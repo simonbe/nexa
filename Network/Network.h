@@ -1,0 +1,611 @@
+#pragma once
+#ifndef NETWORK_H
+#define NETWORK_H
+#endif
+
+#define DEBUG_LEVEL 3
+
+#define MUSIC_AVAILABLE 0
+#define SPARSE_HASH_AVAILABLE 0
+#define GSL_AVAILABLE 0
+#define BOOST_AVAILABLE 0
+#define VISIT_AVAILABLE 0
+#define TR1_COMPILER 0
+#define COMMUNICATION_BUFFER_HASH 1 // not needed to be put at compiler level
+#define USE_HASHED_ACTIVE_COMMUNICATION 1	// faster simulation of units in most cases but uses more memory (extra hash scaling with nr of synapses)
+											// does not need to be on compiler level
+#define USE_DELAYS 0 // not needed to be put at compiler level, will change
+#define USE_UNORDERED_MAP 1 // faster access to e.g. GetPreValue
+
+#define USE_COMMUNICATION_ALLTOALL 1 // otherwise defaults to a communication pattern using allgatherv (all processes get all output messages), not needed to be put at compiler level
+
+#define CRAY 3
+#define JUGENE 2
+#define BGL 1
+#define PC 0
+
+#include <map>
+#include <mpi.h>
+#include <algorithm>
+#include <vector>
+#include <iostream>
+
+#if USE_UNORDERED_MAP == 1
+#if TR1_COMPILER == 1
+#include <tr1/unordered_map>
+#else
+#include <unordered_map>
+//typedef std::unordered_map<foo,bar> my_map;
+#endif
+#endif
+
+#if SPARSE_HASH_AVAILABLE == 1
+	#include <google/type_traits.h>
+	#include <google/sparsetable>
+
+	using GOOGLE_NAMESPACE::sparsetable;
+	using GOOGLE_NAMESPACE::sparse_hash_map;
+	using GOOGLE_NAMESPACE::sparse_hash_set;
+	using GOOGLE_NAMESPACE::dense_hash_map;
+	using GOOGLE_NAMESPACE::dense_hash_set;
+	using GOOGLE_NAMESPACE::HashtableInterface_SparseHashMap;
+	using GOOGLE_NAMESPACE::HashtableInterface_SparseHashSet;
+	using GOOGLE_NAMESPACE::HashtableInterface_SparseHashtable;
+	using GOOGLE_NAMESPACE::HashtableInterface_DenseHashMap;
+	using GOOGLE_NAMESPACE::HashtableInterface_DenseHashSet;
+	using GOOGLE_NAMESPACE::HashtableInterface_DenseHashtable;
+#endif
+
+
+#include "NetworkObject.h"
+#include "NetworkPopulation.h"
+#include "Meter.h"
+#include "DataSources.h"
+#include "Storage.h"
+#include "DataSources.h"
+#include "NetworkParameters.h"
+
+
+class ConnectionModifier;
+class Population;
+class Unit;
+class Meter;
+class NetworkParameters;
+
+using namespace std;
+
+class Network : public NetworkObject
+{
+	#pragma message("Including Network")
+
+public:
+
+	Network();
+
+	~Network();
+
+
+// will change way to select
+#if USE_DELAYS==1
+	struct SynapseStandard // also allow alternate synapses
+	{
+		float weight;
+		float delay;
+	};
+#else
+	struct SynapseStandard
+	{
+		float weight;
+	};
+#endif
+
+	enum SynapseModel // will be moved to layer/population eventually
+	{
+		SynapsesStandard
+	};
+
+	enum CommunicationBufferType
+	{
+		CommunicationBufferVector, // bad memory scaling
+		CommunicationBufferHash // not memory bound, generally slower, could be pos cache effects
+	};
+
+	void SetSeed(bool allSame = false);
+
+	void SetMPIParameters(int nodeId, int nrProcs)
+	{
+		m_mpiNodeId = nodeId;
+		m_mpiNrProcs = nrProcs;
+	}
+
+	void SetUseTiming(bool useTiming);
+
+	void SetTimeResolution(float timeStep)
+	{
+		m_simulationResolution = timeStep;
+	}
+
+	float GetTimeResolution()
+	{
+		return m_simulationResolution;
+	}
+
+	long GetNextUnitId()
+	{
+		long l = m_currentUnitId;
+		m_currentUnitId++;
+		return l;
+	}
+
+	int GetNextHypercolumnId()
+	{
+		long l = m_currentHypercolumnId;
+		m_currentHypercolumnId++;
+		return l;
+	}
+
+	int MPIGetNodeId()
+	{
+		return m_mpiNodeId;
+	}
+
+	long MPIGetNrUnitsParallelizationDefault()
+	{
+		return m_mpiNrUnitsParallelizationDefault;
+	}
+
+	long MPIGetCurrentUnitParallelizationDefault()
+	{
+		return m_mpiCurrentUnitParallelizationDefault;
+	}
+
+	void MPIAddNrUnitsParallelizationDefault(long nrUnits)
+	{
+		m_mpiNrUnitsParallelizationDefault += nrUnits;
+	}
+
+	void MPIAddCurrentUnitParallelizationDefault(long nrUnits)
+	{
+		m_mpiCurrentUnitParallelizationDefault += nrUnits;
+	}
+
+	int MPIGetNrProcs()
+	{
+		return m_mpiNrProcs;
+	}
+
+	float GetCurrentTimeStep() { return m_currentTimeStep; }
+	void SetCurrentTimeStep(float timeStep) { m_currentTimeStep = timeStep; }
+
+	void AddLayer(Population* layer);
+	Population* GetLayer(int index)
+	{
+		return m_populations[index];
+	}
+
+	void Initialize();
+	void Simulate();
+	void Simulate(int nrTimesteps);
+	void CommunicationVersionAllgather();
+	void CommunicationVersionAlltoall();
+
+	void SetExtraFilenameString(char* extraString);
+
+	void KeepCommunicationBuffer(long startId, long endId); // way to reduce communication
+	void KeepCommunicationBuffer(bool keep) // way to reduce communication
+	{
+		this->m_keepCommunicationBuffer = keep;
+	}
+
+	void Reset();
+	void AddUnit(Unit* unit);
+
+	Unit* GetUnitFromId(long unitId) // only local atm?
+	{
+		return m_hashIdUnit[unitId];
+		//return m_listIdUnit[unitId];//m_hashIdUnit[unitId];
+	}
+
+	/*vector<Unit*>* GetPreUnitsFromId(long unitId)
+	{
+		return &m_hashIdPreUnit[unitId];
+	}
+
+	map<long, vector<Unit*> >* HashIdPreUnit()
+	{
+		return &m_hashIdPreUnit;
+	}*/
+
+	float GetSimulationResolution()
+	{
+		return m_simulationResolution;
+	}
+
+	void SetSimulationResolution(float res)
+	{
+		m_simulationResolution = res;
+	}
+
+	void AddMeter(Meter* meter);
+
+//	void AddMeter(char* filename, NetworkObject* object, Meter::MeterType type);
+
+	Meter* GetMeter(int index)
+	{
+		return m_meters[index];
+	}
+
+	vector<Meter*> GetMeters()
+	{
+		return m_meters;
+	}
+
+	long AddUnitModifierIncoming(UnitModifier* e);
+	UnitModifier* GetUnitModifierIncoming(int id);
+
+	void ClearMemory();
+	void ClearEventsIncoming();
+	void ClearEventsIncoming(vector<long> fromPreIds);
+
+	int GetSeed();
+
+	void RecordAll();
+	void StoreNetworkDetails();
+	void StoreTimings();
+	void StoreAnalysis();
+
+	void Dispose();
+
+	vector<float> PrintNetworkDetails();
+	
+	// may get replaced
+	void SetWeight(float weight, long preId, long postId);
+	void SetDelay(float delay, long preId, long postId);
+	float GetWeight(long preId, long postId);
+	float GetDelay(long preId, long postId);
+	void SetUsingDelays(bool usingDelays)
+	{
+		m_isUsingDelays = usingDelays;
+	}
+	bool IsUsingDelays()
+	{
+		return m_isUsingDelays;
+	}
+
+	void SetTrackingHypercolumnIds(bool trackingHypercolumnIds)
+	{
+		m_isTrackingHypercolumnIds = trackingHypercolumnIds;
+	}
+
+	bool IsTrackingHypercolumnIds()
+	{
+		return m_isTrackingHypercolumnIds;
+	}
+
+	bool ConnectionExists(long preId, long postId);
+
+	int GetNrLayers()
+	{
+		return m_populations.size();
+	}
+
+	void AddAnalysis(Analysis* analysis)
+	{
+		analysis->network(this);
+		analysis->SwitchOnOff(true);
+		m_analysis.push_back(analysis);
+	}
+
+	void AddTiming(NetworkObject* networkObject)
+	{
+		if(networkObject!=NULL)
+		{
+			networkObject->SetTiming(true, this);
+			m_analysis.push_back(networkObject->GetAnalysisTiming());
+		}
+	}
+
+	void SetFilenamesAdditional(string additional);
+
+	/*vector<long>* GetPostIds(long preId)
+	{
+		if(m_listPosts.size() == 0) // will be 0 if node has no local units in layer
+			return NULL;
+		else if(preId >= m_listPosts.size())
+			return NULL;
+		else
+			return &m_listPosts[preId]; // use pointer instead
+	}
+
+	vector<vector<long> > GetPostsList()
+	{
+		return m_listPosts;
+	}*/
+
+	//void AddPostIds(vector<long> preIds, long postId);
+	//void AddConnections(vector<long> preIds, long postId);
+
+	float GetPreValue(long preId) // assumes no delays
+	{
+/*		if(m_incomingBufferData.size()<=preId)
+			return 0;
+		else
+			if(m_incomingBufferData.size() == 0)
+				return 0;
+			else*/
+#if COMMUNICATION_BUFFER_HASH == 1
+		return m_incomingBufferDataHash[preId];
+#else
+		return m_incomingBufferData[preId];
+#endif
+
+	}
+
+	/*vector<float> GetPreValues(vector<long> preIds)
+	{
+		vector<float> v(preIds.size());
+		m_incomingBufferDataHash.
+	}*/
+
+#if USE_UNORDERED_MAP == 1
+	unordered_map<long, SynapseStandard>* GetPreSynapses(long postId)
+	{
+		return &m_hashSynapses[postId];
+	}
+#else
+	map<long, SynapseStandard>* GetPreSynapses(long postId)
+	{
+		return &m_hashSynapses[postId];
+	}
+#endif
+
+	bool PreSynapsesExist(long postId)
+	{
+		if(m_hashSynapses.find(postId) == m_hashSynapses.end())
+			return false;
+		else return true;
+	}
+
+#if USE_UNORDERED_MAP == 1
+	unordered_map<long, unordered_map<long, SynapseStandard> >* GetSynapses()
+	{
+		return &m_hashSynapses;
+	}
+#else
+	map<long, map<long, SynapseStandard> >* GetSynapses()
+	{
+		return &m_hashSynapses;
+	}
+#endif
+
+	// ?
+	void EraseSynapseValues(long postId, long preId)
+	{
+		m_hashSynapses[postId].erase(preId);
+		if(m_hashSynapses[postId].size() == 0)
+			m_hashSynapses.erase(postId);
+	}
+
+	//vector<float>* GetIncomingBufferData(long preId)
+	/*float GetIncomingBufferData(long preId)
+	{
+		return m_incomingBufferData[preId];
+		//return &(m_incomingBufferData[preId]);
+	}*/
+
+	/*vector<float>* GetIncomingBufferData()
+	{
+		return &m_incomingBufferData;
+	}*/
+
+	long GetIncomingBufferHypercolumnIds(long preId)
+	{
+#if COMMUNICATION_BUFFER_HASH == 1
+		return m_incomingBufferHypercolumnIdsHash[preId];
+#else
+		return m_incomingBufferHypercolumnIds[preId];
+#endif
+	}
+
+	// pre-created vector of all possible pre ids this process can have as input
+	void CreateAllPreIdsUnion();
+
+	// pre-created vector for each unit to which processes to send an output 
+	// (depending on communication method, sparse send methods esp, this may or may not be needed)
+	void CreateAllPostProcs();
+
+	vector<Analysis*> GetAnalysis()
+	{
+		return m_analysis;
+	}
+
+	void SetFilenameAnalysis(char* filename)
+	{
+		m_filenameAnalysis = filename;
+	}
+
+	void SetFilenameTimings(char* filename)
+	{
+		m_filenameTimings = filename;
+	}
+
+	void SetFilenameNetworkDetails(char* filename)
+	{
+		m_filenameNetworkDetails = filename;
+	}
+
+	void CopyConnectionsPost(Connection* from, Connection* to, bool copyValues);
+
+	void AddNetworkObjectToDelete(void* obj) // these objects the network is responsible to delete
+	{
+		bool exists = false;
+		for(int i=0;i<m_networkObjectsToDelete.size();i++)
+		{
+			if(m_networkObjectsToDelete[i] == obj)
+			{
+				exists = true;
+				break;
+			}
+		}
+		
+		if(exists == false)
+			m_networkObjectsToDelete.push_back(obj);
+	}
+
+	Storage::FilePreference GetFilePreference()
+	{
+		return m_savePreference;
+	}
+
+	void SetFilePreference(Storage::FilePreference savePreference)
+	{
+		m_savePreference = savePreference;
+	}
+
+
+	//////////// Interface for driving simulation from a network object
+
+	void Run();
+
+	//////////////////////////////////////////////////////////////////
+
+
+		//////////// Interface for driving simulation from a network object
+	//// See example class in NetworkTestsNetwork
+	virtual void NetworkSetupStructure() { };
+	virtual void NetworkSetupMeters() { };
+	virtual void NetworkSetupParameters() { };
+	virtual void NetworkRun() { };
+
+	NetworkParameters* Parameters()
+	{
+		return m_networkParameters;
+	}
+	//vector<void*> m_parameterFunctions;
+	//vector<vector<float> > m_parameterValues;
+	//////////////////////////////////////////////////////////////
+
+	void SetRunId(int index)
+	{
+		m_runId = index;
+	}
+
+	int GetRunId()
+	{
+		return m_runId;
+	}
+
+private:
+
+	///////////////////////////////////
+	// (currently) global settings
+
+	CommunicationBufferType m_communicationBufferType;
+	SynapseModel m_synapseModel;
+
+	///////////////////////////////////////////
+
+	bool m_firstRun;
+	bool m_networkDetailsStored;
+	bool m_useTiming;
+	bool m_isUsingDelays;
+	bool m_isTrackingHypercolumnIds; // if pre hypercolumn ids are needed to be communicated etc (used in bcpnn)
+	bool m_useExtraFilenameString;
+	char* m_extraFilenameString;
+
+	double m_timingExtraStart;
+
+	Storage::FilePreference m_savePreference;
+	char* m_filenameNetworkDetails;
+	char* m_filenameTimings;
+	char* m_filenameAnalysis;
+
+	float m_simulationResolution; //[ms]
+	int m_mpiNodeId;
+	int m_mpiNrProcs;
+	long m_mpiCurrentUnitParallelizationDefault;
+	long m_mpiNrUnitsParallelizationDefault;
+	long m_currentUnitId;
+	int m_currentHypercolumnId;
+	int m_currentLayerId;
+
+	float m_currentTimeStep;
+
+	vector<Population*> m_populations;
+	vector<int> m_populationIndexesThisProc;
+	vector<vector<int> > m_communicationToProcs;
+	vector<Connectivity*> m_connectivityTypes;
+
+	//vector<Unit*> m_listIdUnit;
+	map<long, Unit*> m_hashIdUnit;
+	map<long, vector<Unit*> > m_hashIdPreUnit; // used anymore?
+	vector<Meter*> m_meters;
+	vector<Analysis*> m_analysis;
+
+	// if using very large vectors, may want to sort the vector and then use the binary_search, lower_bound, or upper_bound algorithms
+
+	map<long,UnitModifier*> m_eventsUnitIncoming;
+	//map<long, map<long, SynapseStandard> > m_hashSynapses;
+	//vector<map<long, SynapseStandard> > m_hashSynapses;
+	//vector<vector<pair<long, SynapseStandard> > > m_hashSynapses;
+#if USE_UNORDERED_MAP == 1
+	unordered_map<long, unordered_map<long, SynapseStandard> > m_hashSynapses;
+#else
+	map<long, map<long, SynapseStandard> > m_hashSynapses;
+#endif
+	//vector<vector<long> > m_listPosts; // id-based list of post ids [preId, list of post ids]
+
+	//vector<UnitModifier*> m_eventsUnitIncoming;
+
+	//vector<long> m_postIds;
+	//vector<vector<long> > m_preIds; // index-based (wrt position in m_postIds)
+
+	vector<vector<float> > m_incomingBufferDataDelays;
+	vector<float> m_incomingBufferData; // change to hash (?) - not used
+
+#if USE_UNORDERED_MAP == 1
+	unordered_map<long,float> m_incomingBufferDataHash; // alternate version (slower, but not as memory bound - but could be postitive cache effects) - currently map and not spec hash impl
+	unordered_map<long,long> m_incomingBufferHypercolumnIdsHash;
+#else
+	map<long,float> m_incomingBufferDataHash; // alternate version (slower, but not as memory bound - but could be postitive cache effects) - currently map and not spec hash impl
+	map<long,long> m_incomingBufferHypercolumnIdsHash; 
+#endif
+
+	map<long, vector<float> > m_incomingBufferDataDelaysHash;
+	vector<long> m_incomingBufferHypercolumnIds; // can store this locally to reduce communication and processing
+
+	vector<long> m_allPreIds;
+	vector<void*> m_networkObjectsToDelete; // for deletion
+
+	// for keeping of communication buffer
+	bool m_keepCommunicationBuffer;
+
+#if USE_UNORDERED_MAP == 1
+	unordered_map<long,float> m_bufferToKeepData;
+	unordered_map<long,long> m_bufferToKeepHypercolumnIds;
+#else
+	map<long,float> m_bufferToKeepData;
+	map<long,long> m_bufferToKeepHypercolumnIds;
+#endif
+		
+
+	// Multiple parameters handling
+	NetworkParameters* m_networkParameters;
+
+	// Index for the current run if multiple parameters used (also used to set different random seeds for independent runs)
+	int m_runId;
+
+#if MUSIC_AVAILABLE == 1
+	   public:
+		   static MPI_Comm MPIComm;
+#endif
+
+};
+
+#if MUSIC_AVAILABLE == 1
+       //This should be set to the setup->communicator()
+       //when music is used.
+       #define NETWORK_COMM_WORLD Network::MPIComm
+#else
+       #define NETWORK_COMM_WORLD MPI_COMM_WORLD
+#endif
