@@ -1,0 +1,204 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Template|Win32">
+      <Configuration>Template</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{C47191E2-8556-43B5-A231-CB2EF98D1DC3}</ProjectGuid>
+    <RootNamespace>Network</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Configuration)\</IntDir>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Template|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Template|Win32'" />
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IncludePath)</IncludePath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IncludePath)</IncludePath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <AdditionalOptions>-DMPICH_IGNORE_CXX_SEEK %(AdditionalOptions)</AdditionalOptions>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>C:\Program Files (x86)\LLNL\VisIt 2.4.1\libsim\V2\include;..\Resources\boost_1_44_0;..\Resources\hdf5\include;..\Resources\libcsv-3.0.0;..\Resources\GnuWin32\include;C:\Program Files\Microsoft HPC Pack 2008 SDK\Include;C:\Program Files\Microsoft Compute Cluster Pack\Include;..\Projects\OB_OCTX_Connectivity;Utils;Core;Addons</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <WarningLevel>Level2</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Lib>
+      <AdditionalDependencies>msmpi.lib;libgsl.a;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Program Files\Microsoft Compute Cluster Pack\Lib\i386;C:\Program Files\Microsoft HPC Pack 2008 SDK\Lib\i386;..\Resources\GnuWin32\Lib</AdditionalLibraryDirectories>
+      <IgnoreAllDefaultLibraries>
+      </IgnoreAllDefaultLibraries>
+      <IgnoreSpecificDefaultLibraries>
+      </IgnoreSpecificDefaultLibraries>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\Program Files (x86)\LLNL\VisIt 2.4.1\libsim\V2\include;..\Resources\boost_1_44_0;..\Resources\hdf5\include;..\Resources\libcsv-3.0.0;..\Resources\GnuWin32\include;C:\Program Files\Microsoft HPC Pack 2008 SDK\Include;C:\Program Files\Microsoft Compute Cluster Pack\Include;..\Projects\OB_OCTX_Connectivity;Utils;Core;Addons</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Lib>
+      <AdditionalDependencies>msmpi.lib;libgsl.a;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Program Files\Microsoft Compute Cluster Pack\Lib\i386;C:\Program Files\Microsoft HPC Pack 2008 SDK\Lib\i386;..\Resources\GnuWin32\Lib</AdditionalLibraryDirectories>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\Program Files (x86)\LLNL\VisIt 2.3.1\libsim\V2\include;..\Resources\boost_1_44_0;..\Resources\hdf5\include;..\Resources\libcsv-3.0.0;..\Resources\GnuWin32\include;C:\Program Files\Microsoft HPC Pack 2008 SDK\Include;C:\Program Files\Microsoft Compute Cluster Pack\Include;..\Projects\OB_OCTX_Connectivity;Utils;Core;Addons</AdditionalIncludeDirectories>
+      <RuntimeLibrary>
+      </RuntimeLibrary>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\NetworkTests\ParameterSet.cpp" />
+    <ClCompile Include="..\NetworkTests\ParameterSet_OlfactionPH.cpp" />
+    <ClCompile Include="..\Resources\libcsv-3.0.0\libcsv.c" />
+    <ClCompile Include="Addons\EarlyOlfSys.cpp" />
+    <ClCompile Include="Addons\KernelConnectivity.cpp" />
+    <ClCompile Include="Addons\NetworkAdaptation.cpp" />
+    <ClCompile Include="Addons\NetworkAdaptation2.cpp" />
+    <ClCompile Include="Addons\NetworkAdThreshold.cpp" />
+    <ClCompile Include="Addons\NetworkBCM.cpp" />
+    <ClCompile Include="Addons\NetworkBCPNN.cpp" />
+    <ClCompile Include="Addons\NetworkCL.cpp" />
+    <ClCompile Include="Addons\NetworkCorr.cpp" />
+    <ClCompile Include="Addons\NetworkDepression.cpp" />
+    <ClCompile Include="Addons\NetworkFoldiak.cpp" />
+    <ClCompile Include="Addons\NetworkHebbSimple.cpp" />
+    <ClCompile Include="Addons\NetworkKussul.cpp" />
+    <ClCompile Include="Addons\NetworkMDS.cpp" />
+    <ClCompile Include="Addons\NetworkMI.cpp" />
+    <ClCompile Include="Addons\NetworkSanger.cpp" />
+    <ClCompile Include="Addons\NetworkSTDP.cpp" />
+    <ClCompile Include="Addons\NetworkTriesch.cpp" />
+    <ClCompile Include="Addons\NetworkVQ.cpp" />
+    <ClCompile Include="Addons\StimulusPatterns.cpp" />
+    <ClCompile Include="Addons\StructureMIMDSVQ.cpp" />
+    <ClCompile Include="Addons\StructureReTIDe.cpp" />
+    <ClCompile Include="Core\Analysis.cpp" />
+    <ClCompile Include="Core\Meter.cpp" />
+    <ClCompile Include="Core\MPIDistribution.cpp" />
+    <ClCompile Include="Core\Network.cpp" />
+    <ClCompile Include="Core\NetworkConnectionDynamic.cpp" />
+    <ClCompile Include="Core\NetworkConnections.cpp" />
+    <ClCompile Include="Core\NetworkConnectionModifier.cpp" />
+    <ClCompile Include="Core\NetworkPopulationModifier.cpp" />
+    <ClCompile Include="Core\NetworkUnitModifier.cpp" />
+    <ClCompile Include="Core\NetworkPopulation.cpp" />
+    <ClCompile Include="Core\NetworkParameters.cpp" />
+    <ClCompile Include="Core\NetworkUnits.cpp" />
+    <ClCompile Include="Core\NetworkUnitsIF.cpp" />
+    <ClCompile Include="Core\NetworkTransferFunctions.cpp" />
+    <ClCompile Include="Core\Visualization.cpp" />
+    <ClCompile Include="Utils\DataSources.cpp" />
+    <ClCompile Include="Utils\ParamReader.cpp" />
+    <ClCompile Include="Utils\Storage.cpp" />
+    <ClCompile Include="Visualization\stubs.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\NetworkTests\ParameterSet.h" />
+    <ClInclude Include="..\NetworkTests\ParameterSet_OlfactionPH.h" />
+    <ClInclude Include="..\Resources\libcsv-3.0.0\csv.h" />
+    <ClInclude Include="Addons\EarlyOlfSys.h" />
+    <ClInclude Include="Addons\KernelConnectivity.h" />
+    <ClInclude Include="Addons\MinCut.h" />
+    <ClInclude Include="Addons\NetworkAdaptation.h" />
+    <ClInclude Include="Addons\NetworkAdaptation2.h" />
+    <ClInclude Include="Addons\NetworkAdThreshold.h" />
+    <ClInclude Include="Addons\NetworkBCM.h" />
+    <ClInclude Include="Addons\NetworkBCPNN.h" />
+    <ClInclude Include="Addons\NetworkCL.h" />
+    <ClInclude Include="Addons\NetworkCorr.h" />
+    <ClInclude Include="Addons\NetworkDepression.h" />
+    <ClInclude Include="Addons\NetworkFoldiak.h" />
+    <ClInclude Include="Addons\NetworkHebbSimple.h" />
+    <ClInclude Include="Addons\NetworkKussul.h" />
+    <ClInclude Include="Addons\NetworkMDS.h" />
+    <ClInclude Include="Addons\NetworkMI.h" />
+    <ClInclude Include="Addons\NetworkSanger.h" />
+    <ClInclude Include="Addons\NetworkSTDP.h" />
+    <ClInclude Include="Addons\NetworkTriesch.h" />
+    <ClInclude Include="Addons\NetworkVQ.h" />
+    <ClInclude Include="Addons\StimulusPatterns.h" />
+    <ClInclude Include="Addons\StructureMIMDSVQ.h" />
+    <ClInclude Include="Addons\StructureReTIDe.h" />
+    <ClInclude Include="Core\Analysis.h" />
+    <ClInclude Include="Core\Meter.h" />
+    <ClInclude Include="Core\MPIDistribution.h" />
+    <ClInclude Include="Core\Network.h" />
+    <ClInclude Include="Core\NetworkConnectionDynamic.h" />
+    <ClInclude Include="Core\NetworkConnections.h" />
+    <ClInclude Include="Core\NetworkConnectionModifier.h" />
+    <ClInclude Include="Core\NetworkPopulationModifier.h" />
+    <ClInclude Include="Core\NetworkUnitModifier.h" />
+    <ClInclude Include="Core\NetworkPopulation.h" />
+    <ClInclude Include="Core\NetworkObject.h" />
+    <ClInclude Include="Core\NetworkParameters.h" />
+    <ClInclude Include="Core\NetworkStructure.h" />
+    <ClInclude Include="Core\NetworkUnits.h" />
+    <ClInclude Include="Core\NetworkUnitsIF.h" />
+    <ClInclude Include="Core\States.h" />
+    <ClInclude Include="Core\NetworkTransferFunctions.h" />
+    <ClInclude Include="Core\Visualization.h" />
+    <ClInclude Include="Utils\DataSources.h" />
+    <ClInclude Include="Utils\ParamReader.h" />
+    <ClInclude Include="Utils\Storage.h" />
+    <ClInclude Include="Visualization\stubs.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+  <ProjectExtensions>
+    <VisualStudio>
+      <UserProperties HPC_Debug="﻿&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;&lt;Properties xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot; xmlns:xsd=&quot;http://www.w3.org/2001/XMLSchema&quot;&gt;&lt;ProjectNameDisplay&gt;Network&lt;/ProjectNameDisplay&gt;&lt;CollapseAdvanced&gt;true&lt;/CollapseAdvanced&gt;&lt;ApplicationPlatform&gt;x86&lt;/ApplicationPlatform&gt;&lt;/Properties&gt;" />
+    </VisualStudio>
+  </ProjectExtensions>
+</Project>

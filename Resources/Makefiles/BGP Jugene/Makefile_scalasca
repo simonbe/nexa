@@ -1,0 +1,72 @@
+# This is a simple makefile that compiles multiple C++ source files
+
+# set the names here to be the names of your source files with the
+# .cxx or .cpp replaced by .o
+# Be *** SURE *** to put the .o files here rather than the source files
+
+ProjectObjects = PreidxHandler.o CWElement.o ZCWHandler.o Communicator.o HypcolProjection.o HypcolPopulation.o Controller.o util.o Geometry.o Spkbuf.o BrainCore0.4.o 
+
+#------------ no need to change between these lines -------------------
+CFLAGS = -O3 -qstrict -g -qarch=450d -qtune=450 -DMPICH_IGNORE_CXX_SEEK 
+BGP_SYS = /bgsys/drivers/ppcfloor/comm
+CXX_INCLUDES = -I$(BGP_SYS)/include
+
+CXX_LIBS = -L$(BGP_SYS)/lib \
+	-lcxxmpich.cnk -lmpich.cnk -ldcmf.cnk -ldcmfcoll.cnk -lpthread -lrt -L/bgsys/drivers/ppcfloor/runtime/SPI -lSPI.cna
+
+
+.SUFFIXES: .cxx .cpp
+
+.cxx.o:
+	scalasca -instrument bgxlC $(CFLAGS) $(CXX_INCLUDES) -c $<
+
+.cpp.o:
+	scalasca -instrument bgxlC $(CFLAGS) $(CXX_INCLUDES) -c $<
+
+.c.o:
+	scalasca -instrument bgxlC $(CFLAGS) $(CXX_INCLUDES) -c $<
+
+
+#------------ no need to change between these lines -------------------
+
+
+#------------ targets --------------------------------------------
+# describe how to create the targets - often there will be only one target
+
+all: project1
+
+project1: $(ProjectObjects)
+	scalasca -instrument bgxlC $(CFLAGS) $(CXX_INCLUDES) $(ProjectObjects) -o project1 $(CXX_LIBS)
+
+clean:
+	rm -f $(ProjectObjects) project1
+
+#------------ dependencies --------------------------------------------
+# put the .o that depends on a .h, then colon, then TAB, then the .h
+
+
+
+PreidxHandler.o: PreidxHandler.h
+CWElement.o: CWElement.h
+ZCWHandler.o: ZCWHandler.h
+Communicator.o: Communicator.h
+HypcolProjection.o: HypcolProjection.h
+HypcolPopulation.o: HypcolPopulation.h
+Controller.o: Controller.h
+util.o: util.h
+Geometry.o: Geometry.h
+Spkbuf.o: Spkbuf.h
+
+# BrainCore0.3.o: PreidxHandler.h CWElement.h ZCWHandler.h Processor.h Master.h Hyperc.h IdleProc.h util.h Geometry.h Spkbuf.h
+
+BrainCore0.4.o: PreidxHandler.h ZCWHandler.h CWElement.h util.h Communicator.h HypcolProjection.h HypcolPopulation.h Controller.h Geometry.h Spkbuf.h
+
+
+
+
+
+
+
+
+
+

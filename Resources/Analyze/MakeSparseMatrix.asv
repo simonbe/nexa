@@ -1,0 +1,6 @@
+function A = MakeSparseMatrix(data)
+
+
+for i=1:length(data)
+
+end

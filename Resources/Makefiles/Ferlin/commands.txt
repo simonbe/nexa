@@ -1,0 +1,11 @@
+module add heimdal
+module add easy
+spusage | grep interactive 
+
+module add i-compilers
+module add easy
+module add mpi
+module add gcc/4.6.0
+module add openmpi/1.5.4-gcc-4.6
+module add mesa/7.5.2
+module add visit/2.4.0

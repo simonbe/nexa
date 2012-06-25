@@ -1,0 +1,12 @@
+
+vip.rzg.mpg.de
+
+module add deisa
+module add globus
+gsissh -p 2222 jugene5d.zam.kfa-juelich.de
+
+/deisa/sar/home/sar00055/sar00055
+
+change libcsv.c -> csv.c
+
+in cue: jugene5d.zam.kfa-juelich.de.4739 -> jugene5d.4739.0

@@ -1,0 +1,35 @@
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/svn/repsimon1/!svn/ver/194/Network/Resources/libcsv-3.0.0/examples
+END
+LICENSE
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/repsimon1/!svn/ver/194/Network/Resources/libcsv-3.0.0/examples/LICENSE
+END
+csvfix.c
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/repsimon1/!svn/ver/194/Network/Resources/libcsv-3.0.0/examples/csvfix.c
+END
+csvinfo.c
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/repsimon1/!svn/ver/194/Network/Resources/libcsv-3.0.0/examples/csvinfo.c
+END
+csvtest.c
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/repsimon1/!svn/ver/194/Network/Resources/libcsv-3.0.0/examples/csvtest.c
+END
+csvvalid.c
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/repsimon1/!svn/ver/194/Network/Resources/libcsv-3.0.0/examples/csvvalid.c
+END

@@ -1,0 +1,14 @@
+/usr/heimdal/bin/afslog -c nada.kth.se
+
+needed in order to checkout an afs ticket
+
+(or module add heimdal
+afslog -c nada.kth.se)
+
+
+
+module add mpi
+module add gcc/4.6.0
+module add openmpi/1.5.4-gcc-4.6
+module add mesa/7.5.2
+module add visit/2.4.0

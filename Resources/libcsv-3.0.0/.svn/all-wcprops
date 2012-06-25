@@ -1,0 +1,71 @@
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/svn/repsimon1/!svn/ver/194/Network/Resources/libcsv-3.0.0
+END
+csv.h
+K 25
+svn:wc:ra_dav:version-url
+V 64
+/svn/repsimon1/!svn/ver/194/Network/Resources/libcsv-3.0.0/csv.h
+END
+LICENSE
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/svn/repsimon1/!svn/ver/194/Network/Resources/libcsv-3.0.0/LICENSE
+END
+csv.pdf
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/svn/repsimon1/!svn/ver/194/Network/Resources/libcsv-3.0.0/csv.pdf
+END
+libcsv.c
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/svn/repsimon1/!svn/ver/194/Network/Resources/libcsv-3.0.0/libcsv.c
+END
+INSTALL
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/svn/repsimon1/!svn/ver/194/Network/Resources/libcsv-3.0.0/INSTALL
+END
+Changelog
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/svn/repsimon1/!svn/ver/194/Network/Resources/libcsv-3.0.0/Changelog
+END
+FAQ
+K 25
+svn:wc:ra_dav:version-url
+V 62
+/svn/repsimon1/!svn/ver/194/Network/Resources/libcsv-3.0.0/FAQ
+END
+csv.3.gz
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/svn/repsimon1/!svn/ver/194/Network/Resources/libcsv-3.0.0/csv.3.gz
+END
+test_csv.c
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/svn/repsimon1/!svn/ver/194/Network/Resources/libcsv-3.0.0/test_csv.c
+END
+Makefile
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/svn/repsimon1/!svn/ver/194/Network/Resources/libcsv-3.0.0/Makefile
+END
+README
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/repsimon1/!svn/ver/194/Network/Resources/libcsv-3.0.0/README
+END

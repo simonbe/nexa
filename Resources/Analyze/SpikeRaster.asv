@@ -1,0 +1,9 @@
+X = repmat(spikingLayer1(:,1),size(spikingLayer1,2));
+
+figure(70);
+hold on;
+for i=2:size(spikingLayer1,2)
+[a b] = find(spikingLayer1(:,i) == 1)
+scatter(spikingLayer1(a,1),i*ones(length(a),1),ones(length(a),1));
+%    contour(repmat(spikingLayer1(:,1),1,17),repmat(1:17,length(spikingLayer1(:,1)),1), spikingLayer1(:,2:end));
+end

@@ -1,0 +1,74 @@
+# This is a simple makefile that compiles multiple C++ source files
+
+# set the names here to be the names of your source files with the
+# .cxx or .cpp replaced by .o
+# Be *** SURE *** to put the .o files here rather than the source files
+
+ProjectObjects = main.o MDS.o DistanceMatrixSparseCorrelation.o ProjectPET_Corr.o DistanceMatrixSparse.o DistanceMatrix.o Logger.o DataStorage.o Settings.o ProjectMNIST.o ProjectNetFlix.o ProjectImage.o ProjectSensorDrift.o ProjectCOIL.o Tests.o CSL.o BCPNN.o CSLP.o ProjectMNIST_Boost.o Kussul.o BCPNNOnline.o Tools.o ProjectfMRI.o ProjectPET.o ProjectPETStep2.o 
+
+#------------ no need to change between these lines -------------------
+CFLAGS = -O3 -qstrict -qarch=450d -qtune=450 -DMPICH_IGNORE_CXX_SEEK 
+BGP_SYS = /bgsys/drivers/ppcfloor/comm
+CXX_INCLUDES = -I$(BGP_SYS)/include \
+		-I/bgsys/local/gsl/include \
+		-I/homeb/sar00055/sar00055 \
+		-I/homeb/sar00055/sar00055/boost/numeric/ublas
+
+CXX_LIBS = -L$(BGP_SYS)/lib -L/bgsys/local/gsl/lib \
+	-lcxxmpich.cnk -lmpich.cnk -ldcmf.cnk -ldcmfcoll.cnk -lpthread -lrt -L/bgsys/drivers/ppcfloor/runtime/SPI -lSPI.cna -lgsl -lgslcblas -lm
+
+
+.SUFFIXES: .cxx .cpp
+
+.cxx.o:
+	bgxlC $(CFLAGS) $(CXX_INCLUDES) -c $<
+
+.cpp.o:
+	bgxlC $(CFLAGS) $(CXX_INCLUDES) -c $<
+
+.c.o:
+	bgxlC $(CFLAGS) $(CXX_INCLUDES) -c $<
+
+
+#------------ no need to change between these lines -------------------
+
+
+#------------ targets --------------------------------------------
+# describe how to create the targets - often there will be only one target
+
+all: project1
+
+project1: $(ProjectObjects)
+	bgxlC $(CFLAGS) $(CXX_INCLUDES) $(ProjectObjects) -o project1 $(CXX_LIBS)
+
+clean:
+	rm -f $(ProjectObjects) project1
+
+#------------ dependencies --------------------------------------------
+# put the .o that depends on a .h, then colon, then TAB, then the .h
+
+Tests.o:	Tests.h
+ProjectMNIST.o:	ProjectMNIST.h
+ProjectMNIST_Boost.o: ProjectMNIST_Boost.h
+ProjectNetFlix.o:	ProjectNetFlix.h
+ProjectSensorDrift.o:	ProjectSensorDrift.h
+ProjectCOIL.o: ProjectCOIL.h
+ProjectImage.o: ProjectImage.h
+Settings.o:	Settings.h
+Logger.o:	Logger.h
+DataStorage.o:	DataStorage.h
+DistanceMatrix.o:	DistanceMatrix.h
+CSL.o:	CSL.h
+BCPNN.o:	BCPNN.h
+MDS.o:	MDS.h
+CSLP.o: CSLP.h
+Kussul.o: Kussul.h
+BCPNNOnline.o: BCPNNOnline.h
+Tools.o: Tools.h
+ProjectfMRI.o: ProjectfMRI.h
+ProjectPET.o: ProjectPET.h
+ProjectPETStep2.o: ProjectPETStep2.h
+ProjectPET_Corr.o: ProjectPET_Corr.h
+DistanceMatrixSparseCorrelation.o: DistanceMatrixSparseCorrelation.h
+DistanceMatrixSparse.o: DistanceMatrixSparse.h
+main.o:	MDS.h DistanceMatrixSparse.h DistanceMatrix.h Logger.h DataStorage.h Settings.h Tests.h ProjectMNIST.h ProjectImage.h ProjectNetFlix.h ProjectSensorDrift.h ProjectMNIST_Boost.h Kussul.h BCPNNOnline.h Tools.h ProjectfMRI.h ProjectPET.h ProjectPETStep2.h

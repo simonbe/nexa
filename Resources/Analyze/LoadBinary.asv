@@ -1,0 +1,13 @@
+function A = LoadBinary(filename, unixFile)
+
+if(unixFile == 1)
+    fid = fopen(filename,'r','b');
+else
+    fid = fopen(filename,'r');
+end
+
+A = fread(fid,1e9,'real*8');
+
+
+fclose(fid);
+

@@ -1,0 +1,28 @@
+'{8} '{8} '{8} '{8} '{8} '{8} '{8} '{8} '{8} '{8} '{8} '{8} '{8} '{8} '{8} '{8} '{8} '{8} '{8} '{8} '{8} '{8} '{8} '{8} '{8} '{8} '{8} '{8} '{8} '{8} '{8} '{8} '{8} '{8} '{8} '{8} '{8} '{8} '
+[a11c31n14:10599] *** Process received signal ***
+[a11c31n14:10599] Signal: Segmentation fault (11)
+[a11c31n14:10599] Signal code: Address not mapped (1)
+[a11c31n14:10599] Failing at address: 0x801f0fffe6
+[a11c31n14:10599] [ 0] /lib64/libpthread.so.0 [0x3704c0e4c0]
+[a11c31n14:10599] [ 1] /afs/pdc.kth.se/pdc/vol/openmpi/1.5.4/gcc/4.6/lib/libmpi.so.1 [0x2af8585ff84d]
+[a11c31n14:10599] [ 2] /lib64/libc.so.6(cfree+0x27) [0x37040758a7]
+[a11c31n14:10599] [ 3] ./projectFerlin(_ZNSt6vectorIS_IfSaIfEESaIS1_EED2Ev+0x25) [0x42ca25]
+[a11c31n14:10599] [ 4] ./projectFerlin(_ZN10ConnectionD1Ev+0x85) [0x4bd5e5]
+[a11c31n14:10599] [ 5] /pdc/vol/visit/2.4.0/2.4.0/linux-x86_64/lib/libavtpipeline_ser.so(_ZNK19avtDataObjectWriter9WriteAttsER19avtDataObjectStringP14AttributeGroup+0xfa) [0x2aaaafe9c5fa]
+[a11c31n14:10599] [ 6] /pdc/vol/visit/2.4.0/2.4.0/linux-x86_64/lib/libavtpipeline_ser.so(_ZN17avtDataAttributes5WriteER19avtDataObjectStringPK19avtDataObjectWriter+0x989) [0x2aaaafe56359]
+[a11c31n14:10599] [ 7] /pdc/vol/visit/2.4.0/2.4.0/linux-x86_64/lib/libavtpipeline_ser.so(_ZN24avtDataObjectInformation5WriteER19avtDataObjectStringPK19avtDataObjectWriter+0x25) [0x2aaaafe61805]
+[a11c31n14:10599] [ 8] /pdc/vol/visit/2.4.0/2.4.0/linux-x86_64/lib/libavtpipeline_ser.so(_ZN19avtDataObjectWriter5WriteER19avtDataObjectString+0x89) [0x2aaaafe9c269]
+[a11c31n14:10599] [ 9] /pdc/vol/visit/2.4.0/2.4.0/linux-x86_64/lib/libengine_ser.so(_ZN6Engine9WriteDataEP14NonBlockingRPCR7ref_ptrI19avtDataObjectWriterEbbiPbifPi+0x3e9) [0x2aaaaae9fb59]
+[a11c31n14:10599] [10] /pdc/vol/visit/2.4.0/2.4.0/linux-x86_64/lib/libengine_ser.so [0x2aaaaaea01b8]
+[a11c31n14:10599] [11] /pdc/vol/visit/2.4.0/2.4.0/linux-x86_64/lib/libvisitcommon.so(_ZN7Subject6NotifyEv+0x7c) [0x2aaab17f636c]
+[a11c31n14:10599] [12] /pdc/vol/visit/2.4.0/2.4.0/linux-x86_64/lib/libvisitcommon.so(_ZN16AttributeSubject6NotifyEv+0xd) [0x2aaab171d21d]
+[a11c31n14:10599] [13] /pdc/vol/visit/2.4.0/2.4.0/linux-x86_64/lib/libvisitcommon.so(_ZN4Xfer7ProcessEv+0x1e7) [0x2aaab181d407]
+[a11c31n14:10599] [14] /pdc/vol/visit/2.4.0/2.4.0/linux-x86_64/lib/libsimV2runtime_ser.so(simv2_process_input+0x13) [0x2aaaaac3c3c3]
+[a11c31n14:10599] [15] ./projectFerlin [0x51a384]
+[a11c31n14:10599] [16] ./projectFerlin(_ZN15NetworkDemoVis119ProcessVisItCommandEv+0x75) [0x42bc35]
+[a11c31n14:10599] [17] ./projectFerlin(_ZN15NetworkDemoVis110NetworkRunEv+0x1a0) [0x42c5f0]
+[a11c31n14:10599] [18] ./projectFerlin(main+0x38) [0x42b128]
+[a11c31n14:10599] [19] /lib64/libc.so.6(__libc_start_main+0xf4) [0x370401d974]
+[a11c31n14:10599] [20] ./projectFerlin(__gxx_personality_v0+0x249) [0x4288e9]
+[a11c31n14:10599] *** End of error message ***
+Segmentation fault
