@@ -46,8 +46,8 @@ void NetworkTests::NetworkTestBCPNNRecurrent()
 	FullConnectivity* full3 = new FullConnectivity();
 	FullConnectivity* full4 = new FullConnectivity();
 
-	network->AddLayer(layer1);
-	network->AddLayer(layer2);
+	network->AddPopulation(layer1);
+	network->AddPopulation(layer2);
 
 	layer1->AddPost(layer2,full); // Feedforward, with BCPNN
 	layer2->AddPre(layer1,full2); // Feedforward
@@ -56,16 +56,16 @@ void NetworkTests::NetworkTestBCPNNRecurrent()
 	layer2->AddPre(layer2,full4); // Recurrent
 
 	SoftMax* softmax = new SoftMax(1.0, SoftMax::Standard);
-	layer2->AddLayerEvent(softmax);
+	layer2->AddPopulationModifier(softmax);
 
-	// Add connection changes
+	// Add Projection changes
 	float lambda0 = 0.0001;
 	float alpha = 0.01;
-	ConnectionModifierBcpnnOnline* bStandard = new ConnectionModifierBcpnnOnline(alpha,lambda0);
-	ConnectionModifierBcpnnOnline* bInhib = new ConnectionModifierBcpnnOnline(alpha,lambda0);
+	ProjectionModifierBcpnnOnline* bStandard = new ProjectionModifierBcpnnOnline(alpha,lambda0);
+	ProjectionModifierBcpnnOnline* bInhib = new ProjectionModifierBcpnnOnline(alpha,lambda0);
 
-	full2->AddConnectionsEvent(bStandard);
-	full4->AddConnectionsEvent(bInhib);
+	full2->AddProjectionsEvent(bStandard);
+	full4->AddProjectionsEvent(bInhib);
 
 	// Construct initial network
 	network->Initialize();
@@ -117,8 +117,8 @@ void NetworkTests::NetworkTestMDSVQ(int mpiRank, int mpiSize)
 	FullConnectivity* full7 = new FullConnectivity(true,"hypercolumn");
 	FullConnectivity* full8 = new FullConnectivity(true,"hypercolumn");
 
-	network->AddLayer(layer1);
-	network->AddLayer(layer2);
+	network->AddPopulation(layer1);
+	network->AddPopulation(layer2);
 
 	layer1->AddPost(layer2,full); // Feedforward, modified by VQ calculations
 	layer2->AddPre(layer1,full2); // Feedforward
@@ -136,33 +136,33 @@ void NetworkTests::NetworkTestMDSVQ(int mpiRank, int mpiSize)
 	int miDimension = nrInputHypercolumns;
 	
 	// MI
-	ConnectionModifierMIHypercolumn* miHypercolumns = new ConnectionModifierMIHypercolumn();
-	ConnectionModifierMIRateUnit* miRateUnits = new ConnectionModifierMIRateUnit(miHypercolumns);
-	full8->AddConnectionsEvent(miHypercolumns);
-	full4->AddConnectionsEvent(miRateUnits);
-	//miRateUnits->AddParentConnectionModifier(miHypercolumns); // allows mi hypercolumns to have access to the belonging mi minicolumns (set as default?)
+	ProjectionModifierMIHypercolumn* miHypercolumns = new ProjectionModifierMIHypercolumn();
+	ProjectionModifierMIRateUnit* miRateUnits = new ProjectionModifierMIRateUnit(miHypercolumns);
+	full8->AddProjectionsEvent(miHypercolumns);
+	full4->AddProjectionsEvent(miRateUnits);
+	//miRateUnits->AddParentProjectionModifier(miHypercolumns); // allows mi hypercolumns to have access to the belonging mi minicolumns (set as default?)
 
 	// MDS
 	LayerMDS* MDS = new LayerMDS(miDimension,mdsDimension, network);
-	ConnectionModifierMDS* mdsHypercolumns = new ConnectionModifierMDS();
-	layer1->AddLayerEvent(MDS);
-	mdsHypercolumns->AddParentPopulationModifier(MDS); // allows MDS to have access to the hypercolumn event connections (will be set as default)
-	full8->AddConnectionsEvent(mdsHypercolumns);
+	ProjectionModifierMDS* mdsHypercolumns = new ProjectionModifierMDS();
+	layer1->AddPopulationModifier(MDS);
+	mdsHypercolumns->AddParentPopulationModifier(MDS); // allows MDS to have access to the hypercolumn event Projections (will be set as default)
+	full8->AddProjectionsEvent(mdsHypercolumns);
 
 	// VQ
 	int nrGroups = 10;
 	LayerVQ* VQ = new LayerVQ(nrGroups, LayerVQ::VQStandard);
-	layer1->AddLayerEvent(VQ);
+	layer1->AddPopulationModifier(VQ);
 	VQ->AddChildPopulationModifier(MDS); // Allow VQ to have access to MDS output (m_Xi)
-	//full2->AddConnectionsEvent(VQconn);
+	//full2->AddProjectionsEvent(VQconn);
 
 	// Inhibitory bcpnn
 	float lambda0 = 0.0001;
 	float alpha = 0.01;
-	ConnectionModifierBcpnnOnline* bInhib = new ConnectionModifierBcpnnOnline(alpha,lambda0);
+	ProjectionModifierBcpnnOnline* bInhib = new ProjectionModifierBcpnnOnline(alpha,lambda0);
 	bInhib->SetImpactBeta(-1);
 	bInhib->SetImpactWeights(-1);
-	full6->AddConnectionsEvent(bInhib);
+	full6->AddProjectionsEvent(bInhib);
 
 	// Construct initial network
 	network->Initialize();
@@ -266,7 +266,7 @@ void NetworkTests::NetworkTestMNISTRecurrent(int mpiRank, int mpiSize)
 	FullConnectivity* full9 = new FullConnectivity();
 	FullConnectivity* full10 = new FullConnectivity();
 
-	network->AddLayer(layer1);
+	network->AddPopulation(layer1);
 
 //	layer1->AddPost(layer1,full3); // Recurrent, with MI minicolumn calculations
 	layer1->AddPre(layer1,full4); // Recurrent
@@ -277,11 +277,11 @@ void NetworkTests::NetworkTestMNISTRecurrent(int mpiRank, int mpiSize)
 	// Recurrent bcpnn for memory test
 	float lambda0 = 0.0001;
 	float alpha = 0.01;
-	ConnectionModifierBcpnnOnline* bRecTest = new ConnectionModifierBcpnnOnline(alpha,lambda0);
-	full4->AddConnectionsEvent(bRecTest);
+	ProjectionModifierBcpnnOnline* bRecTest = new ProjectionModifierBcpnnOnline(alpha,lambda0);
+	full4->AddProjectionsEvent(bRecTest);
 
 	SoftMax* softmax = new SoftMax(1.0,SoftMax::Standard);	
-	layer1->AddLayerEvent(softmax);
+	layer1->AddPopulationModifier(softmax);
 
 	// Construct initial network
 	network->Initialize();
@@ -384,9 +384,9 @@ void NetworkTests::NetworkTestMNISTClassification(int mpiRank, int mpiSize)
 	FullConnectivity* full8 = new FullConnectivity(true,"hypercolumn");
 	FullConnectivity* full10 = new FullConnectivity();
 
-	network->AddLayer(layer1);
-	network->AddLayer(layer2);
-	network->AddLayer(layer3);
+	network->AddPopulation(layer1);
+	network->AddPopulation(layer2);
+	network->AddPopulation(layer3);
 
 	//layer1->AddPost(layer1,full3); // Recurrent, with MI minicolumn calculations
 	layer1->AddPre(layer1,full4); // Recurrent
@@ -407,71 +407,71 @@ void NetworkTests::NetworkTestMNISTClassification(int mpiRank, int mpiSize)
 	int miDimension = nrInputHypercolumns;
 
 	// MI
-	ConnectionModifierMIHypercolumn* miHypercolumns = new ConnectionModifierMIHypercolumn();
-	ConnectionModifierMIRateUnit* miRateUnits = new ConnectionModifierMIRateUnit(miHypercolumns);
-	full8->AddConnectionsEvent(miHypercolumns);
-	full4->AddConnectionsEvent(miRateUnits);
-	miRateUnits->AddParentConnectionModifier(miHypercolumns); // allows mi hypercolumns to have access to the belonging mi minicolumns (set as default?)
+	ProjectionModifierMIHypercolumn* miHypercolumns = new ProjectionModifierMIHypercolumn();
+	ProjectionModifierMIRateUnit* miRateUnits = new ProjectionModifierMIRateUnit(miHypercolumns);
+	full8->AddProjectionsEvent(miHypercolumns);
+	full4->AddProjectionsEvent(miRateUnits);
+	miRateUnits->AddParentProjectionModifier(miHypercolumns); // allows mi hypercolumns to have access to the belonging mi minicolumns (set as default?)
 
 	// MDS
 	LayerMDS* MDS = new LayerMDS(miDimension,mdsDimension, network);
-	ConnectionModifierMDS* mdsHypercolumns = new ConnectionModifierMDS();
-	layer1->AddLayerEvent(MDS);
-	mdsHypercolumns->AddParentPopulationModifier(MDS); // allows MDS to have access to the hypercolumn event connections (will be set as default)
-	full8->AddConnectionsEvent(mdsHypercolumns);
+	ProjectionModifierMDS* mdsHypercolumns = new ProjectionModifierMDS();
+	layer1->AddPopulationModifier(MDS);
+	mdsHypercolumns->AddParentPopulationModifier(MDS); // allows MDS to have access to the hypercolumn event Projections (will be set as default)
+	full8->AddProjectionsEvent(mdsHypercolumns);
 
 	// VQ
 	int nrGroups = nrMiddleHypercolumns;
 	LayerVQ* VQ = new LayerVQ(nrGroups, LayerVQ::VQCSL);
-	full2->AddConnectionsEvent(VQ->GetConnectionModifier()); // Feedforward modified by VQ calculations
-	layer1->AddLayerEvent(VQ);
+	full2->AddProjectionsEvent(VQ->GetProjectionModifier()); // Feedforward modified by VQ calculations
+	layer1->AddPopulationModifier(VQ);
 	VQ->AddChildPopulationModifier(MDS); // Allow VQ to have access to MDS output (m_Xi)
 
 	// Inhibitory bcpnn + feedforward bcpnn + softmax
 	float lambda0 = 10e-8;
 	float alpha = 0.05;//0.01;
 	float impactBeta = -0.1;//-0.03;//-0.01/nrMiddleRateUnits;
-	ConnectionModifierBcpnnOnline* bInhib = new ConnectionModifierBcpnnOnline(alpha,lambda0);
+	ProjectionModifierBcpnnOnline* bInhib = new ProjectionModifierBcpnnOnline(alpha,lambda0);
 	bInhib->SetImpactWeights(0.0);
 	bInhib->SetImpactBeta(impactBeta);
 
 	//// BGL - 40 patterns (32 nodes)
 	//float lambda0 = 10e-8;
 	//float alpha = 0.05;
-	//ConnectionModifierBcpnnOnline* bInhib = new ConnectionModifierBcpnnOnline(alpha,lambda0);
+	//ProjectionModifierBcpnnOnline* bInhib = new ProjectionModifierBcpnnOnline(alpha,lambda0);
 	//bInhib->SetImpactWeights(0.0);
 	//bInhib->SetImpactBeta(-0.00001);
 
 	// PC - 10, 10 patterns
 	//	float lambda0 = 10e-8;
 	//float alpha = 0.05;
-	//ConnectionModifierBcpnnOnline* bInhib = new ConnectionModifierBcpnnOnline(alpha,lambda0);
+	//ProjectionModifierBcpnnOnline* bInhib = new ProjectionModifierBcpnnOnline(alpha,lambda0);
 	//bInhib->SetImpactWeights(0.0);
 	//bInhib->SetImpactBeta(-0.0001);
 
-	ConnectionModifierBcpnnOnline* bFeedforward = new ConnectionModifierBcpnnOnline(alpha,lambda0);
+	ProjectionModifierBcpnnOnline* bFeedforward = new ProjectionModifierBcpnnOnline(alpha,lambda0);
 	//bFeedforward->SetImpactBeta(0.0);
 
-//	full6->AddConnectionsEvent(bInhib);
-//	full2->AddConnectionsEvent(bFeedforward);
+//	full6->AddProjectionsEvent(bInhib);
+//	full2->AddProjectionsEvent(bFeedforward);
 
 	float clC = nrMiddleRateUnits*20;//*2;
-	ConnectionModifierCL* compLearn = new ConnectionModifierCL(nrMiddleRateUnits,0.0001,0.0005,clC);//nrMiddleRateUnits*100);
+	ProjectionModifierCL* compLearn = new ProjectionModifierCL(nrMiddleRateUnits,0.0001,0.0005,clC);//nrMiddleRateUnits*100);
 
-	full2->AddConnectionsEvent(compLearn);
+	full2->AddProjectionsEvent(compLearn);
 
 	SoftMax* softmax = new SoftMax(1.0, SoftMax::WTA);
 	WTA* wta = new WTA();
-	layer2->AddLayerEvent(wta);//wta);//softmax);
+	layer2->AddPopulationModifier(wta);//wta);//softmax);
 
 	// Classification
 	SoftMax* softmaxOutput = new SoftMax(1.0, SoftMax::WTA);
-	ConnectionModifierBcpnnOnline* bClassification = new ConnectionModifierBcpnnOnline(0.05, 10e-3);
-	ConnectionModifierKussul* kClassification = new ConnectionModifierKussul();
-	//full10->AddConnectionsEvent(bClassification);
-	full10->AddConnectionsEvent(kClassification);
+	ProjectionModifierBcpnnOnline* bClassification = new ProjectionModifierBcpnnOnline(0.05, 10e-3);
+	ProjectionModifierKussul* kClassification = new ProjectionModifierKussul();
+	//full10->AddProjectionsEvent(bClassification);
+	full10->AddProjectionsEvent(kClassification);
 
-	//layer3->AddLayerEvent(softmaxOutput);
+	//layer3->AddPopulationModifier(softmaxOutput);
 
 	// Construct initial network
 	network->Initialize();
@@ -533,9 +533,9 @@ void NetworkTests::NetworkTestMNISTClassification(int mpiRank, int mpiSize)
 	// Recordings
 
 	char name1[20];
-	sprintf(name1,"Connection%d_2.csv",mpiRank);
+	sprintf(name1,"Projection%d_2.csv",mpiRank);
 	Meter connMeter(name1, Storage::CSV);
-	connMeter.AttachConnection(layer2->GetIncomingConnections()[0],0);//AttachUnit(layer1->GetRateUnits()[0]);
+	connMeter.AttachProjection(layer2->GetIncomingProjections()[0],0);//AttachUnit(layer1->GetRateUnits()[0]);
 	network->AddMeter(&connMeter);
 
 	char* name2 = "Layer2Activity_2.csv";
@@ -546,10 +546,10 @@ void NetworkTests::NetworkTestMNISTClassification(int mpiRank, int mpiSize)
 	Meter layerMeter(name2, Storage::CSV);
 	Meter layer3Meter(name3, Storage::CSV);
 
-	layerMeter.AttachLayer(layer2);
+	layerMeter.AttachPopulation(layer2);
 	network->AddMeter(&layerMeter);
 
-	layer3Meter.AttachLayer(layer3);
+	layer3Meter.AttachPopulation(layer3);
 	network->AddMeter(&layer3Meter);
 
 	Meter vqMeter("vqGroups_2.csv", Storage::CSV);
@@ -821,8 +821,8 @@ void NetworkTests::NetworkTestIF(int mpiRank,int mpiSize)
 	FullConnectivity* full3 = new FullConnectivity();
 	FullConnectivity* full4 = new FullConnectivity();
 	
-	network->AddLayer(layer1);
-	network->AddLayer(layer2);
+	network->AddPopulation(layer1);
+	network->AddPopulation(layer2);
 
 	//layer1->AddPost(layer2,full); // Feedforward layer 1 -> layer 2
 	layer2->AddPre(layer1,full2);
@@ -832,10 +832,10 @@ void NetworkTests::NetworkTestIF(int mpiRank,int mpiSize)
 
 	float lambda0 = 0.0001f;
 	float alpha = 0.01f;
-	ConnectionModifierBcpnnOnline* bRecL1 = new ConnectionModifierBcpnnOnline(alpha,lambda0);
+	ProjectionModifierBcpnnOnline* bRecL1 = new ProjectionModifierBcpnnOnline(alpha,lambda0);
 	bRecL1->SetImpactBeta(-1);
 	bRecL1->SetImpactWeights(-1);
-	full4->AddConnectionsEvent(bRecL1);
+	full4->AddProjectionsEvent(bRecL1);
 
 	// Construct initial network
 	network->Initialize();
@@ -901,12 +901,12 @@ void NetworkTests::NetworkTestPearson(int mpiRank, int mpiSize)
 	PopulationColumns* layer1 = new PopulationColumns(network,nrHypercolumns,nrRateUnits,PopulationColumns::Graded);
 	FullConnectivity* full = new FullConnectivity();
 
-	network->AddLayer(layer1);
+	network->AddPopulation(layer1);
 	
 	layer1->AddPre(layer1,full);
 
-	ConnectionModifierPearson* ePearson = new ConnectionModifierPearson();
-	full->AddConnectionsEvent(ePearson);
+	ProjectionModifierPearson* ePearson = new ProjectionModifierPearson();
+	full->AddProjectionsEvent(ePearson);
 
 	network->Initialize();
 
@@ -961,8 +961,8 @@ void NetworkTests::NetworkTestTrieschAndFoldiak(int mpiRank, int mpiSize)
 	PopulationColumns* layer1 = new PopulationColumns(network,nrInputHypercolumns,nrInputRateUnits,PopulationColumns::GradedThresholded);
 	PopulationColumns* layer2 = new PopulationColumns(network,nrOutputHypercolumns,nrOutputRateUnits,PopulationColumns::GradedThresholded);
 
-	network->AddLayer(layer1);
-	network->AddLayer(layer2);
+	network->AddPopulation(layer1);
+	network->AddPopulation(layer2);
 
 	FullConnectivity* full = new FullConnectivity();
 	FullConnectivity* full2;
@@ -971,41 +971,41 @@ void NetworkTests::NetworkTestTrieschAndFoldiak(int mpiRank, int mpiSize)
 	layer2->AddPre(layer1,full);
 
 	bool thresholded = true;
-	ConnectionModifierTriesch* eTriesch = new ConnectionModifierTriesch(0.002f,0.2f,0.05f,1.0f/float(nrOutputRateUnits), thresholded);//0.05,0.2,0.005,1.0/(float)nrOutputRateUnits, thresholded);
+	ProjectionModifierTriesch* eTriesch = new ProjectionModifierTriesch(0.002f,0.2f,0.05f,1.0f/float(nrOutputRateUnits), thresholded);//0.05,0.2,0.005,1.0/(float)nrOutputRateUnits, thresholded);
 
 	if(isTriesch)
-		full->AddConnectionsEvent(eTriesch);
+		full->AddProjectionsEvent(eTriesch);
 
 	//float eta1 = 3, eta2= 2.4, eta3 = 1.5, alpha = 0.005, beta = 200;
 	float eta1 = 0.5, eta2= 0.02, eta3 = 0.02, alpha = 0.0005, beta = 10;//alpha = 1.0/8.0, beta = 10;
 	bool lateral = false;
 
-	ConnectionModifierFoldiak* eFoldiak = new ConnectionModifierFoldiak(eta1, eta2, eta3, alpha, beta, lateral);
+	ProjectionModifierFoldiak* eFoldiak = new ProjectionModifierFoldiak(eta1, eta2, eta3, alpha, beta, lateral);
 	lateral = true;
 	alpha = 0.75;
-	ConnectionModifierFoldiak* eFoldiakLateral = new ConnectionModifierFoldiak(eta1, eta2, eta3, alpha, beta, lateral);
-	//ConnectionModifierBCM* eBCM = new ConnectionModifierBCM(0.1,0.05,20);
+	ProjectionModifierFoldiak* eFoldiakLateral = new ProjectionModifierFoldiak(eta1, eta2, eta3, alpha, beta, lateral);
+	//ProjectionModifierBCM* eBCM = new ProjectionModifierBCM(0.1,0.05,20);
 
 	if(!isTriesch)
 	{
 		full2 = new FullConnectivity();
 		layer2->AddPre(layer2,full2);
-		full->AddConnectionsEvent(eFoldiak);
-		full2->AddConnectionsEvent(eFoldiakLateral);
+		full->AddProjectionsEvent(eFoldiak);
+		full2->AddProjectionsEvent(eFoldiakLateral);
 	}
 	else
 	{
 		full3NoLocal = new FullConnectivityNoLocalHypercolumns();
-		//full3NoLocal->AddConnectionsEvent(eBCM);
-		full3NoLocal->AddConnectionsEvent(eFoldiakLateral);
+		//full3NoLocal->AddProjectionsEvent(eBCM);
+		full3NoLocal->AddProjectionsEvent(eFoldiakLateral);
 		layer2->AddPre(layer2,full3NoLocal);
 	}
 
 	// implements N here
 	SoftMax* softmax = new SoftMax(SoftMax::WTAThresholded,0.5);//(10.0, SoftMax::ProbWTA);
 	WTA* wta = new WTA();
-	//layer2->AddLayerEvent(wta);
-	layer2->AddLayerEvent(softmax);
+	//layer2->AddPopulationModifier(wta);
+	layer2->AddPopulationModifier(softmax);
 
 	network->Initialize();
 
@@ -1013,15 +1013,15 @@ void NetworkTests::NetworkTestTrieschAndFoldiak(int mpiRank, int mpiSize)
 	// Meters
 	char* name1 = new char[50];
 	char* name2 = new char[50];
-	sprintf(name1,"Connection_triesch_n%d.csv",mpiRank);
+	sprintf(name1,"Projection_triesch_n%d.csv",mpiRank);
 	Meter* connMeter = new Meter(name1, Storage::CSV);
-	connMeter->AttachConnection(layer2->GetIncomingConnections()[0],0);
+	connMeter->AttachProjection(layer2->GetIncomingProjections()[0],0);
 	network->AddMeter(connMeter);
 
 	sprintf(name2,"Layer2Activity_triesch.csv");
 
 	Meter* layerMeter = new Meter(name2, Storage::CSV);
-	layerMeter->AttachLayer(layer2);
+	layerMeter->AttachPopulation(layer2);
 	network->AddMeter(layerMeter);
 	// end Meters
 	//////////////////////////////
@@ -1098,25 +1098,25 @@ void NetworkTests::NetworkTestSwitching(int mpiRank, int mpiSize)
 	FullConnectivity* full = new FullConnectivity();//FullConnectivity(false,"");
 
 	layer1->AddPre(layer1,full);
-	network->AddLayer(layer1);
+	network->AddPopulation(layer1);
 
-	ConnectionModifierBcpnnOnline* eBcpnn = new ConnectionModifierBcpnnOnline();
-	ConnectionModifierTriesch* eTriesch = new ConnectionModifierTriesch();
-	ConnectionModifierHebbSimple* eHebb = new ConnectionModifierHebbSimple();
-	ConnectionModifierBCM* eBCM = new ConnectionModifierBCM();
+	ProjectionModifierBcpnnOnline* eBcpnn = new ProjectionModifierBcpnnOnline();
+	ProjectionModifierTriesch* eTriesch = new ProjectionModifierTriesch();
+	ProjectionModifierHebbSimple* eHebb = new ProjectionModifierHebbSimple();
+	ProjectionModifierBCM* eBCM = new ProjectionModifierBCM();
 
-	full->AddConnectionsEvent(eBcpnn);		// incl adding transfer fcn
-	//full->AddConnectionsEvent(eTriesch);		// incl adding transfer fcn
-	//full->AddConnectionsEvent(eHebb);
-	//full->AddConnectionsEvent(eBCM);
+	full->AddProjectionsEvent(eBcpnn);		// incl adding transfer fcn
+	//full->AddProjectionsEvent(eTriesch);		// incl adding transfer fcn
+	//full->AddProjectionsEvent(eHebb);
+	//full->AddProjectionsEvent(eBCM);
 
 	PopulationModifierAdaptation2* eAdaptation = new PopulationModifierAdaptation2();
 	//eAdaptation->SetParameters(0,0); 		// adaptation off initially	
 	eAdaptation->SetParameters(0); 		// adaptation off initially
-	layer1->AddLayerEvent(eAdaptation);
+	layer1->AddPopulationModifier(eAdaptation);
 	
 	WTA* wta = new WTA();
-	layer1->AddLayerEvent(wta);//wta);//softmax);
+	layer1->AddPopulationModifier(wta);//wta);//softmax);
 
 	network->Initialize();
 	eAdaptation->Initm_Aj(1); // initialize m_Aj vector
@@ -1125,16 +1125,16 @@ void NetworkTests::NetworkTestSwitching(int mpiRank, int mpiSize)
 	char* name1 = new char[30];
 	char* name2 = new char[30];
 	char* name3 = new char[30];
-	sprintf(name1,"Connections_n%d.csv",mpiRank);
+	sprintf(name1,"Projections_n%d.csv",mpiRank);
 	sprintf(name2,"Layer1ActivityWTA.csv");
 	sprintf(name3,"Layer1Activity.csv");
 
 	Meter* connMeter = new Meter(name1, Storage::CSV);
-	connMeter->AttachConnection(layer1->GetIncomingConnections()[0],0);
+	connMeter->AttachProjection(layer1->GetIncomingProjections()[0],0);
 	network->AddMeter(connMeter);
 
 	Meter* layerMeter = new Meter(name3, Storage::CSV);
-	layerMeter->AttachLayer(layer1);
+	layerMeter->AttachPopulation(layer1);
 	network->AddMeter(layerMeter);
 
 	Meter* eventLayerMeter=new Meter(name2, Storage::CSV);
@@ -1232,11 +1232,11 @@ void NetworkTests::NetworkTestSanger(int mpiRank, int mpiSize)
 	layerSanger->AddPre(layer1InclTime,fullMidSanger);
 
 	// PCA/Sanger extraction
-	ConnectionModifierSanger* sangerLearn = new ConnectionModifierSanger();
-	fullMidSanger->AddConnectionsEvent(sangerLearn);
+	ProjectionModifierSanger* sangerLearn = new ProjectionModifierSanger();
+	fullMidSanger->AddProjectionsEvent(sangerLearn);
 
-	network->AddLayer(layer1InclTime);
-	network->AddLayer(layerSanger);
+	network->AddPopulation(layer1InclTime);
+	network->AddPopulation(layerSanger);
 
 	network->Initialize();
 
@@ -1292,7 +1292,7 @@ void NetworkTests::NetworkTestOR2ORN2MT(int mpiRank, int mpiSize)
 	ComplexPattern* ligands=new ComplexPattern(network,new RampPattern(network,min_sens,max_sens,int(iterations/2)));	
 	ligands->addPattern(new SilentPattern(network,iterations),params->getval<int>("nligands")-1);
 
-//	network->AddLayer(ligands);	
+//	network->AddPopulation(ligands);	
 	//ligands->SetNormalization(params->getval<int>( "sensor_normalization"));
 	int nligands=ligands->getnligands();
 	/* please use EarlyOlfSys constructor 
@@ -1301,29 +1301,29 @@ void NetworkTests::NetworkTestOR2ORN2MT(int mpiRank, int mpiSize)
 	MTlayerColumn* mtlayer = new MTlayerColumn(network,nortypes,mt_redundancy,PopulationColumns::Graded);
 
 	// connectivity
-	ConnectionOlfSys* or2orn = new ConnectionOlfSys(1);	
+	ProjectionOlfSys* or2orn = new ProjectionOlfSys(1);	
 	//ornlayer->AddPre(ligands,or2orn); 
 	ornlayer->AddPre(orlayer,or2orn); 
-	network->AddLayer(orlayer);
-	network->AddLayer(ornlayer);
+	network->AddPopulation(orlayer);
+	network->AddPopulation(ornlayer);
 	
 	KernelConnectivity* orn2mt = new KernelConnectivity();
-	//ConnectionOlfSys* orn2mt = new ConnectionOlfSys(2);
+	//ProjectionOlfSys* orn2mt = new ProjectionOlfSys(2);
 	//FullConnectivity* orn2mt = new FullConnectivity();
 	mtlayer->AddPre(ornlayer,orn2mt); 
-	network->AddLayer(mtlayer);	
+	network->AddPopulation(mtlayer);	
 
 	network->Initialize();
 
 	// set up meters
 	Meter* ligandMeter = new Meter("ligands.txt", Storage::CSV);
-	ligandMeter->AttachLayer(ligands);network->AddMeter(ligandMeter);
+	ligandMeter->AttachPopulation(ligands);network->AddMeter(ligandMeter);
 	Meter* orMeter = new Meter("receptors.txt", Storage::CSV);
-	orMeter->AttachLayer(orlayer);network->AddMeter(orMeter);
+	orMeter->AttachPopulation(orlayer);network->AddMeter(orMeter);
 	Meter* ornMeter = new Meter("orn_activations.txt", Storage::CSV);
-	ornMeter->AttachLayer(ornlayer);network->AddMeter(ornMeter);
+	ornMeter->AttachPopulation(ornlayer);network->AddMeter(ornMeter);
 	Meter* mtMeter = new Meter("mt_activations.txt", Storage::CSV);
-	mtMeter->AttachLayer(mtlayer);network->AddMeter(mtMeter);	
+	mtMeter->AttachPopulation(mtlayer);network->AddMeter(mtMeter);	
 
 	for(int i=0;i<iterations;i++){
 		cout<<i<<"\n";
@@ -1347,24 +1347,24 @@ void NetworkTests::NetworkTestOlfCortex(int mpiRank, int mpiSize)
 	vector<vector<float> > training;vector<vector<float> > test;
 	storageH5.SeparateTrainingTest(data,training,test);
 	Patterns* ligands = new Patterns(network,training);
-	network->AddLayer(ligands); 
+	network->AddPopulation(ligands); 
 
 	int nrligands=ligands->getnligands();
 	int nmt=nrligands*mt_redundancy;
 	int iterations = params->getval<int>("iterations"); 
 
 	DataLayer* dataLayer = new DataLayer(network,nrligands,1,ligands,PopulationColumns::Graded);
-	network->AddLayer(dataLayer); 
+	network->AddPopulation(dataLayer); 
 
 	MTlayerColumn* mtlayer = new MTlayerColumn(network,nrligands,mt_redundancy,PopulationColumns::Graded);
-	// here comes the data connection: 
+	// here comes the data Projection: 
 	KernelConnectivity* data2mt = new KernelConnectivity();
 	//FullConnectivity* data2mt = new FullConnectivity();
 	mtlayer->AddPre(dataLayer,data2mt);
-	network->AddLayer(mtlayer);
+	network->AddPopulation(mtlayer);
 
 	SoftMax* softmax = new SoftMax(1.0, SoftMax::KSOFT);//KSOFT);
-	mtlayer->AddLayerEvent(softmax);
+	mtlayer->AddPopulationModifier(softmax);
 
 	int nrInputHypercolumns=params->getval<int>("nrInputHypercolumns");
 	int nrInputRateUnits=params->getval<int>("nrInputRateUnits");
@@ -1378,15 +1378,15 @@ void NetworkTests::NetworkTestOlfCortex(int mpiRank, int mpiSize)
     KernelConnectivity* mt2layer1 = new KernelConnectivity();
 	//FullConnectivity* data2mt = new FullConnectivity();
 	mtlayer->AddPre(mtlayer,mt2layer1);
-	network->AddLayer(layer1);
+	network->AddPopulation(layer1);
 
 	network->Initialize();
 
 	Meter* mtMeter = new Meter("mt_activations.txt", Storage::CSV);
-	mtMeter->AttachLayer(mtlayer);network->AddMeter(mtMeter);
+	mtMeter->AttachPopulation(mtlayer);network->AddMeter(mtMeter);
 
 	Meter* dataMeter = new Meter("ligands.txt", Storage::CSV);
-	dataMeter->AttachLayer(dataLayer);network->AddMeter(dataMeter);
+	dataMeter->AttachPopulation(dataLayer);network->AddMeter(dataMeter);
 
 	structurePop1->SetupMeters(mpiRank,mpiSize);
 
@@ -1429,7 +1429,7 @@ void NetworkTests::NetworkTestInclTimingBCPNNRecurrent()
 	network->AddTiming(network);
 
 	PopulationColumns* layer1 = new PopulationColumns(network,nrHypercolumns,nrRateUnits,PopulationColumns::Graded);
-	network->AddLayer(layer1);
+	network->AddPopulation(layer1);
 	
 	FullConnectivity* full = new FullConnectivity();//false,"minicolumns");
 	full->SetRandomWeights(0,0);
@@ -1439,16 +1439,16 @@ void NetworkTests::NetworkTestInclTimingBCPNNRecurrent()
 	
 	layer1->AddPre(layer1,randConn); // recurrent
 
-	// Add connection changes
+	// Add Projection changes
 	float lambda0 = 10e-6;
 	float alpha = 0.05;
-	ConnectionModifierBcpnnOnline* bStandard = new ConnectionModifierBcpnnOnline(alpha,lambda0);
+	ProjectionModifierBcpnnOnline* bStandard = new ProjectionModifierBcpnnOnline(alpha,lambda0);
 	
-	//full->AddConnectionsEvent(bStandard);
-	randConn->AddConnectionsEvent(bStandard);
+	//full->AddProjectionsEvent(bStandard);
+	randConn->AddProjectionsEvent(bStandard);
 
 	WTA* wta = new WTA();
-	layer1->AddLayerEvent(wta);
+	layer1->AddPopulationModifier(wta);
 
 	// Construct initial network
 	network->Initialize();
@@ -1464,14 +1464,14 @@ void NetworkTests::NetworkTestInclTimingBCPNNRecurrent()
 	Meter* l1meter = new Meter("layer1.csv", Storage::CSV);
 	if(storeData)
 	{
-		l1meter->AttachLayer(layer1);
+		l1meter->AttachPopulation(layer1);
 		network->AddMeter(l1meter);
 	}
 
-	Meter* c1meter = new Meter("connections1.csv",Storage::CSV);
+	Meter* c1meter = new Meter("Projections1.csv",Storage::CSV);
 	if(storeData)
 	{
-		c1meter->AttachConnection(layer1->GetIncomingConnections()[0],0);
+		c1meter->AttachProjection(layer1->GetIncomingProjections()[0],0);
 		network->AddMeter(c1meter);
 	}
 
@@ -1481,7 +1481,7 @@ void NetworkTests::NetworkTestInclTimingBCPNNRecurrent()
 	network->AddTiming(full);
 
 	// need to access after it has been built
-	network->AddTiming(layer1->GetIncomingConnections()[0]);
+	network->AddTiming(layer1->GetIncomingProjections()[0]);
 
 	// Training
 	// set fixed pattern

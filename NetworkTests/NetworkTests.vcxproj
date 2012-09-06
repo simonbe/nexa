@@ -24,10 +24,15 @@
     <ConfigurationType>Application</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">
+    <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -63,7 +68,7 @@
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <WarningLevel>Level1</WarningLevel>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
     <Link>
       <AdditionalDependencies>hdf5d.lib;simV2.lib;;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;hdf5_hld.lib</AdditionalDependencies>
@@ -86,6 +91,7 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <WarningLevel>TurnOffAllWarnings</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <BrowseInformation>true</BrowseInformation>
     </ClCompile>
     <Link>
       <AdditionalDependencies>hdf5d.lib;simV2.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;hdf5_hld.lib</AdditionalDependencies>
@@ -100,6 +106,9 @@
       <AdditionalOptions>/FORCE:MULTIPLE %(AdditionalOptions)</AdditionalOptions>
       <Profile>true</Profile>
     </Link>
+    <Bscmake>
+      <PreserveSbr>true</PreserveSbr>
+    </Bscmake>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">
     <ClCompile>
@@ -118,14 +127,17 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\Projects\AssignmentStrategy.h" />
     <ClInclude Include="..\Projects\NetworkArithmetic.h" />
     <ClInclude Include="..\Projects\NetworkBiorep.h" />
     <ClInclude Include="..\Projects\NetworkDemoVis0.h" />
     <ClInclude Include="..\Projects\NetworkDemoVis1.h" />
+    <ClInclude Include="..\Projects\NetworkFridaySemantics.h" />
     <ClInclude Include="..\Projects\NetworkOlfactionScenariosClassification.h" />
     <ClInclude Include="..\Projects\NetworkOlfactionScenariosTemplate.h" />
     <ClInclude Include="..\Projects\NetworkScalingDemos.h" />
     <ClInclude Include="..\Projects\NetworkSensorDrift.h" />
+    <ClInclude Include="..\Projects\NetworkTemporal.h" />
     <ClInclude Include="..\Projects\OlfactionSystem.h" />
     <ClInclude Include="..\Projects\Shapes.h" />
     <ClInclude Include="D:\Databases\Olfaction\Bernhard\ob_output\ob_output\NetworkOlfaction_BK.h" />
@@ -139,11 +151,13 @@
     <ClInclude Include="NetworkUnitTests.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\Projects\AssignmentStrategy.cpp" />
     <ClCompile Include="..\Projects\main.cpp" />
     <ClCompile Include="..\Projects\NetworkArithmetic.cpp" />
     <ClCompile Include="..\Projects\NetworkBiorep.cpp" />
     <ClCompile Include="..\Projects\NetworkDemoVis0.cpp" />
     <ClCompile Include="..\Projects\NetworkDemoVis1.cpp" />
+    <ClCompile Include="..\Projects\NetworkFridaySemantics.cpp" />
     <ClCompile Include="..\Projects\NetworkMNIST.cpp" />
     <ClCompile Include="..\Projects\NetworkOlfaction.cpp" />
     <ClCompile Include="..\Projects\NetworkOlfactionConcInv.cpp" />
@@ -152,6 +166,7 @@
     <ClCompile Include="..\Projects\NetworkOlfactionScenariosTemplate.cpp" />
     <ClCompile Include="..\Projects\NetworkScalingDemos.cpp" />
     <ClCompile Include="..\Projects\NetworkSensorDrift.cpp" />
+    <ClCompile Include="..\Projects\NetworkTemporal.cpp" />
     <ClCompile Include="..\Projects\OlfactionSystem.cpp" />
     <ClCompile Include="..\Projects\Shapes.cpp" />
     <ClCompile Include="D:\Databases\Olfaction\Bernhard\ob_output\ob_output\NetworkOlfaction_BK.cpp" />

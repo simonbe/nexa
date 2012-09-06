@@ -14,27 +14,27 @@ void UnitTests::Run()
 	MPI_Comm_size(NETWORK_COMM_WORLD, &mpiSize);
 	MPI_Comm_rank(NETWORK_COMM_WORLD, &mpiRank);
 
-	bool connectionsOk = true;
+	bool ProjectionsOk = true;
 	
-	// Connections
-	NetworkConnectionTests testConnections;
-	testConnections.Run();
+	// Projections
+	NetworkProjectionTests testProjections;
+	testProjections.Run();
 	
 	if(!statusRun)
-		connectionsOk = false;
+		ProjectionsOk = false;
 
 	// ...
 	if(mpiRank == 0)
 	{
 		cout<<"\n\nStatus:\n-------------\n";
-		if(connectionsOk) cout<<"\nConnections test ok.\n"; else cout<<"Connections test error.\n";
+		if(ProjectionsOk) cout<<"\nProjections test ok.\n"; else cout<<"Projections test error.\n";
 	}
 }
 
-void NetworkConnectionTests::NetworkSetupStructure()
+void NetworkProjectionTests::NetworkSetupStructure()
 {
 	//PopulationColumns* layer1 = new PopulationColumns(this,10,10,PopulationColumns::Graded);
-	//this->AddLayer(layer1);
+	//this->AddPopulation(layer1);
 
 	// total nrHypercolumns*nrRateUnits neural units
 	m_nrHypercolumns = 128*1;//128;//*128;
@@ -42,16 +42,16 @@ void NetworkConnectionTests::NetworkSetupStructure()
 
 	PopulationColumns* layer0 = new PopulationColumns(this, m_nrHypercolumns,
 		m_nrRateUnits, PopulationColumns::Graded);
-	this->AddLayer(layer0); // this population/layer will have index 0
+	this->AddPopulation(layer0); // this population/layer will have index 0
 
 	PopulationColumns* layer1 = new PopulationColumns(this, m_nrHypercolumns,
 		m_nrRateUnits, PopulationColumns::Graded);
-	this->AddLayer(layer1); // this population/layer will have index 1
+	this->AddPopulation(layer1); // this population/layer will have index 1
 	layer1->AddUnitsProperty(new TransferLinear(false));
 
 	PopulationColumns* layer2 = new PopulationColumns(this, m_nrHypercolumns,
 		m_nrRateUnits, PopulationColumns::Graded);
-	this->AddLayer(layer2); // this population/layer will have index 2
+	this->AddPopulation(layer2); // this population/layer will have index 2
 	
 	OneToOneConnectivity* conn = new OneToOneConnectivity(false);
 	RandomConnectivity* rndConn = new RandomConnectivity(0.5,false); // correct ??? 
@@ -64,9 +64,9 @@ void NetworkConnectionTests::NetworkSetupStructure()
 
 	float lambda0 = 0.0001;
 	float alpha = 0.01;
-	ConnectionModifierBcpnnOnline* bcpnn = new ConnectionModifierBcpnnOnline(alpha,lambda0);
+	ProjectionModifierBcpnnOnline* bcpnn = new ProjectionModifierBcpnnOnline(alpha,lambda0);
 
-	fullConn->AddConnectionsEvent(bcpnn);
+	fullConn->AddProjectionsEvent(bcpnn);
 
 	//conn->SetUnitType("hypercolumn");
 
@@ -79,28 +79,28 @@ void NetworkConnectionTests::NetworkSetupStructure()
 
 	// Winner-take-all operation
 	//WTA* wta = new WTA();
-	//layer1->AddLayerEvent(wta);
+	//layer1->AddPopulationModifier(wta);
 
 	this->SetSeed(10);
 }
 
-void NetworkConnectionTests::NetworkSetupMeters()
+void NetworkProjectionTests::NetworkSetupMeters()
 {
-	Meter* layerMeterOut = new Meter("TestConnectionsLayer1.csv", Storage::CSV);
-	layerMeterOut->AttachLayer(this->GetLayer(0));
-	Meter* layerMeterOut2 = new Meter("TestConnectionsLayer2.csv", Storage::CSV);
-	layerMeterOut2->AttachLayer(this->GetLayer(1));
+	Meter* layerMeterOut = new Meter("TestProjectionsLayer1.csv", Storage::CSV);
+	layerMeterOut->AttachPopulation(this->GetLayer(0));
+	Meter* layerMeterOut2 = new Meter("TestProjectionsLayer2.csv", Storage::CSV);
+	layerMeterOut2->AttachPopulation(this->GetLayer(1));
 
 	this->AddMeter(layerMeterOut);
 	this->AddMeter(layerMeterOut2);
 }
 
-void NetworkConnectionTests::NetworkSetupParameters()
+void NetworkProjectionTests::NetworkSetupParameters()
 {
 
 }
 
-void NetworkConnectionTests::NetworkRun()
+void NetworkProjectionTests::NetworkRun()
 {
 	this->GetLayer(0)->SwitchOnOff(false);
 	
@@ -122,7 +122,7 @@ void NetworkConnectionTests::NetworkRun()
 		this->GetLayer(0)->MPI()->MPIMakeLayerValuesLocal();
 		this->GetLayer(1)->MPI()->MPIMakeLayerValuesLocal();
 
-		// Tests one-to-one connection
+		// Tests one-to-one Projection
 		if(i>0)
 		{
 			vector<float> values = this->GetLayer(1)->GetValuesBuffer();
@@ -151,14 +151,14 @@ void NetworkSynapsesTests::NetworkSetupStructure()
 
 	PopulationColumns* layer0 = new PopulationColumns(this, nrHypercolumns,
 		nrRateUnits, PopulationColumns::Graded);
-	this->AddLayer(layer0); // this population/layer will have index 0
+	this->AddPopulation(layer0); // this population/layer will have index 0
 	
 	//layer0->AddUnitsProperty(new TransferLinear(false));
 
 	FullConnectivity* conn = new FullConnectivity();
 
-	m_bcpnn = new ConnectionModifierBcpnnOnline();
-	conn->AddConnectionsEvent(m_bcpnn);
+	m_bcpnn = new ProjectionModifierBcpnnOnline();
+	conn->AddProjectionsEvent(m_bcpnn);
 
 	layer0->AddPre(layer0,conn);
 	this->AddTiming(this);
@@ -179,12 +179,12 @@ void NetworkSynapsesTests::NetworkRun()
 	///// Check deletion of some synapses 
 	///////////////////////////////////////////////////
 
-	vector<long> postIds = this->GetLayer(0)->GetIncomingConnections()[0]->GetPostIds();
+	vector<long> postIds = this->GetLayer(0)->GetIncomingProjections()[0]->GetPostIds();
 
 	vector<pair<long,long> > ids;
 	for(int i=0;i<postIds.size();i++)
 	{
-		vector<long> preIds = this->GetLayer(0)->GetIncomingConnections()[0]->GetPreIds(postIds[i]);
+		vector<long> preIds = this->GetLayer(0)->GetIncomingProjections()[0]->GetPreIds(postIds[i]);
 		
 		for(int j=0;j<preIds.size();j++)
 		{
@@ -202,7 +202,7 @@ void NetworkSynapsesTests::NetworkRun()
 	}
 
 	// check
-	vector<long>* preIdsAll = this->GetLayer(0)->GetIncomingConnections()[0]->GetPreIdsAll();
+	vector<long>* preIdsAll = this->GetLayer(0)->GetIncomingProjections()[0]->GetPreIdsAll();
 	int totalNr = preIdsAll->size();
 	if(preIdsAll->size() == 0)
 		synapsesOk = false;
@@ -212,10 +212,10 @@ void NetworkSynapsesTests::NetworkRun()
 	TimingStop("RunAllSynapses");
 
 	// erase some/all synapses
-	this->GetLayer(0)->GetIncomingConnections()[0]->EraseSynapses(ids);
+	this->GetLayer(0)->GetIncomingProjections()[0]->EraseSynapses(ids);
 
 	// check (this also checks CreatePreIdsUnion work)
-	preIdsAll = this->GetLayer(0)->GetIncomingConnections()[0]->GetPreIdsAll();
+	preIdsAll = this->GetLayer(0)->GetIncomingProjections()[0]->GetPreIdsAll();
 	
 	if(eraseAll == true && preIdsAll->size() != 0)
 		synapsesOk = false;

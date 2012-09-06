@@ -7,7 +7,7 @@
     </MpiDebuggerApplicationCommand>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <MpiDebuggerSchedulerNode>localhost/1</MpiDebuggerSchedulerNode>
-    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <MpiDebuggerSchedulerNode>localhost/4</MpiDebuggerSchedulerNode>
+    <DebuggerFlavor>MpiClusterDebugger</DebuggerFlavor>
   </PropertyGroup>
 </Project>

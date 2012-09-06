@@ -68,6 +68,15 @@
     <ClInclude Include="..\Projects\Shapes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\Projects\NetworkFridaySemantics.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Projects\AssignmentStrategy.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Projects\NetworkTemporal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Projects\NetworkBiorep.cpp">
@@ -134,6 +143,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Projects\Shapes.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Projects\NetworkFridaySemantics.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Projects\AssignmentStrategy.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Projects\NetworkTemporal.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

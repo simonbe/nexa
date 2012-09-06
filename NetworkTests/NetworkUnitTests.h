@@ -15,12 +15,12 @@ private:
 };
 
 
-class NetworkConnectionTests : public Network
+class NetworkProjectionTests : public Network
 {
 public:
 
-/*	 NetworkConnectionTests();
-    ~NetworkConnectionTests();*/
+/*	 NetworkProjectionTests();
+    ~NetworkProjectionTests();*/
 private:
 
 	int m_nrHypercolumns;
@@ -42,5 +42,5 @@ private:
 	void NetworkSetupStructure();
 	void NetworkRun();
 
-	ConnectionModifierBcpnnOnline* m_bcpnn;
+	ProjectionModifierBcpnnOnline* m_bcpnn;
 };
