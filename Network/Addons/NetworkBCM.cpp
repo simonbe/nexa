@@ -1,6 +1,6 @@
 #include "NetworkBCM.h"
 
-ConnectionModifierBCM::ConnectionModifierBCM()
+ProjectionModifierBCM::ProjectionModifierBCM()
 {
 	m_eventId = 13;
 	m_eta = 0.1;
@@ -10,7 +10,7 @@ ConnectionModifierBCM::ConnectionModifierBCM()
 	m_transferFunction = new TransferSigmoid(false);
 }
 
-ConnectionModifierBCM::ConnectionModifierBCM(float eta, float decay, float tau)
+ProjectionModifierBCM::ProjectionModifierBCM(float eta, float decay, float tau)
 {
 	m_eventId = 13;
 	m_eta = eta;
@@ -20,41 +20,41 @@ ConnectionModifierBCM::ConnectionModifierBCM(float eta, float decay, float tau)
 	m_transferFunction = new TransferSigmoid(false);
 }
 
-void ConnectionModifierBCM::SetEta(float eta)
+void ProjectionModifierBCM::SetEta(float eta)
 {
 	m_eta = eta;
 }
 
-void ConnectionModifierBCM::Initialize(Connection* connection)
+void ProjectionModifierBCM::Initialize(Projection* Projection)
 {
-	network(connection->network());
+	network(Projection->network());
 
-	m_connectionFixed = connection;
+	m_projectionFixed = Projection;
 	m_firstRun = true;
-	m_idsPost = m_connectionFixed->GetPostIds();
+	m_idsPost = m_projectionFixed->GetPostIds();
 }
 
-void ConnectionModifierBCM::SetConnection(Connection* c)
+void ProjectionModifierBCM::SetProjection(Projection* c)
 {
-	m_connectionFixed = (ConnectionFixed*)c;
+	m_projectionFixed = (ProjectionFixed*)c;
 }
 
-void ConnectionModifierBCM::Modify()
+void ProjectionModifierBCM::Modify()
 {
 	if(IsOn() == false) return;
 
-	int nodeId = m_connectionFixed->PreLayer()->network()->MPIGetNodeId(); // will be put in mpi-class
+	int processId = m_projectionFixed->PreLayer()->network()->MPIGetNodeId(); // will be put in mpi-class
 
-	if(nodeId == 0) 
+	if(processId == 0) 
 	{
 		cout<<".";
 		cout.flush();
 	}
 
-	vector<float> postValues = m_connectionFixed->GetPostValues();
+	vector<float> postValues = m_projectionFixed->GetPostValues();
 
-	// this does not work correctly atm
-	//vector<vector<long> >* preIds = m_connectionFixed->PreIds(); // move to initializer (until Invalidate().. called)
+	// this may not work correctly atm
+	//vector<vector<long> >* preIds = m_projectionFixed->PreIds(); // move to initializer (until Invalidate().. called)
 
 	if(m_firstRun == true)
 	{
@@ -71,13 +71,13 @@ void ConnectionModifierBCM::Modify()
 
 	for(int j=0;j<postValues.size();j++)
 	{
-		vector<float> preValues = m_connectionFixed->GetPreValues(m_idsPost[j]);
-		vector<long> preIds = m_connectionFixed->GetPreIds(m_idsPost[j]);
+		vector<float> preValues = m_projectionFixed->GetPreValues(m_idsPost[j]);
+		vector<long> preIds = m_projectionFixed->GetPreIds(m_idsPost[j]);
 		postId = m_idsPost[j];
 		y = postValues[j];
 
 //		if(m_thresholds[j] == 0.0)
-//			phi = 0.0; // 1?
+//			phi = 0.0; // or 1
 //		else
 			phi = m_eta*y*( y - m_thresholds[j] ) / m_thresholds[j]; // law and cooper bcm
 
@@ -98,7 +98,7 @@ void ConnectionModifierBCM::Modify()
 
 		m_thresholds[j] = m_thresholds[j] + (y*y-m_thresholds[j])/m_tau;
 
-		// weight normalization
+		// weight normalization not used
 
 		/*totWeights = 0;
 
@@ -125,30 +125,6 @@ void ConnectionModifierBCM::Modify()
 	}
 }
 
-void ConnectionModifierBCM::Simulate(UnitModifier* e)
+void ProjectionModifierBCM::Simulate(UnitModifier* e)
 {
 }
-
-/*
-		elif learning_rule==1: # bcm
-            count=0
-            for n from 0<=n < num_neurons:
-                phi[n]=eta*y[n]*(y[n]-th[n])
-                for i from 0<=i<num_inputs:
-                    w[count]=w[count]+phi[n]*x[count]-eta*decay*w[count]
-                        
-                    count=count+1
-                    
-                th[n]=th[n]+(y[n]*y[n]-th[n])/tau
-            
-        elif learning_rule==2: # law and cooper bcm
-            count=0
-            for n from 0<=n < num_neurons:
-                phi[n]=eta*y[n]*(y[n]-th[n])/th[n]
-                
-                for i from 0<=i<num_inputs:
-                    w[count]=w[count]+phi[n]*x[count]-eta*decay*w[count]
-                    count=count+1
-                    
-                th[n]=th[n]+(y[n]*y[n]-th[n])/tau
-*/

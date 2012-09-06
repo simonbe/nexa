@@ -2,18 +2,19 @@
 #ifndef NETWORKKUSSUL_H
 #define NETWORKKUSSUL_H
 
-#include "NetworkConnectionModifier.h"
+#include "NetworkProjectionModifier.h"
 
+/// <summary>	Kussul learning rule (delta rule). </summary>
 
-class ConnectionModifierKussul : public ConnectionModifier
+class ProjectionModifierKussul : public ProjectionModifier
 {
 public:
 
-	ConnectionModifierKussul();
+	ProjectionModifierKussul();
 
-	void Initialize(Connection* connection);
+	void Initialize(Projection* Projection);
 
-	void SetConnection(Connection* c);
+	void SetProjection(Projection* c);
 	void SetAlpha(float alpha);
 	
 	void Simulate(UnitModifier* e);
@@ -27,7 +28,7 @@ private:
 	vector<long> m_idsPost;
 	vector<vector<long> > m_idsPre;
 
-	Connection* m_connectionFixed;
+	Projection* m_projectionFixed;
 };
 
 

@@ -1,12 +1,12 @@
 #include "NetworkCorr.h"
 
-void ConnectionModifierPearson::Initialize(Connection* connection)
+void ProjectionModifierPearson::Initialize(Projection* Projection)
 {
-	m_connection = connection;
+	m_projection = Projection;
 
-	vector<long> localIds = m_connection->GetPostLocalIds();
+	vector<long> localIds = m_projection->GetPostLocalIds();
 	unsigned long postNrUnits = localIds.size();
-	unsigned long preNrUnits = m_connection->PreLayer()->GetNrUnitsTotal();
+	unsigned long preNrUnits = m_projection->PreLayer()->GetNrUnitsTotal();
 
 	meanI = vector<float>(preNrUnits,0.0);
 	meanJ = vector<float>(postNrUnits,0.0);
@@ -25,12 +25,12 @@ void ConnectionModifierPearson::Initialize(Connection* connection)
 	m_n = 0;
 }
 
-void ConnectionModifierPearson::Modify()
+void ProjectionModifierPearson::Modify()
 {
 	float prntaupdt = 0.01;
 
-	vector<float> postValues = m_connection->GetPostValues();
-	vector<float> preValues = m_connection->GetPreValues((m_connection->GetPostIds())[0]); // assumes used on a full connection, should  otherwise loop over all posts
+	vector<float> postValues = m_projection->GetPostValues();
+	vector<float> preValues = m_projection->GetPreValues((m_projection->GetPostIds())[0]); // assumes used on a full Projection, should  otherwise loop over all posts
 
 	// online, incremental versions of mean and variance taken from http://en.wikipedia.org/wiki/Algorithms_for_calculating_variance / Knuth (1998), Seminumerical algorithms
 	m_n++;

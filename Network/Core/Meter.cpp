@@ -30,16 +30,16 @@ void Meter::AttachUnit(Unit* unit)
 	m_meterTypes.push_back(Meter::MeterUnit);
 }
 
-void Meter::AttachConnection(Connection* connection,int samplingRate)
+void Meter::AttachProjection(Projection* Projection,int samplingRate)
 {
-	m_attachedConnections.push_back(connection);
-	connection->SetRecording(true,samplingRate);
-	m_meterTypes.push_back(Meter::MeterConnection);
-	m_additionalInfo.push_back(connection->PreLayer()->GetLayerId());
-	m_additionalInfo.push_back(connection->PostLayer()->GetLayerId());
+	m_attachedProjections.push_back(Projection);
+	Projection->SetRecording(true,samplingRate);
+	m_meterTypes.push_back(Meter::MeterProjection);
+	m_additionalInfo.push_back(Projection->PreLayer()->GetLayerId());
+	m_additionalInfo.push_back(Projection->PostLayer()->GetLayerId());
 }
 
-void Meter::AttachLayer(Population* layer)
+void Meter::AttachPopulation(Population* layer)
 {
 	m_attachedLayers.push_back(layer);
 	layer->SetRecording(true);
@@ -71,19 +71,23 @@ void Meter::AttachObject(NetworkObject* object, MeterType type)
 		m_additionalInfo.push_back(((Population*)object)->GetLayerId());
 		((Population*)object)->SetAttachedMeter(this);
 	}
-	else if(type == Meter::MeterConnection)
+	else if(type == Meter::MeterProjection)
 	{
-		m_additionalInfo.push_back(((Connection*)object)->PreLayer()->GetLayerId());
-		m_additionalInfo.push_back(((Connection*)object)->PostLayer()->GetLayerId());
+		m_additionalInfo.push_back(((Projection*)object)->PreLayer()->GetLayerId());
+		m_additionalInfo.push_back(((Projection*)object)->PostLayer()->GetLayerId());
 	}
 }
+
+/// <summary>	Stores all recorded data (from added meters) to disk.</summary>
+///
+/// <param name="timestep">	The current timestep (may write as well). </param>
 
 void Meter::RecordAll(float timestep)
 {
 	if(m_firstRun)
 		m_storage = new Storage();
 	
-	int tot = m_attachedUnits.size() + m_attachedLayers.size() + m_attachedConnections.size() + m_attachedPopulationModifiers.size() + m_attachedObjects.size();
+	int tot = m_attachedUnits.size() + m_attachedLayers.size() + m_attachedProjections.size() + m_attachedPopulationModifiers.size() + m_attachedObjects.size();
 	
 	if(tot>0)
 	{
@@ -115,9 +119,6 @@ void Meter::RecordAll(float timestep)
 
 			if(val.size()>0)
 			{
-				//for(int j=0;j<val.size();j++)
-				//	dataToWrite.push_back(val[j]);
-
 				// special case - all processes stored separately during runtime, put together
 				int sizeItem = 0; 
 				sizeItem = val[0].size();
@@ -157,9 +158,9 @@ void Meter::RecordAll(float timestep)
 				dataToWrite.push_back(val[j]);
 		}
 
-		for(int i=0;i<m_attachedConnections.size();i++)
+		for(int i=0;i<m_attachedProjections.size();i++)
 		{
-			vector<vector<float> > val = m_attachedConnections[i]->GetValuesToRecord();
+			vector<vector<float> > val = m_attachedProjections[i]->GetValuesToRecord();
 			for(int j=0;j<val.size();j++)
 				dataToWrite.push_back(val[j]);
 		}
@@ -171,11 +172,6 @@ void Meter::RecordAll(float timestep)
 				dataToWrite.push_back(val[j]);
 		}
 
-		/*if(m_firstRun)
-		state = Storage::Open;
-		else
-		state = Storage::Append;*/
-
 		char* filename = new char[100];
 		stringstream ss2;
 		if(this->m_useExtraFilenameString == true)
@@ -186,7 +182,6 @@ void Meter::RecordAll(float timestep)
 		else
 		{
 			strcpy(filename,m_filename);
-			//filename = m_filename;
 		}
 
 
@@ -196,9 +191,9 @@ void Meter::RecordAll(float timestep)
 			stringstream ss;
 			ss<<"t="<<timestep<<"\n";
 
-			if(dataToWrite.size()>0)// || m_firstRun == true)
+			if(dataToWrite.size()>0)
 			{
-				m_storage->SaveDataFloatCSV(filename,dataToWrite,state, "");//ss.str());	
+				m_storage->SaveDataFloatCSV(filename,dataToWrite,state, "");
 			}
 
 			TimingStop("MeterSaveCSV");
@@ -215,7 +210,7 @@ void Meter::RecordAll(float timestep)
 		}
 		else if(m_fileType == Storage::MPI_HDF5)
 		{
-			RecordUnitsHDF5();
+			// TODO: Implement
 		}
 
 		delete[] filename;
@@ -223,21 +218,4 @@ void Meter::RecordAll(float timestep)
 
 	if(m_firstRun)
 		m_firstRun = false;
-}
-
-void Meter::RecordUnitsHDF5()
-{
-	vector<vector<float> > values(m_attachedUnits.size());
-
-	for(int i=0;i<m_attachedUnits.size();i++)
-	{
-		vector<vector<float> > val = m_attachedUnits[i]->GetValuesToRecord();
-		//values[i] = val;
-
-		/*if(m_firstRun)
-		m_Storage->SaveDataFloatHDF5(m_filename,"temp",val,Storage::Open);
-		else
-		m_Storage->SaveDataFloatHDF5(m_filename,"temp",val,Storage::Append);*/
-
-	}
 }

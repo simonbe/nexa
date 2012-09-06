@@ -1,6 +1,6 @@
 #include "NetworkTriesch.h"
 
-ConnectionModifierTriesch::ConnectionModifierTriesch()
+ProjectionModifierTriesch::ProjectionModifierTriesch()
 {
 	m_eventId = 10;
 	m_etaHebb =0.05;
@@ -9,7 +9,7 @@ ConnectionModifierTriesch::ConnectionModifierTriesch()
 	m_transferFunction = new TransferTriesch(0.005, 1.0, false);
 }
 
-ConnectionModifierTriesch::ConnectionModifierTriesch(float etaHebb, float beta, float etaIP, float mu, bool thresholded)
+ProjectionModifierTriesch::ProjectionModifierTriesch(float etaHebb, float beta, float etaIP, float mu, bool thresholded)
 {
 	m_eventId = 10;
 	m_etaHebb = etaHebb;//0.05;
@@ -18,35 +18,35 @@ ConnectionModifierTriesch::ConnectionModifierTriesch(float etaHebb, float beta, 
 	m_transferFunction = new TransferLinear(thresholded,mu,0.001,0.005);//new TransferTriesch(etaIP, mu, thresholded);
 }
 
-void ConnectionModifierTriesch::Initialize(Connection* connection)
+void ProjectionModifierTriesch::Initialize(Projection* Projection)
 {
-	network(connection->network());
+	network(Projection->network());
 
-	vector<float> postValues = m_connectionFixed->GetPostValues();
-	m_connectionFixed = connection;
+	vector<float> postValues = m_projectionFixed->GetPostValues();
+	m_projectionFixed = Projection;
 	m_firstRun = true;
-	m_idsPost = m_connectionFixed->GetPostIds();
+	m_idsPost = m_projectionFixed->GetPostIds();
 }
 
-void ConnectionModifierTriesch::SetConnection(Connection* c)
+void ProjectionModifierTriesch::SetProjection(Projection* c)
 {
-	m_connectionFixed = (ConnectionFixed*)c;
+	m_projectionFixed = (ProjectionFixed*)c;
 }
 
-void ConnectionModifierTriesch::Modify()
+void ProjectionModifierTriesch::Modify()
 {
 	if(IsOn() == false) return;
 
-	int nodeId = m_connectionFixed->PreLayer()->network()->MPIGetNodeId(); // will be put in mpi-class
+	int processId = m_projectionFixed->PreLayer()->network()->MPIGetNodeId(); // will be put in mpi-class
 
-	if(nodeId == 0) 
+	if(processId == 0) 
 	{
 		cout<<".";
 		cout.flush();
 	}
 
-	vector<float> postValues = m_connectionFixed->GetPostValues();
-	vector<vector<long> >* preIds;// = m_connectionFixed->PreIds(); // move to initializer (until Invalidate().. called)
+	vector<float> postValues = m_projectionFixed->GetPostValues();
+	vector<vector<long> >* preIds;// = m_projectionFixed->PreIds(); // move to initializer (until Invalidate().. called)
 
 	long preId, postId;
 	float weight;
@@ -55,14 +55,14 @@ void ConnectionModifierTriesch::Modify()
 	float x,y;
 
 	// need max post id for N-function
-	vector<long> maxPostIds;// m_connectionFixed->PostLayer()->MPI()->MPIGetMaxIdInHypercolumns(); // usually only one
+	vector<long> maxPostIds;// m_projectionFixed->PostLayer()->MPI()->MPIGetMaxIdInHypercolumns(); // usually only one
 	bool isMaxValue;
 
 	for(int j=0;j<postValues.size();j++)
 	{	
 		if(postValues[j] == 1) // temporary test
 		{
-			vector<float> preValues = m_connectionFixed->GetPreValues(m_idsPost[j]);
+			vector<float> preValues = m_projectionFixed->GetPreValues(m_idsPost[j]);
 			postId = m_idsPost[j];
 			y = postValues[j];
 
@@ -119,7 +119,7 @@ void ConnectionModifierTriesch::Modify()
 	}
 }
 
-float ConnectionModifierTriesch::N(float y, bool isMaxValue)
+float ProjectionModifierTriesch::N(float y, bool isMaxValue)
 {
 	// standard
 	if(isMaxValue)
@@ -128,29 +128,29 @@ float ConnectionModifierTriesch::N(float y, bool isMaxValue)
 		return -m_beta;
 }
 
-void ConnectionModifierTriesch::Simulate(UnitModifier* e)
+void ProjectionModifierTriesch::Simulate(UnitModifier* e)
 {
 
 }
 
-void ConnectionModifierTriesch::SetMu(float mu)
+void ProjectionModifierTriesch::SetMu(float mu)
 {
 	((TransferTriesch*)m_transferFunction)->SetDesiredActivity(mu);
 }
 
-void ConnectionModifierTriesch::Clear()
+void ProjectionModifierTriesch::Clear()
 {
 	// 1. Clear weight values
 
-	vector<float> postValues = m_connectionFixed->GetPostValues();
-	vector<vector<long> >* preIds;// = m_connectionFixed->PreIds(); // move to initializer (until Invalidate().. called)
+	vector<float> postValues = m_projectionFixed->GetPostValues();
+	vector<vector<long> >* preIds;// = m_projectionFixed->PreIds(); // move to initializer (until Invalidate().. called)
 
 	long preId, postId;
 
 	// need max post id for N-function
 	for(int j=0;j<postValues.size();j++)
 	{	
-		vector<float> preValues = m_connectionFixed->GetPreValues(m_idsPost[j]);
+		vector<float> preValues = m_projectionFixed->GetPreValues(m_idsPost[j]);
 		postId = m_idsPost[j];
 		for(int i=0;i<preValues.size();i++)
 		{

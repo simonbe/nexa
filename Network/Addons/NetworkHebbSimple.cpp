@@ -1,112 +1,118 @@
 #include "NetworkHebbSimple.h"
 
-ConnectionModifierHebbSimple::ConnectionModifierHebbSimple()
+ProjectionModifierHebbSimple::ProjectionModifierHebbSimple()
 {
 	m_eventId = 12;
 	m_etaHebb = 0.1;
 	m_normalizationFactor = 1.0;
 	m_normalize = true;
 	m_transferFunction = new TransferLinear(false);
+	m_projectionFixed = NULL;
 }
 
-ConnectionModifierHebbSimple::ConnectionModifierHebbSimple(float etaHebb, bool normalize)
+ProjectionModifierHebbSimple::ProjectionModifierHebbSimple(float etaHebb, bool normalize)
 {
 	m_eventId = 12;
 	m_etaHebb = etaHebb;
 	m_normalizationFactor = 1.0;
 	m_normalize = normalize;
 	m_transferFunction = new TransferLinear(false);
+	m_projectionFixed = NULL;
 }
 
-ConnectionModifierHebbSimple::ConnectionModifierHebbSimple(float etaHebb, bool normalize, UnitModifier* transfer)
+ProjectionModifierHebbSimple::ProjectionModifierHebbSimple(float etaHebb, bool normalize, UnitModifier* transfer)
 {
 	m_eventId = 12;
 	m_etaHebb = etaHebb;
 	m_normalizationFactor = 1.0;
 	m_normalize = normalize;
 	m_transferFunction = transfer;//new TransferLinear(true);
+	m_projectionFixed = NULL;
 }
 
-void ConnectionModifierHebbSimple::SetEtaHebb(float etaHebb)
+void ProjectionModifierHebbSimple::SetEtaHebb(float etaHebb)
 {
 	m_etaHebb = etaHebb;
 }
 
-void ConnectionModifierHebbSimple::Initialize(Connection* connection)
+void ProjectionModifierHebbSimple::Initialize(Projection* Projection)
 {
-	network(connection->network());
+	network(Projection->network());
 
-	m_connectionFixed = connection;
+	m_projectionFixed = Projection;
 	m_firstRun = true;
-	m_idsPost = m_connectionFixed->GetPostIds();
+	m_idsPost = m_projectionFixed->GetPostIds();
 }
 
-void ConnectionModifierHebbSimple::SetConnection(Connection* c)
+void ProjectionModifierHebbSimple::SetProjection(Projection* c)
 {
-	m_connectionFixed = (ConnectionFixed*)c;
+	m_projectionFixed = (ProjectionFixed*)c;
 }
 
-void ConnectionModifierHebbSimple::Normalize(bool allWeights)
+void ProjectionModifierHebbSimple::Normalize(bool allWeights)
 {
-	vector<float> postValues = m_connectionFixed->GetPostValues();
-	long postId, preId;
-	float weight,y,totWeights;
+	if(m_projectionFixed != NULL)
+	{
+		vector<float> postValues = m_projectionFixed->GetPostValues();
+		long postId, preId;
+		float weight,y,totWeights;
 
-	for(int j=0;j<postValues.size();j++)
-	{	
-		vector<float> preValues = m_connectionFixed->GetPreValues(m_idsPost[j]);
-		vector<long> preIds = m_connectionFixed->GetPreIds(m_idsPost[j]);
-		postId = m_idsPost[j];
-		y = postValues[j];
+		for(int j=0;j<postValues.size();j++)
+		{	
+			vector<float> preValues = m_projectionFixed->GetPreValues(m_idsPost[j]);
+			vector<long> preIds = m_projectionFixed->GetPreIds(m_idsPost[j]);
+			postId = m_idsPost[j];
+			y = postValues[j];
 
-		// weight normalization
-		totWeights = 0;
+			// weight normalization
+			totWeights = 0;
 
-		for(int i=0;i<preValues.size();i++)
-		{
-			if(preValues[i]>0 || allWeights == true)
-			{
-				preId = preIds[i];//(*preIds)[j][i];
-
-				weight = network()->GetWeight(preId,postId);
-				totWeights += pow((double)weight,2.0); // weight*preValues[i];//pow((double)weight,2.0); // fabs(weight); // += weight;
-			}
-		}
-
-		totWeights = sqrt(totWeights);
-
-		if(totWeights > 0.0)// && totWeightsOld>0)
 			for(int i=0;i<preValues.size();i++)
 			{
-				preId = preIds[i];//(*preIds)[j][i];
-
 				if(preValues[i]>0 || allWeights == true)
 				{
-					weight = network()->GetWeight(preId,postId);
-					//if(preValues[i] >0.0)
-					//	weight = y/preValues[i] * weight/totWeights;
-					//else
-					weight = m_normalizationFactor*weight/totWeights;//weight*1.0/totWeights;//2*y*weight/totWeights;//weight*1.0/totWeights;//totWeightsOld/totWeights;
+					preId = preIds[i];//(*preIds)[j][i];
 
-					network()->SetWeight(weight,preId,postId);
+					weight = network()->GetWeight(preId,postId);
+					totWeights += pow((double)weight,2.0); // weight*preValues[i];//pow((double)weight,2.0); // fabs(weight); // += weight;
 				}
 			}
+
+			//totWeights = sqrt(totWeights);
+
+			if(totWeights > 0.0)// && totWeightsOld>0)
+				for(int i=0;i<preValues.size();i++)
+				{
+					preId = preIds[i];//(*preIds)[j][i];
+
+					if(preValues[i]>0 || allWeights == true)
+					{
+						weight = network()->GetWeight(preId,postId);
+						//if(preValues[i] >0.0)
+						//	weight = y/preValues[i] * weight/totWeights;
+						//else
+						weight = m_normalizationFactor*sqrt(pow(weight,2)/totWeights);//weight*1.0/totWeights;//2*y*weight/totWeights;//weight*1.0/totWeights;//totWeightsOld/totWeights;
+
+						network()->SetWeight(weight,preId,postId);
+					}
+				}
+		}
 	}
 }
 
-void ConnectionModifierHebbSimple::Modify()
+void ProjectionModifierHebbSimple::Modify()
 {
 	if(IsOn() == false) return;
-	int nodeId = m_connectionFixed->PreLayer()->network()->MPIGetNodeId(); // will be put in mpi-class
+	int processId = m_projectionFixed->PreLayer()->network()->MPIGetNodeId(); // will be put in mpi-class
 
-	if(nodeId == 0) 
+	if(processId == 0) 
 	{
 		cout<<".";
 		cout.flush();
 	}
 
-	vector<float> postValues = m_connectionFixed->GetPostValues();
-	//vector<vector<long> >* preIds = m_connectionFixed->GetPreIds(; // move to initializer (until Invalidate().. called)
+	vector<float> postValues = m_projectionFixed->GetPostValues();
+	//vector<vector<long> >* preIds = m_projectionFixed->GetPreIds(; // move to initializer (until Invalidate().. called)
 
 	long preId, postId;
 	float weight;
@@ -116,8 +122,8 @@ void ConnectionModifierHebbSimple::Modify()
 
 	for(int j=0;j<postValues.size();j++)
 	{	
-		vector<float> preValues = m_connectionFixed->GetPreValues(m_idsPost[j]);
-		vector<long> preIds = m_connectionFixed->GetPreIds(m_idsPost[j]);
+		vector<float> preValues = m_projectionFixed->GetPreValues(m_idsPost[j]);
+		vector<long> preIds = m_projectionFixed->GetPreIds(m_idsPost[j]);
 		postId = m_idsPost[j];
 		y = postValues[j];
 
@@ -137,8 +143,8 @@ void ConnectionModifierHebbSimple::Modify()
 
 			for(int i=0;i<preValues.size();i++)
 			{
-				//if(preValues[i]>0)
-				//{
+				if(preValues[i]>0)
+				{
 					preId = preIds[i];//(*preIds)[j][i];
 					x = preValues[i];
 
@@ -152,10 +158,15 @@ void ConnectionModifierHebbSimple::Modify()
 					//dw = y*(x - weight);
 
 					//if(weight<1)
-					weight = weight + m_etaHebb*dw; // (add: (optional) weight decay)
+					if(dw!=0.0)
+					{
+						weight = weight + m_etaHebb*dw - fabs(weight)*0.1; // (add: (optional) weight decay)
 
-					network()->SetWeight(weight,preId,postId);
-				//}
+						network()->SetWeight(weight,preId,postId);
+					}
+					else
+						network()->SetWeight(0.0,preId,postId);
+				}
 			}
 
 			// weight normalization
@@ -166,24 +177,24 @@ void ConnectionModifierHebbSimple::Modify()
 
 				for(int i=0;i<preValues.size();i++)
 				{
-					//if(preValues[i]>0)
-					//{
+					if(preValues[i]>0)
+					{
 						preId = preIds[i];//(*preIds)[j][i];
 
 						weight = network()->GetWeight(preId,postId);
 						totWeights += pow((double)weight,2.0); // weight*preValues[i];//pow((double)weight,2.0); // fabs(weight); // += weight;
-					//}
+					}
 				}
 
-				totWeights = sqrt(totWeights);
+				//totWeights = sqrt(totWeights);
 
 				if(totWeights > 0.0)// && totWeightsOld>0)
 					for(int i=0;i<preValues.size();i++)
 					{
 						preId = preIds[i];//(*preIds)[j][i];
 
-						//if(preValues[i]>0)
-						//{
+						if(preValues[i]>0)
+						{
 							weight = network()->GetWeight(preId,postId);
 							//if(preValues[i] >0.0)
 							//	weight = y/preValues[i] * weight/totWeights;
@@ -191,10 +202,10 @@ void ConnectionModifierHebbSimple::Modify()
 							/*if(y<10)
 								weight = weight*y/totWeights;//weight*1.0/totWeights;//weight*1.0/totWeights;//2*y*weight/totWeights;//weight*1.0/totWeights;//totWeightsOld/totWeights;
 							else*/
-								weight = m_normalizationFactor*weight/totWeights;//m_normalizationFactor*weight/totWeights;
+								weight = m_normalizationFactor*sqrt(pow(weight,2)/totWeights);//m_normalizationFactor*weight/totWeights;
 
 							network()->SetWeight(weight,preId,postId);
-						//}
+						}
 					}
 			}
 		}
@@ -202,24 +213,24 @@ void ConnectionModifierHebbSimple::Modify()
 }
 
 
-void ConnectionModifierHebbSimple::Simulate(UnitModifier* e)
+void ProjectionModifierHebbSimple::Simulate(UnitModifier* e)
 {
 
 }
 
-/*void ConnectionModifierTriesch::Clear()
+/*void ProjectionModifierTriesch::Clear()
 {
 	// 1. Clear weight values
 
-	vector<float> postValues = m_connectionFixed->GetPostValues();
-	vector<vector<long> >* preIds = m_connectionFixed->PreIds(); // move to initializer (until Invalidate().. called)
+	vector<float> postValues = m_projectionFixed->GetPostValues();
+	vector<vector<long> >* preIds = m_projectionFixed->PreIds(); // move to initializer (until Invalidate().. called)
 
 	long preId, postId;
 
 	// need max post id for N-function
 	for(int j=0;j<postValues.size();j++)
 	{	
-		vector<float> preValues = m_connectionFixed->GetPreValues(m_idsPost[j]);
+		vector<float> preValues = m_projectionFixed->GetPreValues(m_idsPost[j]);
 		postId = m_idsPost[j];
 		for(int i=0;i<preValues.size();i++)
 		{

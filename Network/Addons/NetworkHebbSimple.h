@@ -2,22 +2,22 @@
 #ifndef NETWORKHEBBSMP_H
 #define NETWORKHEBBSMP_H
 
-#include "NetworkConnectionModifier.h"
+#include "NetworkProjectionModifier.h"
 
-// Hebbian with weight normalization and/or weight decay
+/// <summary>	Plain Hebbian learning with weight normalization and/or weight decay </summary>
 
-class ConnectionModifierHebbSimple : public ConnectionModifier
+class ProjectionModifierHebbSimple : public ProjectionModifier
 {
 public:
 
-	ConnectionModifierHebbSimple();
-	ConnectionModifierHebbSimple(float etaHebb, bool normalize);
-	ConnectionModifierHebbSimple(float etaHebb, bool normalize, UnitModifier* transfer);
+	ProjectionModifierHebbSimple();
+	ProjectionModifierHebbSimple(float etaHebb, bool normalize);
+	ProjectionModifierHebbSimple(float etaHebb, bool normalize, UnitModifier* transfer);
 
 	void SetEtaHebb(float etaHebb);
 
-	void Initialize(Connection* connection);
-	void SetConnection(Connection* c);
+	void Initialize(Projection* Projection);
+	void SetProjection(Projection* c);
 	void Simulate(UnitModifier* e);
 	void Modify();
 	void Clear();
@@ -40,7 +40,7 @@ private:
 	bool m_normalize;
 	float m_normalizationFactor;
 
-	Connection* m_connectionFixed;
+	Projection* m_projectionFixed;
 };
 
 #endif

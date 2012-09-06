@@ -2,16 +2,16 @@
 #ifndef NETWORKEVCONNDEP_H
 #define NETWORKEVCONNDEP_H
 
-#include "NetworkConnectionModifier.h"
+#include "NetworkProjectionModifier.h"
 
-// Synaptic depression
+/// <summary>	Synaptic depression. </summary>
 
-class ConnectionModifierDepression : public ConnectionModifier
+class ProjectionModifierDepression : public ProjectionModifier
 {
 public:
-	ConnectionModifierDepression();
-	ConnectionModifierDepression(float strength);
-	void SetConnection(Connection* c);
+	ProjectionModifierDepression();
+	ProjectionModifierDepression(float strength);
+	void SetProjection(Projection* c);
 	void Simulate(UnitModifier* e);
 	void Modify();
 	void Clear();

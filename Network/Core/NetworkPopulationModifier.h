@@ -4,22 +4,31 @@
 
 #include "Network.h"
 #include "NetworkPopulation.h"
-#include "NetworkConnectionModifier.h"
+#include "NetworkProjectionModifier.h"
 
 class Population;
-class ConnectionModifier;
+class ProjectionModifier;
 
 using namespace std;
+
+/// <summary>	Modifies the activity values or any other state variables of a population of neural units.
+///				Could e.g. implement abstract functions across population or columns of a population. </summary>
 
 class PopulationModifier : public NetworkObject
 {
 public:
+
+	/// <summary>	Main function to override. </summary>
+
 	virtual void Simulate(){}// = 0;
+
+	/// <summary>	Run after global communication step, not overridden in any example class. </summary>
+	
 	virtual void Modify(){}
 
 	virtual void Initialize(Population* population)
 	{
-		if(m_initialized == false) // move to parent
+		if(m_initialized == false) // may be moved to parent
 		{
 			m_population = population;
 		}
@@ -29,25 +38,23 @@ public:
 
 	virtual ~PopulationModifier()
 	{
-		/*for(int i=0;i<m_childConnectionModifier.size();i++)
-			delete m_childConnectionModifier[i];
-
-		for(int i=0;i<m_parentPopulationModifier.size();i++)
-			delete m_parentPopulationModifier[i];
-
-		for(int i=0;i<m_childPopulationModifier.size();i++)
-			delete m_childPopulationModifier[i];*/
 	}
 
-	void AddChildConnectionModifier(ConnectionModifier* e)
+	/// <summary>	Help function for Network. </summary>
+
+	void AddChildProjectionModifier(ProjectionModifier* e)
 	{
-		m_childConnectionModifier.push_back(e);
+		m_childProjectionModifier.push_back(e);
 	}
+
+	/// <summary>	Help function for Network. </summary>
 
 	void AddParentPopulationModifier(PopulationModifier* e)
 	{
 		m_parentPopulationModifier.push_back(e);
 	}
+
+	/// <summary>	Help function for Network. </summary>
 
 	void AddChildPopulationModifier(PopulationModifier* e)
 	{
@@ -64,18 +71,18 @@ public:
 	{
 		return m_population;
 	}
-
-	/*virtual void Reset()
-	{
-	}*/
 	
 protected:
 
-	vector<ConnectionModifier*> m_childConnectionModifier;
+	vector<ProjectionModifier*> m_childProjectionModifier;
 	vector<PopulationModifier*> m_parentPopulationModifier;
 	vector<PopulationModifier*> m_childPopulationModifier;
 	Population* m_population;
 };
+
+/// <summary>	 SoftMax function as a population modifier, sharpness decided by m_G.
+///			Observe: The exp used can lead to NaN if too high numbers are fed in.
+///			Now these numbers are reduced by default but no warning is issued. </summary>
 
 class SoftMax : public PopulationModifier
 {
@@ -132,6 +139,9 @@ private:
 	bool m_probabilisticWTA;
 };
 
+/// <summary>	 Implements a winner-take-all function as a population modifier.
+/// Works on the columns if a population has a columnar organization. </summary>
+
 class WTA : public PopulationModifier
 {
 public:
@@ -142,12 +152,13 @@ public:
 	}
 
 	void Simulate();
-	std::vector<float> Function(std::vector<float> data);
+	std::vector<float> wta(std::vector<float> data);
 
 private:
 
 };
 
+/// <summary>	 Test function - winner-take-all with a threshold. Use normal WTA in standard cases. </summary>
 
 class WTAThreshold : public PopulationModifier
 {
@@ -166,6 +177,25 @@ private:
 	WTA m_wta;
 };
 
+/// <summary>	Divisive normalization. </summary>
+
+class DivisiveNormalization : public PopulationModifier
+{
+public:
+
+	DivisiveNormalization()
+	{
+		m_name = "DivisiveNormalization";
+	}
+
+	void Simulate();
+	//std::vector<float> Function(std::vector<float> data);
+
+private:
+
+};
+
+/// <summary>	Threshold as a population modifier, sets activity of unit to 0 unless over threshold. </summary>
 
 class Threshold : public PopulationModifier
 {

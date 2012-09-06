@@ -1,6 +1,6 @@
 #include "NetworkFoldiak.h"
 
-ConnectionModifierFoldiak::ConnectionModifierFoldiak(float eta1, float eta2, float eta3, float alpha, float beta, bool lateral)
+ProjectionModifierFoldiak::ProjectionModifierFoldiak(float eta1, float eta2, float eta3, float alpha, float beta, bool lateral)
 {
 	m_eta1 = eta1; // f: beta
 	m_eta2 = eta2; // f: alpha
@@ -14,34 +14,34 @@ ConnectionModifierFoldiak::ConnectionModifierFoldiak(float eta1, float eta2, flo
 	m_transferFunction = new TransferFoldiak(m_beta,m_alpha,m_eta3);
 }
 
-void ConnectionModifierFoldiak::Modify()
+void ProjectionModifierFoldiak::Modify()
 {
 	if(IsOn() == false) return;
 
-	int nodeId = m_connectionFixed->PreLayer()->network()->MPIGetNodeId(); // will be put in mpi-class
+	int processId = m_projectionFixed->PreLayer()->network()->MPIGetNodeId(); // will be put in mpi-class
 
-	if(nodeId == 0) 
+	if(processId == 0) 
 	{
 		cout<<".";
 		cout.flush();
 	}
 
-	vector<float> postValues = m_connectionFixed->GetPostValues();
-	vector<vector<long> >* preIds;// = m_connectionFixed->PreIds(); // move to initializer (until Invalidate().. called)
+	vector<float> postValues = m_projectionFixed->GetPostValues();
+	vector<vector<long> >* preIds;// = m_projectionFixed->PreIds(); // move to initializer (until Invalidate().. called)
 
 	long preId, postId;
 	float weight;
 	double totWeights;
 	float dw, ds;
 
-	vector<float> preValues = m_connectionFixed->GetPreValues(m_idsPost[0]);
+	vector<float> preValues = m_projectionFixed->GetPreValues(m_idsPost[0]);
 
 	for(int j=0;j<postValues.size();j++)
 	{	
 		if(postValues[j] == 1) // temporary test
 		{
 			postId = m_idsPost[j];
-			vector<long> preIds = m_connectionFixed->GetPreIds(m_idsPost[j]);
+			vector<long> preIds = m_projectionFixed->GetPreIds(m_idsPost[j]);
 
 			for(int i=0;i<preValues.size();i++)
 			{
@@ -88,30 +88,30 @@ void ConnectionModifierFoldiak::Modify()
 			ds = m_eta3*(m_alpha-postValues[j]);
 			m_s[j] += ds;
 
-			((RateUnit*)m_connectionFixed->PostLayer()->network()->GetUnitFromId(m_idsPost[j]))->AddInhibBeta(m_s[j]);
+			((RateUnit*)m_projectionFixed->PostLayer()->network()->GetUnitFromId(m_idsPost[j]))->AddInhibBeta(m_s[j]);
 		}
 */
 	}
 }
 
-void ConnectionModifierFoldiak::Simulate(UnitModifier* e)
+void ProjectionModifierFoldiak::Simulate(UnitModifier* e)
 {
 }
 
-void ConnectionModifierFoldiak::SetConnection(Connection* c)
+void ProjectionModifierFoldiak::SetProjection(Projection* c)
 {
-	m_connectionFixed = (ConnectionFixed*)c;
+	m_projectionFixed = (ProjectionFixed*)c;
 }
 
 
-void ConnectionModifierFoldiak::Initialize(Connection* connection)
+void ProjectionModifierFoldiak::Initialize(Projection* Projection)
 {
-	network(connection->network());
+	network(Projection->network());
 
-	vector<float> postValues = m_connectionFixed->GetPostValues();
+	vector<float> postValues = m_projectionFixed->GetPostValues();
 	m_s = vector<float>(postValues.size());
 
-	m_connectionFixed = connection;
+	m_projectionFixed = Projection;
 	m_firstRun = true;
-	m_idsPost = m_connectionFixed->GetPostIds();
+	m_idsPost = m_projectionFixed->GetPostIds();
 }

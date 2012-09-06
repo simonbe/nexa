@@ -69,7 +69,7 @@ void NetworkDemoVis1::NetworkSetupStructure()
     sim.nrRateUnits = 50;
 
     PopulationColumns* layer1 = new PopulationColumns(this, sim.nrHypercolumns, sim.nrRateUnits, PopulationColumns::Graded);
-    this->AddLayer(layer1); // this population/layer will have index 0
+    this->AddPopulation(layer1); // this population/layer will have index 0
 
     // Population fully connected to itself by random synaptic weights
     FullConnectivity* full1 = new FullConnectivity();
@@ -78,7 +78,7 @@ void NetworkDemoVis1::NetworkSetupStructure()
 
     // Winner-take-all operation
     WTA* wta = new WTA();
-    layer1->AddLayerEvent(wta);
+    layer1->AddPopulationModifier(wta);
     this->SetSeed(10);
 }
 
@@ -88,7 +88,7 @@ void NetworkDemoVis1::NetworkSetupMeters()
 {
     // example of file output
     Meter* layerMeter = new Meter("activity.csv", Storage::CSV, Storage::Standard);
-    //layerMeter->AttachLayer(this->GetLayer(0));
+    //layerMeter->AttachPopulation(this->GetLayer(0));
     //this->AddMeter(layerMeter);
 
     // also check simulation times
@@ -171,7 +171,7 @@ void NetworkDemoVis1::NetworkRun()
         {
 			VisItSetupEnvironment();
             /* VisIt is trying to connect to sim. */
-            if (VisItAttemptToCompleteConnection() == VISIT_OKAY)
+            if (VisItAttemptToCompleteProjection() == VISIT_OKAY)
             {
                 fprintf(stderr, "VisIt connected\n");
                 VisItSetCommandCallback(ControlCommandCallback, (void*) &sim);
@@ -195,7 +195,7 @@ void NetworkDemoVis1::NetworkRun()
 #endif
             {
 				cout<<"VisItDisconnect.";cout.flush();
-                /* Disconnect on an error or closed connection. */
+                /* Disconnect on an error or closed Projection. */
                 VisItDisconnect();
                 /* Start running again if VisIt closes. */
                 sim.runMode = VISIT_SIMMODE_RUNNING;

@@ -2,6 +2,9 @@
 #include "MPIDistribution.h"
 #include "NetworkPopulation.h"
 
+/// <summary>	Creates communicator for population. 
+/// 			TODO: Check if necessary any longer to call in network initialization. (should be able to remove)</summary>
+ 
 void MPIDistribution::MPICreateCommLayer()
 {
 	// Create MPI handle for entire network layer (used to gather data from all units in the layer)
@@ -24,7 +27,7 @@ void MPIDistribution::MPICreateCommLayer()
 	vector<int> nodeLayerIndexes =  m_population->GetNodeLayerIndexes();
 	vector<int> mpiProcsUsed = m_population->MPIGetProcessesUsed();
 
-	// currently debug off
+	// currently not set here in this way but may be changed
 	/*
 	MPI_Group_incl(orig_group, nodeLayerIndexes.size(), &(nodeLayerIndexes[0]), &new_group);
 	MPI_Comm_create(NETWORK_COMM_WORLD, new_group, new_comm);
@@ -57,7 +60,6 @@ void MPIDistribution::MPICreateCommLayer()
 	}
 
 	m_commsLayersCreated = true;
-	//MPI_Barrier(NETWORK_COMM_WORLD);
 }
 
 vector<float> MPIDistribution::MPILayerReduceVariable(vector<float> data)
@@ -131,7 +133,19 @@ vector<vector<int> > MPIDistribution::MPILayerGatherVariables(vector<vector<int>
 	return gatheredData;
 }
 
-void MPIDistribution::MPIMakeValuesLocal(bool fullLayer)
+void Simulate(); // overridden from PopulationModifier and called every simulation time step
+	vector<float> wta(std::vector<float> data); // the actual winner-take-all function,
+												// which takes the input vector data and
+												//  returns a vector with a 1 on the position 
+												//  of the highest value in data and 0 on 
+												//  all other positions
+
+/// <summary>	 Makes all activity values in population (fullLayer = true) or columns (fullLayer = false)
+///				available to the other processes also simulating parts of this population/column. </summary>
+///
+/// <param name="fullLayer">	true to make all activity values of the population local. </param>
+
+void MPIDistribution::MakeActivityValuesLocal(bool fullLayer)
 {
 	if(m_commsHCsCreated == false && fullLayer == false)
 	{
@@ -145,20 +159,20 @@ void MPIDistribution::MPIMakeValuesLocal(bool fullLayer)
 	vector<int> localHypercolumns = ((PopulationColumns*)m_population)->GetLocalHypercolumnIndexes();
 	vector<Unit*> units = ((PopulationColumns*)m_population)->GetUnits();
 
-	int totMcs =  ((PopulationColumns*)m_population)->GetNrUnitsTotal();//((PopulationColumns*)m_population)->GetRateUnits().size(); // slow
+	int totMcs =  ((PopulationColumns*)m_population)->GetNrUnitsTotal();
 
-	vector<float> data;//mcsIndexes.size());
+	vector<float> data;
 	MPI_Comm* comm;
 
 	bool allLocal = true;
 
 	if(fullLayer == true && localHypercolumns.size()>0)
 	{
-		data = vector<float>(totMcs);//mcsIndexes.size());
+		data = vector<float>(totMcs);
 	
 		//
 		for(int i=0;i<units.size();i++)
-			data[units[i]->GetUnitIdLocal()] = units[i]->GetValue();//((RateUnit*)units[i])->GetSubThresholdValue();//
+			data[units[i]->GetUnitIdLocal()] = units[i]->GetValue();
 
 		vector<float> recData(data.size());
 		
@@ -167,18 +181,13 @@ void MPIDistribution::MPIMakeValuesLocal(bool fullLayer)
 			comm = m_mpiCommLayer;
 			MPI_Allreduce(&data[0],&recData[0],data.size(),MPI_FLOAT,MPI_SUM,*comm);
 
-			m_population->SetValuesBuffer(recData);
-			/*for(int j=0;j<units.size();j++)//data.size();j++)
-			{
-				((RateUnit*)units[j])->SetValue(recData[units[j]->GetUnitIdLocal()]);//recData[j]);//mcsIndexes[j]])->SetValue(recData[j]);
-			}*/
+			m_population->SetValuesBuffer(recData);			
 		}
 	}
 	else
 	{
 		for(int i=0;i<localHypercolumns.size();i++)
 		{
-			//vector<int> mcsIndexes = ((PopulationColumns*)m_population)->GetRateUnitsIndexes(localHypercolumns[i]);
 			Hypercolumn* h = (Hypercolumn*)((PopulationColumns*)m_population)->GetHypercolumn(i);
 			vector<RateUnit*> mcs = h->GetRateUnits();
 
@@ -189,13 +198,12 @@ void MPIDistribution::MPIMakeValuesLocal(bool fullLayer)
 				{
 					if(mpiComms.size()!=1)
 					{
-						// (!)
-						//cerr<<"W";//cerr<<"Assumption about locality of hypercolumns not correct!";
+						//cerr<<"Assumption about locality of hypercolumns not correct!";
 					}
 
 					//assuming only one non-local hypercolumn on process
-					comm = mpiComms[localHypercolumns[i]];//mpiComms[i];//mpiComms[0];//(MPIGetCommHCs())[localHypercolumns[i]];
-					data = vector<float>(h->GetTotalNrRateUnits());//mcs.size());//mcsIndexes.size());//totMcs);
+					comm = mpiComms[localHypercolumns[i]];
+					data = vector<float>(h->GetTotalNrRateUnits());
 					allLocal = true;
 				}
 			}
@@ -203,43 +211,33 @@ void MPIDistribution::MPIMakeValuesLocal(bool fullLayer)
 			{
 				data = vector<float>(totMcs);//mcsIndexes.size());
 			}
-			
 
-			//Hypercolumn* h = ((PopulationColumns*)m_population)->GetHypercolumn(i);
-			//vector<RateUnit*> mcs = h->GetRateUnits();
-
-			for(int j=0;j<mcs.size();j++)//mcsIndexes.size();j++)
+			for(int j=0;j<mcs.size();j++)
 			{
 				data[mcs[j]->GetUnitIdLocalInHypercolumn()] = mcs[j]->GetValue();
-
-				//if(units[j]->IsLocal() == true)//mcsIndexes[j]]->IsLocal() == true)
-				//	data[((RateUnit*)units[j])->GetUnitIdLocalInHypercolumn()] = ((Unit*)units[j])->GetValue();//data[((RateUnit*)units[j])->GetUnitIdLocal()] = ((Unit*)units[j])->GetValue();//mcsIndexes[j]])->GetValue();
-				//else
-				//{
-					//units[mcsIndexes[j]]->SetLocal(true); // will retrieve data
-//					allLocal = false;
-//				}
 			}
 
-			if(units.size() < h->GetTotalNrRateUnits())//mcsIndexes.size())
+			if(units.size() < h->GetTotalNrRateUnits())
 				allLocal = false;
 
 			if(allLocal == false && fullLayer == false) // all local, no need to update
 			{
 				vector<float> recData(data.size());
+				// using allreduce
 				MPI_Allreduce(&data[0],&recData[0],data.size(),MPI_FLOAT,MPI_SUM,*comm);
-
-				//Hypercolumn* h = ((PopulationColumns*)m_population)->GetHypercolumn(i);
-				h->SetValues(recData);//values);
-				/*for(int j=0;j<mcsIndexes.size();j++)
+				
+				// using allgatherv
+				/*for(int j=1;j<rcounts.size();j++)
 				{
-				((RateUnit*)units[mcsIndexes[j]])->SetValue(recData[mcsIndexes[j]]);//mcsIndexes[j]])->SetValue(recData[j]);
-				}*/
+					displs[j] = rcounts[j-1]+displs[j-1];
+				}
+
+				MPI_Allgatherv( &data[i][0],data[i].size(),MPI_INT,&totalIndexes[0],&rcounts[0],&displs[0],MPI_INT,*comm);*/
+				
+				h->SetValues(recData);
 			}
 			else if(allLocal == true)
 				h->SetValues(data);
-
-			//vector<int> nodeIndexes = GetNodeIndexes(localHypercolumns[i]); // other nodes utilizing this hypercolumn
 		}
 	}
 }
@@ -247,53 +245,13 @@ void MPIDistribution::MPIMakeValuesLocal(bool fullLayer)
 // All nodes part of the layer gather the unit values
 void MPIDistribution::MPIMakeLayerValuesLocal()
 {
-	this->MPIMakeValuesLocal(true);	
+	this->MakeActivityValuesLocal(true);	
 }
-
-// not distr atm. - create fcn using mpi min instead
-// assuming one hypercolumn in layer (or first hypercolumn in layer)
-/*vector<long> MPIDistribution::MPIGetMaxIdInHypercolumns()
-{	
-	MPIMakeHypercolumnsValuesLocal();
-
-	vector<int> localHypercolumns = ((PopulationColumns*)m_population)->GetLocalHypercolumnIndexes();
-	vector<long> ids(localHypercolumns.size());
-
-	for(int k=0;k<localHypercolumns.size();k++)
-	{
-//		vector<int> mcsIndexes = ((PopulationColumns*)m_population)->GetRateUnitsIndexes(localHypercolumns[k]);
-
-		//vector<int> mcsIndexes = ((PopulationColumns*)m_population)->GetRateUnitsIndexes(0); // first hc
-		vector<double> data(mcsIndexes.size());
-		vector<Unit*> units = ((PopulationColumns*)m_population)->GetUnits(); // make pointer
-
-		for(int j=mcsIndexes.size()-1;j>-1;j--)
-		{
-			data[j] = ((RateUnit*)units[mcsIndexes[j]])->GetValue();
-		}
-
-		float maxVal = -1e8;
-		int maxIndex = -1;
-		for(int i=0;i<data.size();i++)
-		{
-			if(data[i]>maxVal)
-			{
-				maxVal = data[i];
-				maxIndex = i;
-			}
-		}
-
-		ids[k] = units[mcsIndexes[maxIndex]]->GetUnitId();
-	}
-
-	return ids;
-}*/
-
 
 // All nodes part of the hypercolumns gather the unit values
 void MPIDistribution::MPIMakeHypercolumnsValuesLocal()
 {
-	this->MPIMakeValuesLocal(false);	
+	this->MakeActivityValuesLocal(false);	
 }
 
 void MPIDistribution::MPICreateCommsHypercolumns()
@@ -325,33 +283,15 @@ void MPIDistribution::MPICreateCommsHypercolumns()
 	{
 		if(nodeHcIndexes[i].size()>1)
 		{
-			// all processes currently need to go in here and all need to know the nodeHcIndexes (global) list - could be changed (!)
-//			for(int j=0;j<nodeHcIndexes[i].size();j++)
-//			{
-				
+			MPI_Comm* new_comm = new MPI_Comm();
+			MPI_Group_incl(orig_group, nodeHcIndexes[i].size(), &(nodeHcIndexes[i][0]), &new_group);
+			MPI_Comm_create(NETWORK_COMM_WORLD, new_group, new_comm);
 
-				//if(nodeHcIndexes[i][j] == this->m_population->network()->MPIGetNodeId())
-				//{
-					MPI_Comm* new_comm = new MPI_Comm();
-					MPI_Group_incl(orig_group, nodeHcIndexes[i].size(), &(nodeHcIndexes[i][0]), &new_group);
-					MPI_Comm_create(NETWORK_COMM_WORLD, new_group, new_comm);
-
-					m_mpiCommHCs.push_back(new_comm);
-				//}
-//			}
+			m_mpiCommHCs.push_back(new_comm);
 		}
 		else
 			m_mpiCommHCs.push_back(NULL);
 	}
-
-	/*for(int i=0;i<nodeHcIndexes.size();i++)
-	{
-		MPI_Comm* new_comm = new MPI_Comm();
-		MPI_Group_incl(orig_group, nodeHcIndexes[i].size(), &(nodeHcIndexes[i][0]), &new_group);
-		MPI_Comm_create(NETWORK_COMM_WORLD, new_group, new_comm);
-
-		m_mpiCommHCs.push_back(new_comm);
-	}*/
 
 	if(m_population->network()->MPIGetNodeId() == 0 && DEBUG_LEVEL > 2)
 	{
@@ -553,4 +493,87 @@ vector<vector<vector<long> > > MPIDistribution::DivideEqualByTotalUnits(vector<i
 	out.push_back(indexesInterval);
 
 	return out;//indexesInterval;
+}
+
+
+// As divide equal by total units but does not allow one process to be in several populations if possible
+vector<vector<vector<long> > > MPIDistribution::DivideEqualByPopulations(vector<int> nrRateUnits, long currentUnit, long totalNrUnits, int mpiRank,int mpiSize)
+{
+	long nrUnits = 0;
+	for(int i=0;i<nrRateUnits.size();i++)
+	{
+		nrUnits+=nrRateUnits[i];
+	}
+
+	vector<vector<vector<long> > > out;
+
+	float part = (float)totalNrUnits/(float)mpiSize;
+	vector<vector<long> > nodeIndexes(nrRateUnits.size());
+
+	// does not happen
+
+	vector<vector<long> > indexesInterval;
+
+	int i=mpiRank;
+	long lb = (long)(part * (float)i);
+	long ub = (long)(part * (float)(i+1));
+	if(i == mpiSize-1)
+		ub = totalNrUnits;
+
+	bool cont = false;
+
+	if(lb<currentUnit+nrUnits && ub>=currentUnit)
+		cont = true;
+
+	if(cont == true) // this process should take part in this population
+	{
+		long currentPartUnit = 0;
+
+		for(int m=0;m<nrRateUnits.size();m++)
+		{
+			for(int n=0;n<nrRateUnits[m];n++)
+			{
+				long unitNr = currentUnit+currentPartUnit;
+				if(lb>=unitNr && ub>unitNr)
+				{
+					nodeIndexes[m].push_back(i);
+					break;
+				}
+				currentPartUnit++;
+			}
+		}
+
+		// get local locations
+		long tlb = 0;
+		long tub = 0;
+
+		if(lb<=currentUnit)
+			tlb = 0;
+		else
+			tlb = lb-currentUnit;
+
+		if(ub>currentUnit+nrUnits)
+			tub = currentUnit+nrUnits;
+		else
+			tub = ub-currentUnit;
+
+		vector<long> v;
+		v.push_back(tlb);
+		v.push_back(tub);
+
+		indexesInterval.push_back(v);
+	}
+	else
+	{
+		vector<long> v;
+		v.push_back(0);
+		v.push_back(0);
+
+		indexesInterval.push_back(v);
+	}
+
+	out.push_back(nodeIndexes);
+	out.push_back(indexesInterval);
+
+	return out;
 }

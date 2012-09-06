@@ -2,17 +2,23 @@
 #ifndef NETWORKBCPNN_H
 #define NETWORKBCPNN_H
 
-#include "NetworkConnectionModifier.h"
+#include "NetworkProjectionModifier.h"
 
-class ConnectionModifierBcpnnOnline : public ConnectionModifier
+/// <summary>	Implements the BCPNN learning rule. 
+/// 			See e.g. 
+/// 			Sandberg A., Lansner A., Petersson K.-M. and Ekeberg . (2002): Bayesian
+///				attractor networks with incremental learning. Network: Computation in
+///				Neural Systems: 13(2), 179-194. </summary>
+
+class ProjectionModifierBcpnnOnline : public ProjectionModifier
 {
 public:
 
-	ConnectionModifierBcpnnOnline(float alpha, float lambda, float maxValue = -1);
-	ConnectionModifierBcpnnOnline();
+	ProjectionModifierBcpnnOnline(float alpha, float lambda, float maxValue = -1);
+	ProjectionModifierBcpnnOnline();
 
-	void Initialize(Connection* connection);
-	void SetConnection(Connection* c);
+	void Initialize(Projection* Projection);
+	void SetProjection(Projection* c);
 	
 	void SetImpactWeights(float impact)
 	{
@@ -44,20 +50,13 @@ private:
 
 	bool m_firstRun;
 	bool m_useNoUpdateIfNoPreActivity;
-	//BCPNNOnline m_bcpnnOnline;
-	/*vector<float> m_Ai;
-	vector<float> m_Aj;
-	vector<vector<float> > m_Aij;
-	vector<float> m_beta; // in unitevent
-	vector<float> m_inhibBeta; // in case of inhibitory
-	*/
 
-	// hash implementation (allows for moving any synapses)
+	// map implementation
 	map<long,float> m_Ai;
 	vector<float> m_Aj;
-	vector<float> m_beta; // in unitevent
-	vector<float> m_inhibBeta; // in case of inhibitory
-	vector<vector<float> > m_Aij; // watch out, need to restructure if synapses moved
+	vector<float> m_beta;
+	vector<float> m_inhibBeta;
+	vector<vector<float> > m_Aij; // may need to restructure if synapses moved
 	//vector<map<long,float> > m_Aij;
 
 	float m_alpha;
@@ -68,9 +67,9 @@ private:
 	float m_impactBeta;
 
 	vector<long> m_postIds;
-	//vector<vector<long> > m_idsPre;
 
-	Connection* m_connectionFixed;
+	/// <summary>	Projection it is used on. </summary>
+	Projection* m_projectionFixed;
 };
 
 #endif

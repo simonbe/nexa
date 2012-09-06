@@ -49,7 +49,7 @@ void simulation_data_ctor(simulation_data *sim);
 void simulation_data_dtor(simulation_data *sim);
 
 
-// Handles setting up and managing connection with VisIt in-situ visualization (the libsim library)
+// Handles setting up and managing Projection with VisIt in-situ visualization (the libsim library)
 
 class Visualization
 {

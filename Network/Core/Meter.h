@@ -6,13 +6,17 @@
 #include "NetworkPopulationModifier.h"
 #include "Storage.h"
 
-class Connection;
+class Projection;
 class Unit;
 class Population;
 class PopulationModifier;
 //class Network;
 
 using namespace std;
+
+
+/// Recording class.
+/// - 
 
 class Meter : public NetworkObject
 {
@@ -30,7 +34,7 @@ public:
 		MeterUnit,
 		MeterLayer,
 		MeterPopulationModifier,
-		MeterConnection,
+		MeterProjection,
 		MeterObject
 	};
 
@@ -49,10 +53,10 @@ public:
 	}
 
 	void AttachUnit(Unit* unit);
-	void AttachLayer(Population* layer);
+	void AttachPopulation(Population* layer);
 	void AttachPopulationModifier(PopulationModifier* layer);
 	void AttachObject(NetworkObject* object, MeterType type=MeterObject);
-	void AttachConnection(Connection* conn, int samplingRate); // 0 samplingrate if only last result to be stored, otherwise weights evolution
+	void AttachProjection(Projection* conn, int samplingRate); // 0 samplingrate if only last result to be stored, otherwise weights evolution
 	void RecordAll(float timestep);
 
 	vector<int> GetMeterStructure()
@@ -99,7 +103,6 @@ private:
 
 	vector<int> m_additionalInfo;
 	bool m_firstRun;
-	void RecordUnitsHDF5();
 	char* m_filename;
 	char* m_filenameExtraString;
 	bool m_useExtraFilenameString;
@@ -111,7 +114,7 @@ private:
 	vector<Unit*> m_attachedUnits;
 	vector<Population*> m_attachedLayers;
 	vector<PopulationModifier*> m_attachedPopulationModifiers;
-	vector<Connection*> m_attachedConnections;
+	vector<Projection*> m_attachedProjections;
 	vector<NetworkObject*> m_attachedObjects;
 };
 

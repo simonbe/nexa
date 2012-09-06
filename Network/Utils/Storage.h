@@ -190,6 +190,8 @@ public:
 
 	vector<vector<float> > LoadDataFloatCSV(char* filename, int nrItems, bool keepOpen);
 	vector<vector<float> > LoadDataFloatCSVNextItems(int nrItems, bool close);
+	vector<vector<vector<float> > > LoadDataFloatBinSparse(char* filename, int nrItems, bool keepOpen);
+
 	vector<vector<float> > LoadDataFloatMPIBin(char* filename, int nrItems, int startColumn, int endColumn, MPI_Comm comm);
 
 	void SeparateTrainingTest(vector<vector<float> > data,vector<vector<float> > &training,vector<vector<float> > &test,float trainingper=.9);
@@ -208,6 +210,9 @@ public:
 		m_mpiRank = mpiRank;
 		m_mpiSize = mpiSize;
 	}
+
+	// Alternative load class into strings
+	vector<string> GetFileData(string filename);
 
 private:
 	int m_mpiRank,m_mpiSize;

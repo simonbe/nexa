@@ -8,6 +8,9 @@ class AnalysisTiming;
 
 using namespace std;
 
+/// <summary>	Generic class all network objects inherit from.
+/// 			Contains flags for enabling/disabling the object and its timing, recording of data. </summary>
+
 class NetworkObject
 {
 public:
@@ -21,9 +24,6 @@ public:
 		m_name = "";
 
 		m_mpiCommunicator = NULL;//NETWORK_COMM_WORLD;
-
-		//m_timingTot = vector<double>(1,0.0); // move
-		//m_timingStart = vector<double>(1,0.0);
 	}
 
 	bool IsOn()
@@ -160,15 +160,13 @@ public:
 
 protected:
 
-	MPI_Comm* m_mpiCommunicator; // not efficient, change
+	MPI_Comm* m_mpiCommunicator; // may be moved away from here - not by default initialized (NULL) but set from outside.
 
 	Network* m_network;
-	bool m_on, m_recording, m_initialized;
-	map<string,bool> m_recordParameters;
+	bool m_on, m_recording, m_initialized; // flags for enabling/disabling object and recording
+	map<string,bool> m_recordParameters; // which parameters that should have their values recorded (only used in MDS atm).
 
-	// timer variables, create new parent timing class? since not interesting for all network objects
-	// or move into timing class, initialize if turned on
-
+	// Timing/Timer of process time for this object 
 	AnalysisTiming* m_analysisTiming;
 	bool m_timing;
 

@@ -66,12 +66,6 @@
     <ClCompile Include="Core\Network.cpp">
       <Filter>Source Files\core</Filter>
     </ClCompile>
-    <ClCompile Include="Core\NetworkConnectionDynamic.cpp">
-      <Filter>Source Files\core</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\NetworkConnections.cpp">
-      <Filter>Source Files\core</Filter>
-    </ClCompile>
     <ClCompile Include="Core\NetworkUnits.cpp">
       <Filter>Source Files\core</Filter>
     </ClCompile>
@@ -180,7 +174,13 @@
     <ClCompile Include="Core\NetworkTransferFunctions.cpp">
       <Filter>Source Files\core</Filter>
     </ClCompile>
-    <ClCompile Include="Core\NetworkConnectionModifier.cpp">
+    <ClCompile Include="Core\NetworkProjectionModifier.cpp">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\NetworkProjections.cpp">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\NetworkProjectionDynamic.cpp">
       <Filter>Source Files\core</Filter>
     </ClCompile>
   </ItemGroup>
@@ -201,12 +201,6 @@
       <Filter>Header Files\core</Filter>
     </ClInclude>
     <ClInclude Include="Core\Network.h">
-      <Filter>Header Files\core</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\NetworkConnectionDynamic.h">
-      <Filter>Header Files\core</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\NetworkConnections.h">
       <Filter>Header Files\core</Filter>
     </ClInclude>
     <ClInclude Include="Core\NetworkObject.h">
@@ -323,10 +317,16 @@
     <ClInclude Include="Core\NetworkUnitModifier.h">
       <Filter>Header Files\core</Filter>
     </ClInclude>
-    <ClInclude Include="Core\NetworkConnectionModifier.h">
+    <ClInclude Include="Core\NetworkTransferFunctions.h">
       <Filter>Header Files\core</Filter>
     </ClInclude>
-    <ClInclude Include="Core\NetworkTransferFunctions.h">
+    <ClInclude Include="Core\NetworkProjectionModifier.h">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\NetworkProjections.h">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\NetworkProjectionDynamic.h">
       <Filter>Header Files\core</Filter>
     </ClInclude>
   </ItemGroup>

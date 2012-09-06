@@ -31,7 +31,7 @@
     */
 
 
-ConnectionModifierSTDP::ConnectionModifierSTDP(bool inhibitoryWeights)
+ProjectionModifierSTDP::ProjectionModifierSTDP(bool inhibitoryWeights)
 {
 	m_eventId = 15;
 	//m_transferFunction = new TransferLinear(false);
@@ -46,32 +46,32 @@ ConnectionModifierSTDP::ConnectionModifierSTDP(bool inhibitoryWeights)
 	Wadj=5;
 }
 
-void ConnectionModifierSTDP::Initialize(Connection* connection)
+void ProjectionModifierSTDP::Initialize(Projection* Projection)
 {
-	network(connection->network());
+	network(Projection->network());
 
-	m_connectionFixed = connection;
+	m_projectionFixed = Projection;
 	m_firstRun = true;
-	m_idsPost = m_connectionFixed->GetPostIds();
+	m_idsPost = m_projectionFixed->GetPostIds();
 }
 
-void ConnectionModifierSTDP::Modify()
+void ProjectionModifierSTDP::Modify()
 {
 	if(!IsOn()) return;
 	// Should iterate over GetPostSpikes, GetPreSpikes.. etc
 	
 	// currently a fix to this
 	if(this->m_network->MPIGetNrProcs()>1)
-		this->m_connectionFixed->PreLayer()->MPI()->MPIMakeLayerValuesLocal();	
+		this->m_projectionFixed->PreLayer()->MPI()->MPIMakeLayerValuesLocal();	
 
-	vector<float> postValues = m_connectionFixed->GetPostValues();
+	vector<float> postValues = m_projectionFixed->GetPostValues();
 	if(m_prevPostValues.size()==0)
 		m_prevPostValues = postValues;
 
-	//vector<vector<long> >* preIds = m_connectionFixed->GetPreIdsAll();// = m_connectionFixed->PreIds(); // move to initializer (until Invalidate().. called)
-	vector<long>* preIds = m_connectionFixed->GetPreIdsAll();// = m_connectionFixed->PreIds(); // move to initializer (until Invalidate().. called)
+	//vector<vector<long> >* preIds = m_projectionFixed->GetPreIdsAll();// = m_projectionFixed->PreIds(); // move to initializer (until Invalidate().. called)
+	vector<long>* preIds = m_projectionFixed->GetPreIdsAll();// = m_projectionFixed->PreIds(); // move to initializer (until Invalidate().. called)
 
-	//vector<long> postIds = m_connectionFixed->GetPostIds();
+	//vector<long> postIds = m_projectionFixed->GetPostIds();
 
 	if(m_firstRun == true)
 	{
@@ -81,8 +81,8 @@ void ConnectionModifierSTDP::Modify()
 		preexp_decay1 = vector<vector<float> >(postValues.size());
 		for(int j=0;j<postValues.size();j++)
 		{
-			vector<long> preIds = m_connectionFixed->GetPreIds(m_idsPost[j]);
-			//vector<float> preValues = m_connectionFixed->GetPreValues(m_idsPost[j]);
+			vector<long> preIds = m_projectionFixed->GetPreIds(m_idsPost[j]);
+			//vector<float> preValues = m_projectionFixed->GetPreValues(m_idsPost[j]);
 			preexp_decay2[j] = vector<float>(preIds.size(),0.0);//preValues.size(),0.0);
 			preexp_decay1[j] = vector<float>(preIds.size(),0.0);
 		}
@@ -101,10 +101,10 @@ void ConnectionModifierSTDP::Modify()
 
 	for(int j=0;j<postValues.size();j++)
 	{
-		vector<float> preValues = m_connectionFixed->GetPreValues(m_idsPost[j]);
+		vector<float> preValues = m_projectionFixed->GetPreValues(m_idsPost[j]);
 		postId = m_idsPost[j];
 
-		vector<long> preIds = m_connectionFixed->GetPreIds(m_idsPost[j]);
+		vector<long> preIds = m_projectionFixed->GetPreIds(m_idsPost[j]);
 		
 		for(int i=0;i<preValues.size();i++)
 		{
@@ -162,7 +162,7 @@ Ke=0.27;
 */
 
 
-float ConnectionModifierSTDP::synapse_stdp(float I, float w, float input)
+float ProjectionModifierSTDP::synapse_stdp(float I, float w, float input)
 {
 /*
 % input: spikes

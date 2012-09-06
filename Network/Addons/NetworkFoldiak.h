@@ -2,17 +2,19 @@
 #ifndef NETWORKFOLDIAK_H
 #define NETWORKFOLDIAK_H
 
-#include "NetworkConnectionModifier.h"
+#include "NetworkProjectionModifier.h"
 
-class ConnectionModifierFoldiak : public ConnectionModifier
+/// <summary>	Foldiak learning rule. </summary>
+
+class ProjectionModifierFoldiak : public ProjectionModifier
 {
 public:
 
-	ConnectionModifierFoldiak(float eta1, float eta2, float eta3, float alpha, float beta, bool lateral);
+	ProjectionModifierFoldiak(float eta1, float eta2, float eta3, float alpha, float beta, bool lateral);
 
-	void Initialize(Connection* connection);
+	void Initialize(Projection* Projection);
 
-	void SetConnection(Connection* c);
+	void SetProjection(Projection* c);
 	void SetAlpha(float alpha);
 
 	void Simulate(UnitModifier* e);
@@ -29,7 +31,7 @@ private:
 	vector<long> m_idsPost;
 	vector<vector<long> > m_idsPre;
 
-	Connection* m_connectionFixed;
+	Projection* m_projectionFixed;
 };
 
 

@@ -2,7 +2,7 @@
 #ifndef NETWORKADTHR_H
 #define NETWORKADTHR_H
 
-#include "NetworkConnectionModifier.h"
+#include "NetworkProjectionModifier.h"
 
 // Hebbian + intrinsic (threshold) plasticity
 

@@ -65,16 +65,16 @@ void NetworkScalingStrong::NetworkSetupStructure()
 	
 	float lambda0 = 10e-6;
 	float alpha = 0.05;
-	//m_bcpnn= new ConnectionModifierBcpnnOnline(alpha,lambda0);
+	//m_bcpnn= new ProjectionModifierBcpnnOnline(alpha,lambda0);
 	
-	//randConn3->AddConnectionsEvent(m_bcpnn);
+	//randConn3->AddProjectionsEvent(m_bcpnn);
 
 	// population operations
 	WTA* wta = new WTA();
-	//m_layer3->AddLayerEvent(wta);
+	//m_layer3->AddPopulationModifier(wta);
 
-	this->AddLayer(m_layer1);
-	//this->AddLayer(m_layer3);
+	this->AddPopulation(m_layer1);
+	//this->AddPopulation(m_layer3);
 
 	vector<RandomConnectivity*> randConn1;
 	vector<RandomConnectivity*> randConn2;
@@ -115,13 +115,13 @@ void NetworkScalingStrong::NetworkSetupStructure()
 		layer->AddPre(m_layer1,randConnForward);//full1);//oneToOne);//randConnForward);//full1);//randConnForward);
 		//m_layer3->AddPre(layer,randConnForward2);
 		// add populations to network
-		this->AddLayer(layer);
+		this->AddPopulation(layer);
 
 		// also check simulation times
 		AddTiming(layer);
 	}
 
-	// Create some long-range connections (not symmetric)
+	// Create some long-range Projections (not symmetric)
 	this->SetSeed(true); // guarantee same description on all
 
 	srand(8);
@@ -134,7 +134,7 @@ void NetworkScalingStrong::NetworkSetupStructure()
 				if(i==j+1 || i==j-1 || (i==0 && j==nrPop2-1) || (i==nrPop2-1 && j == 0))//rand()%(this->MPIGetNrProcs()) == 0) // 10% chance populations are connected
 				{
 					RandomConnectivity* randRecurr2 = new RandomConnectivity(0.0005,false);//0.0001,false);
-					randRecurr2->SetRandomWeights(-0.1,-0.1); // weak long-range inhibitory connections
+					randRecurr2->SetRandomWeights(-0.1,-0.1); // weak long-range inhibitory Projections
 
 					m_layer2[i]->AddPre(m_layer2[j],randRecurr2);
 				}
@@ -259,7 +259,7 @@ void NetworkScalingStrong::NetworkRun()
 			{
 				for(int k=0;k<m_layer2.size();k++)
 				{
-					m_layer2[k]->GetIncomingConnections()[1]->KeepActiveBuffer(true);
+					m_layer2[k]->GetIncomingProjections()[1]->KeepActiveBuffer(true);
 					vector<float> emptyIn(m_sizePopulation1);
 					m_layer1->SetValuesAll(emptyIn);
 				}
@@ -271,7 +271,7 @@ void NetworkScalingStrong::NetworkRun()
 			// stop freezing input
 			for(int k=0;k<m_layer2.size();k++)
 			{
-				m_layer2[k]->GetIncomingConnections()[0]->KeepActiveBuffer(false);
+				m_layer2[k]->GetIncomingProjections()[0]->KeepActiveBuffer(false);
 			}
 		}
 		
@@ -376,7 +376,7 @@ void NetworkScalingDemos::NetworkScalingRunRecurrentBCPNN(bool storeData)
 	network->AddTiming(network);
 
 	PopulationColumns* layer1 = new PopulationColumns(network,nrHypercolumns,nrRateUnits,PopulationColumns::Graded);
-	network->AddLayer(layer1);
+	network->AddPopulation(layer1);
 	
 	FullConnectivity* full = new FullConnectivity();//false,"minicolumns");
 	full->SetRandomWeights(0,0);
@@ -386,16 +386,16 @@ void NetworkScalingDemos::NetworkScalingRunRecurrentBCPNN(bool storeData)
 	
 	layer1->AddPre(layer1,randConn); // recurrent
 
-	// Add connection changes
+	// Add Projection changes
 	float lambda0 = 10e-6;
 	float alpha = 0.05;
-	ConnectionModifierBcpnnOnline* bStandard = new ConnectionModifierBcpnnOnline(alpha,lambda0);
+	ProjectionModifierBcpnnOnline* bStandard = new ProjectionModifierBcpnnOnline(alpha,lambda0);
 	
-	//full->AddConnectionsEvent(bStandard);
-	randConn->AddConnectionsEvent(bStandard);
+	//full->AddProjectionsEvent(bStandard);
+	randConn->AddProjectionsEvent(bStandard);
 
 	WTA* wta = new WTA();
-	layer1->AddLayerEvent(wta);
+	layer1->AddPopulationModifier(wta);
 
 	network->AddTiming(randConn);
 	network->AddTiming(layer1);
@@ -425,22 +425,22 @@ void NetworkScalingDemos::NetworkScalingRunRecurrentBCPNN(bool storeData)
 	{
 		filename1 = "layer1_" + m_extraFilenameString + ".dat";
 		l1meter = new Meter((char*)(filename1.c_str()), Storage::MPI_Binary);
-		filename2 = "connections1_" + m_extraFilenameString + ".dat";
+		filename2 = "Projections1_" + m_extraFilenameString + ".dat";
 		c1meter = new Meter((char*)(filename2.c_str()),Storage::MPI_Binary);
 	}
 	else
 	{
 		filename1 = "layer1_" + m_extraFilenameString + ".csv";
 		l1meter = new Meter((char*)(filename1.c_str()), Storage::CSV);
-		filename2 = "connections1_" + m_extraFilenameString + ".csv";
+		filename2 = "Projections1_" + m_extraFilenameString + ".csv";
 		c1meter = new Meter((char*)(filename2.c_str()),Storage::CSV);
 	}
 
 	if(storeData)
 	{
-		l1meter->AttachLayer(layer1);
+		l1meter->AttachPopulation(layer1);
 		//network->AddMeter(l1meter);
-		c1meter->AttachConnection(layer1->GetIncomingConnections()[0],0);
+		c1meter->AttachProjection(layer1->GetIncomingProjections()[0],0);
 		//network->AddMeter(c1meter);
 		analysisDistance1 = new AnalysisDistance(layer1,AnalysisDistance::Euclidean);
 		filename3 = "Distances_"+ m_extraFilenameString + ".csv";
@@ -455,7 +455,7 @@ void NetworkScalingDemos::NetworkScalingRunRecurrentBCPNN(bool storeData)
 	
 
 	// need to access after it has been built
-	network->AddTiming(layer1->GetIncomingConnections()[0]);
+	network->AddTiming(layer1->GetIncomingProjections()[0]);
 
 	//cout<<layer1->GetRateUnits().size()<<" ";cout.flush();
 
@@ -574,7 +574,7 @@ void NetworkScalingDemos::NetworkScalingRunRecurrentSimple(bool storeData)
 	network->AddTiming(network);
 
 	PopulationColumns* layer1 = new PopulationColumns(network,nrHypercolumns,nrRateUnits,PopulationColumns::Graded);
-	network->AddLayer(layer1);
+	network->AddPopulation(layer1);
 	
 	FullConnectivity* full = new FullConnectivity();//false,"minicolumns");
 	full->SetRandomWeights(0,0);
@@ -584,16 +584,16 @@ void NetworkScalingDemos::NetworkScalingRunRecurrentSimple(bool storeData)
 	
 	layer1->AddPre(layer1,randConn); // recurrent
 
-	// Add connection changes
+	// Add Projection changes
 	float lambda0 = 10e-6;
 	float alpha = 0.05;
-	ConnectionModifierBcpnnOnline* bStandard = new ConnectionModifierBcpnnOnline(alpha,lambda0);
+	ProjectionModifierBcpnnOnline* bStandard = new ProjectionModifierBcpnnOnline(alpha,lambda0);
 	
-	//full->AddConnectionsEvent(bStandard);
-	randConn->AddConnectionsEvent(bStandard);
+	//full->AddProjectionsEvent(bStandard);
+	randConn->AddProjectionsEvent(bStandard);
 
 	WTA* wta = new WTA();
-	layer1->AddLayerEvent(wta);
+	layer1->AddPopulationModifier(wta);
 
 	// Construct initial network
 	network->Initialize();
@@ -620,22 +620,22 @@ void NetworkScalingDemos::NetworkScalingRunRecurrentSimple(bool storeData)
 	{
 		filename1 = "layer1_" + m_extraFilenameString + ".dat";
 		l1meter = new Meter((char*)(filename1.c_str()), Storage::MPI_Binary);
-		filename2 = "connections1_" + m_extraFilenameString + ".dat";
+		filename2 = "Projections1_" + m_extraFilenameString + ".dat";
 		c1meter = new Meter((char*)(filename2.c_str()),Storage::MPI_Binary);
 	}
 	else
 	{
 		filename1 = "layer1_" + m_extraFilenameString + ".csv";
 		l1meter = new Meter((char*)(filename1.c_str()), Storage::CSV);
-		filename2 = "connections1_" + m_extraFilenameString + ".csv";
+		filename2 = "Projections1_" + m_extraFilenameString + ".csv";
 		c1meter = new Meter((char*)(filename2.c_str()),Storage::CSV);
 	}
 
 	if(storeData)
 	{
-		l1meter->AttachLayer(layer1);
+		l1meter->AttachPopulation(layer1);
 		//network->AddMeter(l1meter);
-		c1meter->AttachConnection(layer1->GetIncomingConnections()[0],0);
+		c1meter->AttachProjection(layer1->GetIncomingProjections()[0],0);
 		//network->AddMeter(c1meter);
 		analysisDistance1 = new AnalysisDistance(layer1,AnalysisDistance::Euclidean);
 		filename3 = "Distances_"+ m_extraFilenameString + ".csv";
@@ -650,7 +650,7 @@ void NetworkScalingDemos::NetworkScalingRunRecurrentSimple(bool storeData)
 	network->AddTiming(full);
 
 	// need to access after it has been built
-	network->AddTiming(layer1->GetIncomingConnections()[0]);
+	network->AddTiming(layer1->GetIncomingProjections()[0]);
 
 	//cout<<layer1->GetRateUnits().size()<<" ";cout.flush();
 

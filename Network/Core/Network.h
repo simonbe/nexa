@@ -1,17 +1,24 @@
+// file:	Core\Network.h
+//
+// summary:	Declares Network class
+// - Derive from to setup an own simulation (but can also call functions directly)
+// - Has compiler flags for various libraries
+
 #pragma once
 #ifndef NETWORK_H
 #define NETWORK_H
-#endif
 
-#define DEBUG_LEVEL 3
 
+#define DEBUG_LEVEL 3 // not used, remove
+
+// Libraries available
 #define MUSIC_AVAILABLE 0
 #define SPARSE_HASH_AVAILABLE 0
 #define GSL_AVAILABLE 0
 #define BOOST_AVAILABLE 0
 #define VISIT_AVAILABLE 0
 #define TR1_COMPILER 0
-#define COMMUNICATION_BUFFER_HASH 1 // not needed to be put at compiler level
+#define COMMUNICATION_BUFFER_HASH 1 // may be turned into normal flag as does not need to be on compile level
 #define USE_HASHED_ACTIVE_COMMUNICATION 1	// faster simulation of units in most cases but uses more memory (extra hash scaling with nr of synapses)
 											// does not need to be on compiler level
 #define USE_DELAYS 0 // not needed to be put at compiler level, will change
@@ -19,6 +26,7 @@
 
 #define USE_COMMUNICATION_ALLTOALL 1 // otherwise defaults to a communication pattern using allgatherv (all processes get all output messages), not needed to be put at compiler level
 
+// Help pre-sets for different computer architectures
 #define CRAY 3
 #define JUGENE 2
 #define BGL 1
@@ -30,15 +38,16 @@
 #include <vector>
 #include <iostream>
 
+// Depending on compiler and version, unordered_map is included differently
 #if USE_UNORDERED_MAP == 1
 #if TR1_COMPILER == 1
 #include <tr1/unordered_map>
 #else
 #include <unordered_map>
-//typedef std::unordered_map<foo,bar> my_map;
 #endif
 #endif
 
+// TODO: currently not used, check functionality
 #if SPARSE_HASH_AVAILABLE == 1
 	#include <google/type_traits.h>
 	#include <google/sparsetable>
@@ -56,7 +65,6 @@
 	using GOOGLE_NAMESPACE::HashtableInterface_DenseHashtable;
 #endif
 
-
 #include "NetworkObject.h"
 #include "NetworkPopulation.h"
 #include "Meter.h"
@@ -66,13 +74,15 @@
 #include "NetworkParameters.h"
 
 
-class ConnectionModifier;
+class ProjectionModifier;
 class Population;
 class Unit;
 class Meter;
 class NetworkParameters;
 
 using namespace std;
+
+/// <summary>	Network. Main simulation class. Recommended to inherit and extend for each new network model.</summary>
 
 class Network : public NetworkObject
 {
@@ -81,11 +91,10 @@ class Network : public NetworkObject
 public:
 
 	Network();
-
 	~Network();
 
 
-// will change way to select
+// TODO: Synapse type atm decided on compile level, change
 #if USE_DELAYS==1
 	struct SynapseStandard // also allow alternate synapses
 	{
@@ -99,27 +108,27 @@ public:
 	};
 #endif
 
-	enum SynapseModel // will be moved to layer/population eventually
+	enum SynapseModel 
 	{
 		SynapsesStandard
 	};
 
 	enum CommunicationBufferType
 	{
-		CommunicationBufferVector, // bad memory scaling
-		CommunicationBufferHash // not memory bound, generally slower, could be pos cache effects
+		CommunicationBufferVector, // not good memory scaling, but fast (ok to use for small networks)
+		CommunicationBufferHash // not memory bound, generally slower depending on hash/table implementation
 	};
 
-	void SetSeed(bool allSame = false);
+	// Random number generator seed, can also used srand straight away
+	void SetSeed(bool allSame = false, float x = 8);
 
-	void SetMPIParameters(int nodeId, int nrProcs)
+	void SetMPIParameters(int processId, int nrProcs)
 	{
-		m_mpiNodeId = nodeId;
+		m_mpiNodeId = processId;
 		m_mpiNrProcs = nrProcs;
 	}
 
-	void SetUseTiming(bool useTiming);
-
+	// TODO: Check why some classes use this
 	void SetTimeResolution(float timeStep)
 	{
 		m_simulationResolution = timeStep;
@@ -130,6 +139,8 @@ public:
 		return m_simulationResolution;
 	}
 
+	// Used in network construction to get a unique global id of unit
+	//  TODO: check why not move
 	long GetNextUnitId()
 	{
 		long l = m_currentUnitId;
@@ -137,6 +148,8 @@ public:
 		return l;
 	}
 
+	// Used in network construction to get a unique global id of hypercolumn (in case of a columnar population)
+	//  TODO: check why not move
 	int GetNextHypercolumnId()
 	{
 		long l = m_currentHypercolumnId;
@@ -144,9 +157,22 @@ public:
 		return l;
 	}
 
+	/// <summary>	Get the process id (0...N-1 for N processes). </summary>
+	///
+	/// <returns>	This MPI process id. </returns>
+
 	int MPIGetNodeId()
 	{
 		return m_mpiNodeId;
+	}
+
+	/// <summary>	Gets nr of processes network is running on (communicator NETWORK_MPI_WORLD). </summary>
+	///
+	/// <returns>	Nr MPI processes. </returns>
+
+	int MPIGetNrProcs()
+	{
+		return m_mpiNrProcs;
 	}
 
 	long MPIGetNrUnitsParallelizationDefault()
@@ -169,15 +195,11 @@ public:
 		m_mpiCurrentUnitParallelizationDefault += nrUnits;
 	}
 
-	int MPIGetNrProcs()
-	{
-		return m_mpiNrProcs;
-	}
 
 	float GetCurrentTimeStep() { return m_currentTimeStep; }
 	void SetCurrentTimeStep(float timeStep) { m_currentTimeStep = timeStep; }
 
-	void AddLayer(Population* layer);
+	void AddPopulation(Population* population);
 	Population* GetLayer(int index)
 	{
 		return m_populations[index];
@@ -203,18 +225,7 @@ public:
 	Unit* GetUnitFromId(long unitId) // only local atm?
 	{
 		return m_hashIdUnit[unitId];
-		//return m_listIdUnit[unitId];//m_hashIdUnit[unitId];
 	}
-
-	/*vector<Unit*>* GetPreUnitsFromId(long unitId)
-	{
-		return &m_hashIdPreUnit[unitId];
-	}
-
-	map<long, vector<Unit*> >* HashIdPreUnit()
-	{
-		return &m_hashIdPreUnit;
-	}*/
 
 	float GetSimulationResolution()
 	{
@@ -228,8 +239,6 @@ public:
 
 	void AddMeter(Meter* meter);
 
-//	void AddMeter(char* filename, NetworkObject* object, Meter::MeterType type);
-
 	Meter* GetMeter(int index)
 	{
 		return m_meters[index];
@@ -240,10 +249,6 @@ public:
 		return m_meters;
 	}
 
-	long AddUnitModifierIncoming(UnitModifier* e);
-	UnitModifier* GetUnitModifierIncoming(int id);
-
-	void ClearMemory();
 	void ClearEventsIncoming();
 	void ClearEventsIncoming(vector<long> fromPreIds);
 
@@ -258,15 +263,16 @@ public:
 
 	vector<float> PrintNetworkDetails();
 	
-	// may get replaced
 	void SetWeight(float weight, long preId, long postId);
 	void SetDelay(float delay, long preId, long postId);
 	float GetWeight(long preId, long postId);
 	float GetDelay(long preId, long postId);
-	void SetUsingDelays(bool usingDelays)
+	
+	void SetUsingDelays(bool usingDelays) // note: not all neural units can use the delays without extending the classes
 	{
 		m_isUsingDelays = usingDelays;
 	}
+	
 	bool IsUsingDelays()
 	{
 		return m_isUsingDelays;
@@ -282,9 +288,7 @@ public:
 		return m_isTrackingHypercolumnIds;
 	}
 
-	bool ConnectionExists(long preId, long postId);
-
-	int GetNrLayers()
+	int GetNrPopulations()
 	{
 		return m_populations.size();
 	}
@@ -307,45 +311,15 @@ public:
 
 	void SetFilenamesAdditional(string additional);
 
-	/*vector<long>* GetPostIds(long preId)
-	{
-		if(m_listPosts.size() == 0) // will be 0 if node has no local units in layer
-			return NULL;
-		else if(preId >= m_listPosts.size())
-			return NULL;
-		else
-			return &m_listPosts[preId]; // use pointer instead
-	}
-
-	vector<vector<long> > GetPostsList()
-	{
-		return m_listPosts;
-	}*/
-
-	//void AddPostIds(vector<long> preIds, long postId);
-	//void AddConnections(vector<long> preIds, long postId);
 
 	float GetPreValue(long preId) // assumes no delays
 	{
-/*		if(m_incomingBufferData.size()<=preId)
-			return 0;
-		else
-			if(m_incomingBufferData.size() == 0)
-				return 0;
-			else*/
 #if COMMUNICATION_BUFFER_HASH == 1
 		return m_incomingBufferDataHash[preId];
 #else
 		return m_incomingBufferData[preId];
 #endif
-
 	}
-
-	/*vector<float> GetPreValues(vector<long> preIds)
-	{
-		vector<float> v(preIds.size());
-		m_incomingBufferDataHash.
-	}*/
 
 #if USE_UNORDERED_MAP == 1
 	unordered_map<long, SynapseStandard>* GetPreSynapses(long postId)
@@ -358,6 +332,12 @@ public:
 		return &m_hashSynapses[postId];
 	}
 #endif
+
+	/// <summary>	Checks if a unit has any incoming connections. </summary>
+	///
+	/// <param name="postId">	id of post unit. </param>
+	///
+	/// <returns>	true if it has. </returns>
 
 	bool PreSynapsesExist(long postId)
 	{
@@ -378,25 +358,17 @@ public:
 	}
 #endif
 
-	// ?
+	/// <summary>	Removes synapse values (if e.g. a connection is removed). </summary>
+	///
+	/// <param name="postId">	id of post unit. </param>
+	/// <param name="preId"> 	id of pre unit. </param>
+
 	void EraseSynapseValues(long postId, long preId)
 	{
 		m_hashSynapses[postId].erase(preId);
 		if(m_hashSynapses[postId].size() == 0)
 			m_hashSynapses.erase(postId);
 	}
-
-	//vector<float>* GetIncomingBufferData(long preId)
-	/*float GetIncomingBufferData(long preId)
-	{
-		return m_incomingBufferData[preId];
-		//return &(m_incomingBufferData[preId]);
-	}*/
-
-	/*vector<float>* GetIncomingBufferData()
-	{
-		return &m_incomingBufferData;
-	}*/
 
 	long GetIncomingBufferHypercolumnIds(long preId)
 	{
@@ -407,11 +379,7 @@ public:
 #endif
 	}
 
-	// pre-created vector of all possible pre ids this process can have as input
 	void CreateAllPreIdsUnion();
-
-	// pre-created vector for each unit to which processes to send an output 
-	// (depending on communication method, sparse send methods esp, this may or may not be needed)
 	void CreateAllPostProcs();
 
 	vector<Analysis*> GetAnalysis()
@@ -434,9 +402,11 @@ public:
 		m_filenameNetworkDetails = filename;
 	}
 
-	void CopyConnectionsPost(Connection* from, Connection* to, bool copyValues);
+	// Copy Projections including weight values from one existing projection Projection to another (empty) projection
+	void CopyProjections(Projection* from, Projection* to, bool copyValues);
 
-	void AddNetworkObjectToDelete(void* obj) // these objects the network is responsible to delete
+	// Help function where objects the network should be responsible to delete can be put
+	void AddNetworkObjectToDelete(void* obj) 
 	{
 		bool exists = false;
 		for(int i=0;i<m_networkObjectsToDelete.size();i++)
@@ -470,7 +440,7 @@ public:
 	//////////////////////////////////////////////////////////////////
 
 
-		//////////// Interface for driving simulation from a network object
+	//////////// Interface for driving simulation from a network object
 	//// See example class in NetworkTestsNetwork
 	virtual void NetworkSetupStructure() { };
 	virtual void NetworkSetupMeters() { };
@@ -481,14 +451,22 @@ public:
 	{
 		return m_networkParameters;
 	}
-	//vector<void*> m_parameterFunctions;
-	//vector<vector<float> > m_parameterValues;
 	//////////////////////////////////////////////////////////////
+
+	 
+
+	/// <summary>	Sets run identifier. Used in multiple parameters runs to a different identifier for each independent run. </summary>
+	///
+	/// <param name="index">	Run id. </param>
 
 	void SetRunId(int index)
 	{
 		m_runId = index;
 	}
+
+	/// <summary>	Gets run identifier. </summary>
+	///
+	/// <returns>	Run id. </returns>
 
 	int GetRunId()
 	{
@@ -500,68 +478,60 @@ private:
 	///////////////////////////////////
 	// (currently) global settings
 
-	CommunicationBufferType m_communicationBufferType;
-	SynapseModel m_synapseModel;
+	CommunicationBufferType m_communicationBufferType; // what type of communication buffer incoming data should be kept in
+	SynapseModel m_synapseModel; // TODO: extend
 
 	///////////////////////////////////////////
 
-	bool m_firstRun;
+	bool m_firstRun;					// keeps track of first simulation time step
 	bool m_networkDetailsStored;
 	bool m_useTiming;
-	bool m_isUsingDelays;
-	bool m_isTrackingHypercolumnIds; // if pre hypercolumn ids are needed to be communicated etc (used in bcpnn)
+	bool m_isUsingDelays;				// keeps track of if the network synapse model is using delays
+	bool m_isTrackingHypercolumnIds;	// if pre hypercolumn ids are needed to be communicated etc (used in bcpnn)
+	
+	// extra filename strings to keep track of independent runs
 	bool m_useExtraFilenameString;
 	char* m_extraFilenameString;
-
-	double m_timingExtraStart;
 
 	Storage::FilePreference m_savePreference;
 	char* m_filenameNetworkDetails;
 	char* m_filenameTimings;
 	char* m_filenameAnalysis;
 
-	float m_simulationResolution; //[ms]
-	int m_mpiNodeId;
-	int m_mpiNrProcs;
+	float m_simulationResolution;
+	
+	int m_mpiNodeId; // mpi process id
+	int m_mpiNrProcs; // nr of total processes available to network
+	
+	// used when building network to get unique ids
 	long m_mpiCurrentUnitParallelizationDefault;
 	long m_mpiNrUnitsParallelizationDefault;
 	long m_currentUnitId;
 	int m_currentHypercolumnId;
 	int m_currentLayerId;
 
+	// current time step used when writing data to disk
 	float m_currentTimeStep;
 
 	vector<Population*> m_populations;
 	vector<int> m_populationIndexesThisProc;
 	vector<vector<int> > m_communicationToProcs;
 	vector<Connectivity*> m_connectivityTypes;
-
-	//vector<Unit*> m_listIdUnit;
-	map<long, Unit*> m_hashIdUnit;
-	map<long, vector<Unit*> > m_hashIdPreUnit; // used anymore?
 	vector<Meter*> m_meters;
 	vector<Analysis*> m_analysis;
 
-	// if using very large vectors, may want to sort the vector and then use the binary_search, lower_bound, or upper_bound algorithms
+	// Note: for the large vectors, may want to sort the vector and then use the binary_search, lower_bound, or upper_bound algorithms
 
+	map<long, Unit*> m_hashIdUnit;
 	map<long,UnitModifier*> m_eventsUnitIncoming;
-	//map<long, map<long, SynapseStandard> > m_hashSynapses;
-	//vector<map<long, SynapseStandard> > m_hashSynapses;
-	//vector<vector<pair<long, SynapseStandard> > > m_hashSynapses;
 #if USE_UNORDERED_MAP == 1
 	unordered_map<long, unordered_map<long, SynapseStandard> > m_hashSynapses;
 #else
 	map<long, map<long, SynapseStandard> > m_hashSynapses;
 #endif
-	//vector<vector<long> > m_listPosts; // id-based list of post ids [preId, list of post ids]
-
-	//vector<UnitModifier*> m_eventsUnitIncoming;
-
-	//vector<long> m_postIds;
-	//vector<vector<long> > m_preIds; // index-based (wrt position in m_postIds)
 
 	vector<vector<float> > m_incomingBufferDataDelays;
-	vector<float> m_incomingBufferData; // change to hash (?) - not used
+	vector<float> m_incomingBufferData; // 
 
 #if USE_UNORDERED_MAP == 1
 	unordered_map<long,float> m_incomingBufferDataHash; // alternate version (slower, but not as memory bound - but could be postitive cache effects) - currently map and not spec hash impl
@@ -575,11 +545,12 @@ private:
 	vector<long> m_incomingBufferHypercolumnIds; // can store this locally to reduce communication and processing
 
 	vector<long> m_allPreIds;
-	vector<void*> m_networkObjectsToDelete; // for deletion
+	vector<void*> m_networkObjectsToDelete; // network object the main network class is responsible to delete
 
-	// for keeping of communication buffer
+	// turn on to keep communication buffer for next timestep to reduce communication
 	bool m_keepCommunicationBuffer;
 
+	// buffers keeping communicated (received + local) data
 #if USE_UNORDERED_MAP == 1
 	unordered_map<long,float> m_bufferToKeepData;
 	unordered_map<long,long> m_bufferToKeepHypercolumnIds;
@@ -588,24 +559,25 @@ private:
 	map<long,long> m_bufferToKeepHypercolumnIds;
 #endif
 		
-
-	// Multiple parameters handling
+	// Handling of multiple parameters
 	NetworkParameters* m_networkParameters;
 
 	// Index for the current run if multiple parameters used (also used to set different random seeds for independent runs)
 	int m_runId;
 
+	// MUSIC specific
 #if MUSIC_AVAILABLE == 1
 	   public:
 		   static MPI_Comm MPIComm;
 #endif
-
 };
 
+	// MUSIC specific - need to use specific communicator if MUSIC is used as it takes up its own process/processes
 #if MUSIC_AVAILABLE == 1
-       //This should be set to the setup->communicator()
-       //when music is used.
+       //TODO: This could  be set to the setup->communicator() when music is used.
        #define NETWORK_COMM_WORLD Network::MPIComm
 #else
        #define NETWORK_COMM_WORLD MPI_COMM_WORLD
+#endif
+
 #endif

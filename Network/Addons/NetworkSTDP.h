@@ -2,15 +2,15 @@
 #ifndef NETWORKSTDP_H
 #define NETWORKSTDP_H
 
-#include "NetworkConnectionModifier.h"
+#include "NetworkProjectionModifier.h"
 
-class ConnectionModifierSTDP : public ConnectionModifier
+class ProjectionModifierSTDP : public ProjectionModifier
 {
 public:
-	ConnectionModifierSTDP(bool inhibitoryWeights);
+	ProjectionModifierSTDP(bool inhibitoryWeights);
 
-	void Initialize(Connection* connection);
-	void SetConnection(Connection* c) {}
+	void Initialize(Projection* Projection);
+	void SetProjection(Projection* c) {}
 	void Simulate(UnitModifier* e) {}
 	void Modify();
 	void Clear();
@@ -33,7 +33,7 @@ private:
 	
 	//map<long, map<long, SynapseStandard> > m_hashSynapses;
 
-	Connection* m_connectionFixed;
+	Projection* m_projectionFixed;
 };
 
 #endif

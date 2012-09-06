@@ -23,10 +23,15 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">
+    <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -84,11 +89,15 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <BrowseInformation>true</BrowseInformation>
     </ClCompile>
     <Lib>
       <AdditionalDependencies>msmpi.lib;libgsl.a;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>C:\Program Files\Microsoft Compute Cluster Pack\Lib\i386;C:\Program Files\Microsoft HPC Pack 2008 SDK\Lib\i386;..\Resources\GnuWin32\Lib</AdditionalLibraryDirectories>
     </Lib>
+    <Bscmake>
+      <PreserveSbr>true</PreserveSbr>
+    </Bscmake>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">
     <ClCompile>
@@ -127,9 +136,9 @@
     <ClCompile Include="Core\Meter.cpp" />
     <ClCompile Include="Core\MPIDistribution.cpp" />
     <ClCompile Include="Core\Network.cpp" />
-    <ClCompile Include="Core\NetworkConnectionDynamic.cpp" />
-    <ClCompile Include="Core\NetworkConnections.cpp" />
-    <ClCompile Include="Core\NetworkConnectionModifier.cpp" />
+    <ClCompile Include="Core\NetworkProjectionDynamic.cpp" />
+    <ClCompile Include="Core\NetworkProjections.cpp" />
+    <ClCompile Include="Core\NetworkProjectionModifier.cpp" />
     <ClCompile Include="Core\NetworkPopulationModifier.cpp" />
     <ClCompile Include="Core\NetworkUnitModifier.cpp" />
     <ClCompile Include="Core\NetworkPopulation.cpp" />
@@ -174,9 +183,9 @@
     <ClInclude Include="Core\Meter.h" />
     <ClInclude Include="Core\MPIDistribution.h" />
     <ClInclude Include="Core\Network.h" />
-    <ClInclude Include="Core\NetworkConnectionDynamic.h" />
-    <ClInclude Include="Core\NetworkConnections.h" />
-    <ClInclude Include="Core\NetworkConnectionModifier.h" />
+    <ClInclude Include="Core\NetworkProjectionDynamic.h" />
+    <ClInclude Include="Core\NetworkProjections.h" />
+    <ClInclude Include="Core\NetworkProjectionModifier.h" />
     <ClInclude Include="Core\NetworkPopulationModifier.h" />
     <ClInclude Include="Core\NetworkUnitModifier.h" />
     <ClInclude Include="Core\NetworkPopulation.h" />

@@ -2,19 +2,19 @@
 #include "NetworkMI.h"
 #include "NetworkCorr.h"
 
-void ConnectionModifierMDS::SetConnection(Connection* c)
+void ProjectionModifierMDS::SetProjection(Projection* c)
 {
-	m_connectionFixed = (ConnectionFixed*)c;
+	m_projectionFixed = (ProjectionFixed*)c;
 }
 
-void ConnectionModifierMDS::Modify()
+void ProjectionModifierMDS::Modify()
 {
 	if(IsOn() == false) return;
 	if(prn == 0 || sprn == 0) return;
 
 	TimingStart(m_name);
 
-	vector<long> localIdsPost = m_connectionFixed->GetPostLocalIds();
+	vector<long> localIdsPost = m_projectionFixed->GetPostLocalIds();
 
 	LayerMDS* layerMDS = (LayerMDS*)(m_parentPopulationModifier[0]);
 	m_Xi = layerMDS->GetCurrentXi();
@@ -25,13 +25,13 @@ void ConnectionModifierMDS::Modify()
 
 	if(m_usePearson == true)
 	{
-		ConnectionModifierPearson* e = (ConnectionModifierPearson*)m_connectionFixed->GetEvent("pearson");
+		ProjectionModifierPearson* e = (ProjectionModifierPearson*)m_projectionFixed->GetEvent("pearson");
 		miDij = e->GetRij();
 	}
 	else
 	{
-		ConnectionModifierMIHypercolumn* e = (ConnectionModifierMIHypercolumn*)m_connectionFixed->GetEvent("mihypercolumn");
-		miDij = e->GetDij();//((ConnectionModifierMIHypercolumn*)m_childConnectionModifier[0])->GetDij();//m_MI->GetDij();
+		ProjectionModifierMIHypercolumn* e = (ProjectionModifierMIHypercolumn*)m_projectionFixed->GetEvent("mihypercolumn");
+		miDij = e->GetDij();//((ProjectionModifierMIHypercolumn*)m_childProjectionModifier[0])->GetDij();//m_MI->GetDij();
 	}
 
 	float meanddij = 0;
@@ -99,7 +99,7 @@ void ConnectionModifierMDS::Modify()
 					diffXi[j][d] -= ddij*((*m_Xi)[j][d]-(*m_Xi)[iIndex][d]);
 
 					// if...
-					//	Xm[d]+= Xi_i[d]; // only be done on one connection from hc
+					//	Xm[d]+= Xi_i[d]; // only be done on one Projection from hc
 				}
 			}
 		}
@@ -111,7 +111,7 @@ void ConnectionModifierMDS::Modify()
 	TimingStop(m_name);
 }
 
-void ConnectionModifierMDS::TranslateToOrigin(vector<float> XmTot)
+void ProjectionModifierMDS::TranslateToOrigin(vector<float> XmTot)
 {
 	for(int d=0;d<m_mdsDim;d++) 
 	{
@@ -124,7 +124,7 @@ void ConnectionModifierMDS::TranslateToOrigin(vector<float> XmTot)
 	meands = 0;
 }
 
-void ConnectionModifierMDS::AddParentPopulationModifier(PopulationModifier* e)
+void ProjectionModifierMDS::AddParentPopulationModifier(PopulationModifier* e)
 {
 	m_parentPopulationModifier.push_back(e);
 	m_mdsDim = ((LayerMDS*)e)->GetDimension();
@@ -193,6 +193,6 @@ void LayerMDS::Simulate()
 	TimingStop(m_name);
 }
 
-void ConnectionModifierMDS::Dispose()
+void ProjectionModifierMDS::Dispose()
 {
 }

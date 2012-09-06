@@ -1,23 +1,27 @@
 #pragma once
 #include "Network.h"
-#include "NetworkConnections.h"
+#include "NetworkProjections.h"
 
-// Parameter-handling:
-// Used so that it is possible to specify an input vector to a network construction
-// and let the network run independent runs for all parameters.
-// Ex:
-// paramMaxWeightValues = {0.2,0.3,0.4};
-// fullConnectivity->SetRandomWeights(0, paramMaxWeightValues);
-//
-// extend:  with e.g. boost.bind, boost.function, replace type with template,
-//			optimize parameters wrt fitness function
-//
 class FullConnectivity;
+
+/// <summary>	Network parameters. 
+/// 	
+///	Used so that it is possible to specify an input vector to a network construction
+/// and let the network run independent runs for all parameters.
+/// Ex:
+/// paramMaxWeightValues = {0.2,0.3,0.4};
+/// fullConnectivity->SetRandomWeights(0, paramMaxWeightValues);
+/// 
+/// extend:  with e.g. boost.bind, boost.function, replace type with template,
+/// 		optimize parameters wrt fitness function
+/// 
+/// </summary>
 
 class NetworkParameters
 {
 
 public:
+
 	NetworkParameters()
 	{
 		m_currentStep = 0;

@@ -5,21 +5,21 @@
 #include <string>
 #include "Network.h"
 #include "NetworkPopulation.h"
-#include "NetworkConnectionModifier.h"
+#include "NetworkProjectionModifier.h"
 #include "NetworkUnits.h"
 
 class Network;
 class Population;
-class ConnectionModifier;
+class ProjectionModifier;
 class Unit;
 
-class Connection;
-class ConnectionFixed;
+class Projection;
+class ProjectionFixed;
 class UnitModifier;
 
 using namespace std;
 
-// Note: if symmetric connections (ie for random connectivities), they needs to be constructed specifically for each connectivity type (if not by default, ie full connectivity), not implemented in any generic way
+// Note: if symmetric Projections (ie for random connectivities), they needs to be constructed specifically for each connectivity type (if not by default, ie full connectivity), not implemented in any generic way
 
 class Connectivity : public NetworkObject
 {
@@ -37,36 +37,36 @@ public:
 	
 	virtual void Initialize()
 	{		
-		InitializeWeightsAndConnectionModifiers();
+		InitializeWeightsAndProjectionModifiers();
 	}
 
-	virtual void InitializeWeightsAndConnectionModifiers();
+	virtual void InitializeWeightsAndProjectionModifiers();
 
-	virtual void MakeConnectionsSymmetric(vector<vector<long> >* preCache,vector<long>* postCache, ConnectionFixed* conn);
+	virtual void MakeProjectionsSymmetric(vector<vector<long> >* preCache,vector<long>* postCache, ProjectionFixed* conn);
 
 	virtual bool ExtraConstraints(Unit* preUnit, Unit* postUnit)// allows constraint on unit property level
 	{
 		return true;
 	}
 
-	virtual bool IterationPreConstraint(Unit* postUnit,int currentIndex, int currentHcIndex)		// faster to use for random connections etc that are only dependent on current iteration number or less
+	virtual bool IterationPreConstraint(Unit* postUnit,int currentIndex, int currentHcIndex)		// faster to use for random Projections etc that are only dependent on current iteration number or less
 	{
 		return true;
 	}
 
-	virtual int IterationAdvance()								// fast way to put constraint on connections (but cannot use any properties)
+	virtual int IterationAdvance()								// fast way to put constraint on Projections (but cannot use any properties)
 	{
 		return 0;
 	}
 
-	virtual vector<long> IterationSpecificIndexes(Unit* postUnit, vector<int> nrPreRateUnits)				// fast way to build connections between post and only specifically generated pre indexes (but cannot use any properties)
+	virtual vector<long> IterationSpecificIndexes(Unit* postUnit, vector<int> nrPreRateUnits)				// fast way to build Projections between post and only specifically generated pre indexes (but cannot use any properties)
 	{
 		return vector<long>(); // needs to be sorted lowest to highest!
 	}
 	
-	virtual void GlobalSettings() { }; // can be used to initialize things such as global indexes before connections are built
+	virtual void GlobalSettings() { }; // can be used to initialize things such as global indexes before Projections are built
 	
-	//virtual bool SetConnections();
+	//virtual bool SetProjections();
 
 	void SetPreAndPost(Population* pre, Population* post)
 	{
@@ -74,9 +74,9 @@ public:
 		m_post = post;
 	}
 
-	void AddConnectionsEvent(ConnectionModifier* e)
+	void AddProjectionsEvent(ProjectionModifier* e)
 	{
-		m_eventConnections.push_back(e);
+		m_eventProjections.push_back(e);
 	}
 
 	void AddUnitsProperty(UnitModifier* p)
@@ -96,7 +96,7 @@ public:
 	virtual void SetWeightValues(long preId, long postId) {};
 	//virtual void SetWeightValues(Unit* pre, Unit* post) = 0;
 
-	virtual void ExtraPostUnit(Unit* postUnit,Connection* conn) { }
+	virtual void ExtraPostUnit(Unit* postUnit,Projection* conn) { }
 
 	// Multiple parameters implementation
 	virtual void AddParameters() { }
@@ -116,12 +116,12 @@ protected:
 
 	string m_unitType;
 
-	vector<ConnectionModifier*> m_eventConnections;
+	vector<ProjectionModifier*> m_eventProjections;
 	vector<UnitModifier*> m_unitsProperties;
 	bool m_symmetric;
 };
 
-// can be used to initialize connections that will be copied from another connectivity later on
+// can be used to initialize Projections that will be copied from another connectivity later on
 class EmptyConnectivity : public virtual Connectivity
 {
 public:
@@ -129,10 +129,10 @@ public:
 	{
 		m_unitType = "";
 		m_name = "EmptyConnectivity";
-		m_useIterationSpecificIndexes = true; // will return empty vector of connections to build
+		m_useIterationSpecificIndexes = true; // will return empty vector of Projections to build
 	}
 
-	void ExtraPostUnit(Unit* postUnit,Connection* conn);
+	void ExtraPostUnit(Unit* postUnit,Projection* conn);
 
 private:
 };
@@ -147,7 +147,7 @@ public:
 	{
 		m_unitType = "";
 		m_name = "FullConnectivity";
-		m_allowSelfConnections = true;
+		m_allowSelfProjections = true;
 		m_setRandomWeights = true;
 		m_weightsMinVal = 0;
 		m_weightsMaxVal = 1;
@@ -155,10 +155,10 @@ public:
 		m_useExtraConstraint = false;
 	}
 
-	FullConnectivity(bool allowSelfConnections, string unitType)
+	FullConnectivity(bool allowSelfProjections, string unitType)
 	{
 		m_name = "FullConnectivity";
-		m_allowSelfConnections = allowSelfConnections;
+		m_allowSelfProjections = allowSelfProjections;
 		m_unitType = unitType;//m_unitType = "";
 		m_setRandomWeights = false;//true;
 		m_weightsMinVal = 0;
@@ -186,7 +186,7 @@ public:
 		m_weightsMaxVal = maxVal;
 	}
 
-	// currently need to supply network as that may be set first when connection made (could supply in constructor instead)
+	// currently need to supply network as that may be set first when Projection made (could supply in constructor instead)
 	void SetRandomWeights(vector<float> minVal, float maxVal,Network* net);
 	void SetRandomWeights(float minVal, vector<float> maxVal,Network* net);
 
@@ -222,7 +222,7 @@ protected:
 
 	bool m_setRandomWeights;
 	bool m_setRandomDelays;
-	bool m_allowSelfConnections;
+	bool m_allowSelfProjections;
 
 	float m_weightsMinVal, m_weightsMaxVal;
 	float m_delaysMinVal, m_delaysMaxVal;
@@ -277,7 +277,7 @@ public:
 	{
 		m_unitType = "";
 		m_name = "FullConnectivityNoLocalHypercolumns";
-		m_allowSelfConnections = true;
+		m_allowSelfProjections = true;
 		m_setRandomWeights = true;
 		m_weightsMinVal = 0;
 		m_weightsMaxVal = 1;
@@ -343,17 +343,17 @@ private:
 	int m_nrIns;
 };
 
-class Connection : public NetworkObject
+class Projection : public NetworkObject
 {
 public:
 
-	Connection()
+	Projection()
 	{
 		m_keepActiveBuffer = false;
 	}
 
-	~Connection();
-	void SetConnection(Unit* pre, Unit* post);
+	~Projection();
+	void SetProjection(Unit* pre, Unit* post);
 	void Initialize(Population* pre, Population* post)
 	{
 		m_preLayer = pre;
@@ -368,25 +368,24 @@ public:
 	void SetRandomWeightsIn(long localPostIndex, float minVal, float maxVal);
 	void SetRandomWeightsOut(long localPreIndex, float minVal, float maxVal);
 	
-	vector<ConnectionModifier*> GetConnectionModifiers()
+	vector<ProjectionModifier*> GetProjectionModifiers()
 	{
 		return m_events;
 	}
 
-	ConnectionModifier* GetEvent(string hashName)
+	ProjectionModifier* GetEvent(string hashName)
 	{
 		return m_hashEvents[hashName];
 	}
 
-	void AddEvent(ConnectionModifier* e, string hashName);
+	void AddEvent(ProjectionModifier* e, string hashName);
 
 	virtual void SimulateEvent(UnitModifier* e) = 0;
-	virtual void ModifyConnection() = 0;
-	//virtual void AddConnection(Unit* pre, Unit* post, bool firstRun) = 0;
+	virtual void ModifyProjection() = 0;
 	virtual void GenerateHashTables();
 
-	void AddConnection(long preId, long postId, long postLocalId, bool firstRun);
-	void AddConnections(vector<long> preIds, long postId, long postLocalId); // faster version - will speed up further by removing vectors of post ids
+	void AddProjection(long preId, long postId, long postLocalId, bool firstRun);
+	void AddProjections(vector<long> preIds, long postId, long postLocalId); // faster version - will speed up further by removing vectors of post ids
 
 	Population* PreLayer()
 	{
@@ -404,7 +403,7 @@ public:
 	vector<float> GetPostValues();
 	vector<long> GetPostLocalIds();
 	vector<long> GetPostIds();
-	vector<long>* GetPreIdsAll();//Union(); // in case of changing pre ids over time, this should be allowed to vary, otherwise keep static
+	vector<long>* GetPreIdsAll(); // in case of changing pre ids over time, this should be allowed to vary, otherwise keep static
 	void CreatePreIdsUnion();
 
 	void SetConnectivity(Connectivity* connectivityType)
@@ -417,120 +416,19 @@ public:
 		return m_connectivityType;
 	}
 
-	//vector<long>* GetPostIds(long preId);
-
 	vector<long> GetPreIds(long unitId);
-	//vector<pair<long,float> >* GetPreIdsActive(long unitId); // gets only the active (from buffer) units
 	vector<pair<long,float> >* GetPreIdsActiveLocal(long unitId);
-
-	/*vector<vector<long>* > GetPreIds()
-	{
-		return m_listPosts;
-	}*/
-
-	/*void AddWeight(float weight, int index)
-	{
-		if(m_weights.size()<=index)
-			m_weights.push_back(weight);
-		else
-			m_weights[index] = weight;
-	}*/
-
-	// will be removed
-/*	void SetWeight(float weight, long preId, long postId)
-	{
-		((Network*)network())->SetWeight(weight, preId, postId);
-		//m_hashWeights[postId][preId] = weight;
-		//((this->network()->GetHashSynapses()))[preId][postId].weight = weight;//m_hashSynapses[preId][postId].weight = weight;
-	}
-	
-	// will be removed
-	void SetDelay(float delay, long preId, long postId)
-	{
-		network()->SetDelay(delay, preId, postId);
-
-		//(*(this->network()->GetHashSynapses()))[preId][postId].delay = delay;//m_hashSynapses[preId][postId].delay = delay;
-	}
-
-	float GetDelay(long preId, long postId)
-	{
-		return network()->GetDelay(preId,postId);
-		//return (*this->network()->GetHashSynapses())[preId][postId].delay;
-		//return m_hashSynapses[preId][postId].delay;
-		//return m_listSynapses[preId][postId].delay;
-	}
-
-	float GetWeight(long preId, long postId)
-	{
-		return network()->GetWeight(preId,postId);
-		//return (*this->network()->GetHashSynapses())[preId][postId].weight;
-		//return m_hashSynapses[preId][postId].weight;
-		//return m_hashWeights[postId][preId];
-		//return m_listSynapses[preId][postId].weight;
-	}
-	*/
-
-	/*void SetWeight(float weight, long preId, long postId);
-	void SetDelay(float delay, long preId, long postId);
-	float GetWeight(long preId, long postId);
-	float GetDelay(long preId, long postId);
-	*/
-
-			/*map<long,map<long,float> >::iterator itr;
-
-		if ( (itr = m_hashWeights.find(postId)) != m_hashWeights.end())
-		{
-			map<long,float>::iterator itr2;
-
-			if ( (itr2 = m_hashWeights[postId].find(preId)) != m_hashWeights[postId].end())
-				return true;
-			else
-				return false;
-		}
-		else
-			return false;
-		*/
-
-	// could send from which population
-	/*bool ConnectionExists(long preId, long postId)
-	{
-
-
-		if(m_listPosts.size() == 0)
-			return false;
-
-		if(preId>m_listPosts.size()-1)
-			return false;
-
-		vector<long>* posts = m_listPosts[preId];
 		
-		for(unsigned int i=0;i<posts->size();i++)
-		{
-			if((*posts)[i] == postId)
-				return true;
-		}
-
-		return false;
-	}*/
-
 	void Clear();
 	void Clear(long postId);
 
-
-	// will be removed anytime (!)
-	/*vector<long>* PostIds() 
-	{ 
-		return &m_postIds;
-	}*/
-
-	/*vector<vector<long> >* PreIds() 
-	{ 
-		return &m_preIds;
-	}*/
-
 	std::vector<std::vector<float> > GetValuesToRecord();
-	
-	void CopyConnectionsOtherPost(Population* newPost);
+
+	// Copy all weight values to another connectivity
+	void CopyProjectionsOtherPost(Population* newPost);
+
+	// Set all weights to the same value
+	void SetWeightValues(float value);
 
 	void SetRecording(bool on, int samplingRate) // sampling rate over 0 then weights evolution stored
 	{
@@ -546,12 +444,12 @@ public:
 	void AddUnitsProperty(UnitModifier* p)
 	{
 		if(p!=NULL) // can set to NULL to not use any
-			m_unitPropertiesConnection.push_back(p);
+			m_unitPropertiesProjection.push_back(p);
 	}
 
-	vector<UnitModifier*>* GetUnitPropertiesConnection()
+	vector<UnitModifier*>* GetUnitPropertiesProjection()
 	{
-		return &m_unitPropertiesConnection;
+		return &m_unitPropertiesProjection;
 	}
 
 	UnitModifier* GetUnitModifier(int id);
@@ -588,32 +486,22 @@ protected:
 
 	bool m_allowPreIdsChanges;
 	bool m_keepActiveBuffer;
-	long m_totalNrLocalConnections;
+	long m_totalNrLocalProjections;
 	
-	//ConnectionType* m_connection;
-	vector<ConnectionModifier*> m_events;
-	map<string,ConnectionModifier*> m_hashEvents;
+	//ProjectionType* m_projection;
+	vector<ProjectionModifier*> m_events;
+	map<string,ProjectionModifier*> m_hashEvents;
 	map<long,long,string> m_hashIdEvents;
 
-	vector<UnitModifier*> m_unitPropertiesConnection; // can also be on a unit or layer level
+	vector<UnitModifier*> m_unitPropertiesProjection; // can also be on a unit or layer level
 	
-//	map<long,map<long,float> > m_hashWeights; // <post id, <pre id, weight> >, map could be replace by faster/more memory efficient hash class or list
-	
-	
-	//vector<vector<SynapseStandard> > m_listSynapses; // id-based list of synapses [preId, list of synapses]
-	//vector<vector<long>* > m_listPosts; // id-based list of post ids [preId, list of post ids]
-
 	vector<long> m_postIds;
 	vector<long> m_preIdsUnion; // collection of all pre ids for all post ids, should be allowed to change over time e.g. if structural plasticity is taking place
 
-	//vector<vector<long> > m_preIds; // index-based (wrt position in m_postIds) - used anymore?
-
-	
 	vector<vector<pair<long,float> > > m_preIdsActive; // accessed by local unit id
 
 #if USE_UNORDERED_MAP == 1
 	unordered_map<long, vector<long> > m_preIds;
-//	unordered_map<long, vector<pair<long, float> > > m_preIdsActive;
 #if USE_HASHED_ACTIVE_COMMUNICATION == 1
 	unordered_map<long, vector<long> > m_postIdsPre;
 	unordered_map<long, vector<long> > m_localPostIdsPre;
@@ -621,8 +509,6 @@ protected:
 
 #else
 	map<long, vector<long> > m_preIds; // id-based (wrt position in m_postIds) - used anymore?
-//	map<long, vector<pair<long,float> > > m_preIdsActive;
-
 #if USE_HASHED_ACTIVE_COMMUNICATION == 1
 	map<long, vector<long> > m_postIdsPre;
 	map<long, vector<long> > m_localPostIdsPre;
@@ -632,38 +518,20 @@ protected:
 
 	int m_storeSamplingWeightsEvolution; // 0 if not, otherwise store by this rate (1 highest resolution)
 	int m_storeSamplingCounter;
+
 	// could place in parent
 	vector<vector<float> > m_recordedValues;
 };
 
-class ConnectionFixed : public Connection
+class ProjectionFixed : public Projection
 {
 public:
 
-/*	void SetWeight(float weight, long connectionId)
-	{
-		m_hashWeights[connectionId] = weight;
-	}*/
-
-	/*void SetWeight(float weight)
-	{
-		m_weight = weight;
-	}
-
-	float GetWeight()
-	{
-		return m_weight;
-	}*/
-
 	void SimulateEvent(UnitModifier* e);
-	void ModifyConnection();
-
-	//void AddConnection(Unit* pre, Unit* post, bool firstRun);
+	void ModifyProjection();
 	
 protected:
 
-	//float m_weight;
-	
 };
 
 

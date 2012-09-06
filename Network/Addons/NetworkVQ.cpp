@@ -786,41 +786,41 @@ int LayerVQ::CSL_GetClosestCodeVectorIndex(vector<float> data, vector<vector<flo
 ///////////////////////////////////////////////////////////////////////////////
 
 
-void ConnectionModifierVQ::Modify()
+void ProjectionModifierVQ::Modify()
 {
 	TimingStart(m_name);
 
-	m_layerVQ->ModifyConnections(m_connection);
+	m_layerVQ->ModifyProjections(m_projection);
 	
 	TimingStop(m_name);
 }
 
-ConnectionModifierVQ::ConnectionModifierVQ(LayerVQ* layerVQ)
+ProjectionModifierVQ::ProjectionModifierVQ(LayerVQ* layerVQ)
 {
 	m_eventId = 5; // unique id
 	m_layerVQ = layerVQ;
-	m_name = "ConnectionModifierVQ";
+	m_name = "ProjectionModifierVQ";
 }
 
-ConnectionModifierVQ* LayerVQ::GetConnectionModifier()
+ProjectionModifierVQ* LayerVQ::GetProjectionModifier()
 {
-	return m_eventConnectionVQ;
+	return m_eventProjectionVQ;
 }
 
 
-// replace AddConnection to AddConnections etc
-void LayerVQ::ModifyConnections(Connection* connections)
+// replace AddProjection to AddProjections etc
+void LayerVQ::ModifyProjections(Projection* Projections)
 {
 	if(IsOn())
 	{
 		if(m_type == LayerVQ::VQStandard)
 			m_totalWinnersUnits = m_population->MPI()->MPILayerGatherVariables(m_winnersUnits);
 
-		PopulationColumns* post = (PopulationColumns*)connections->PostLayer();
-		PopulationColumns* pre = (PopulationColumns*)connections->PreLayer();
+		PopulationColumns* post = (PopulationColumns*)Projections->PostLayer();
+		PopulationColumns* pre = (PopulationColumns*)Projections->PreLayer();
 
 		// rebuild connectivity
-		connections->Clear();
+		Projections->Clear();
 		vector<Unit*> postUnits = post->GetLocalRateUnits();
 
 		vector<int> attachedHypercolumns;
@@ -838,26 +838,26 @@ void LayerVQ::ModifyConnections(Connection* connections)
 			{
 				vector<Hypercolumn*> hypercolumns = pre->GetHypercolumns();
 
-				// check if connections are between hypercolumns or minicolumns
+				// check if Projections are between hypercolumns or minicolumns
 				// fix
 				
 				int nrWinners = 0;
-				//if(m_hasCheckedPreConnections == false)
+				//if(m_hasCheckedPreProjections == false)
 				//{
 					
 					for(int i=0;i<m_totalWinnersUnits.size();i++)
 						nrWinners+=m_totalWinnersUnits[i].size();
 
 					//if(hypercolumns.size() != nrWinners) // always true atm
-						m_isRateUnitPreConnections = true;
+						m_isRateUnitPreProjections = true;
 
-					m_hasCheckedPreConnections = true;
+					m_hasCheckedPreProjections = true;
 				//}
 
 				vector<RateUnit*> minicolumns;
 				vector<long> minicolumns2;
 
-				if(m_isRateUnitPreConnections == true)
+				if(m_isRateUnitPreProjections == true)
 				{
 					minicolumns = pre->GetRateUnits();
 					
@@ -875,12 +875,12 @@ void LayerVQ::ModifyConnections(Connection* connections)
 							minicolumns2.push_back(attachedHypercolumns[j] + pre->GetUnitsStartId());
 						}
 
-						//connections->AddConnection(minicolumns[attachedHypercolumns[j]]->GetUnitId(),postUnits[i]->GetUnitId(),false);
+						//Projections->AddProjection(minicolumns[attachedHypercolumns[j]]->GetUnitId(),postUnits[i]->GetUnitId(),false);
 					}
 
-					connections->AddConnections(minicolumns2,postUnits[i]->GetUnitId(), postUnits[i]->GetUnitIdLocal());
+					Projections->AddProjections(minicolumns2,postUnits[i]->GetUnitId(), postUnits[i]->GetUnitIdLocal());
 					for(int j=0;j<minicolumns2.size();j++)
-						connections->GetConnectivity()->SetWeightValues(minicolumns2[j],postUnits[i]->GetUnitId());
+						Projections->GetConnectivity()->SetWeightValues(minicolumns2[j],postUnits[i]->GetUnitId());
 					// not setting the weight or delay values in synapses hash - these will by default be 0
 				}
 				else
@@ -892,13 +892,13 @@ void LayerVQ::ModifyConnections(Connection* connections)
 						for(int m=0;m<minicolumns.size();m++)
 						{
 							minicolumns2.push_back(minicolumns[m]->GetUnitId());
-							//connections->AddConnection(minicolumns[m]->GetUnitId(),postUnits[i]->GetUnitId(),false);
+							//Projections->AddProjection(minicolumns[m]->GetUnitId(),postUnits[i]->GetUnitId(),false);
 						}
 					}
 
-					connections->AddConnections(minicolumns2,postUnits[i]->GetUnitId(),postUnits[i]->GetUnitIdLocal());
+					Projections->AddProjections(minicolumns2,postUnits[i]->GetUnitId(),postUnits[i]->GetUnitIdLocal());
 					for(int j=0;j<minicolumns2.size();j++)
-						connections->GetConnectivity()->SetWeightValues(minicolumns2[j],postUnits[i]->GetUnitId());
+						Projections->GetConnectivity()->SetWeightValues(minicolumns2[j],postUnits[i]->GetUnitId());
 					// not setting the weight or delay values in synapses hash - these will by default be 0
 				}
 			}
@@ -911,7 +911,7 @@ void LayerVQ::ModifyConnections(Connection* connections)
 		}
 
 		// not used anymore
-		//connections->GenerateHashTables(); // move to specific location
+		//Projections->GenerateHashTables(); // move to specific location
 	}
 }
 
@@ -971,7 +971,7 @@ vector<vector<float> > LayerVQ::GetValuesToRecord()
 
 }*/
 
-void CSL::Initialize(vector<vector<float> >* x, int nrCodeVectors, int mpiRank, int mpiSize, bool printOutResult, NetworkObject* parent, MPI_Comm comm)
+void CSL::Initialize(vector<vector<float> >* x, int nrCodeVectors, int mpiRank, int mpiSize, bool printOutResult, NetworkObject* parent, MPI_Comm comm, int selectionNrs)
 {
 	m_parent = parent;
 	m_useSelection = true;
@@ -1047,16 +1047,20 @@ void CSL::Initialize(vector<vector<float> >* x, int nrCodeVectors, int mpiRank, 
 		cout<<"CSL_Initiate complete.\n";
 	}
 
-	// Selection sizes (declining)
+	// Selection sizes (declining, determine number by input selectionNrs, default 3)
 	for(int i=m_c.size()-m_c.size()/2; i>0; i--)
 	{
 		m_S.insert(m_S.end(),i);
-		if(m_S.size()<m_x->size())
+
+		for(int m=0;m<selectionNrs;m++)
+		{
+			if(m_S.size()<m_x->size())
+				m_S.insert(m_S.end(),i);
+		}
+		/*if(m_S.size()<m_x->size())
 		m_S.insert(m_S.end(),i);
 		if(m_S.size()<m_x->size())
-		m_S.insert(m_S.end(),i);
-		if(m_S.size()<m_x->size())
-		m_S.insert(m_S.end(),i);
+		m_S.insert(m_S.end(),i);*/
 	}
 
 	m_M = 0; // Selection time step index
@@ -1762,27 +1766,30 @@ int CSL::GetClosestCodeVectorIndex(vector<float> data, vector<vector<float> > co
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////// ConnectionModifierCSL: 
+//////////////// ProjectionModifierCSL: 
 //////////////// CSL usage as feature extractor in multiple hypercolumns (simultaneously, in parallel)
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-ConnectionModifierCSL::ConnectionModifierCSL()
+ProjectionModifierCSL::ProjectionModifierCSL()
 {
 	m_eventId = 9;
 
+	m_eta = 0.01f;
+	m_epsilon = 0.01;
+
 	m_transferFunction = new TransferCSL();
 	m_maxPatterns = 0;
-	m_name = "ConnectionModifierCSL";
+	m_name = "ProjectionModifierCSL";
 }
 
-void ConnectionModifierCSL::Initialize(Connection* connection)
+void ProjectionModifierCSL::Initialize(Projection* Projection)
 {
-	network(connection->network());
-	vector<float> postValues = m_connectionFixed->GetPostValues();
+	network(Projection->network());
+	vector<float> postValues = m_projectionFixed->GetPostValues();
 
-	m_connectionFixed = connection;
-	m_idsPost = m_connectionFixed->GetPostIds();
+	m_projectionFixed = Projection;
+	m_idsPost = m_projectionFixed->GetPostIds();
 
 	for(int i=0;i<m_idsPost.size();i++)
 	{
@@ -1791,8 +1798,8 @@ void ConnectionModifierCSL::Initialize(Connection* connection)
 	}
 
 	// build communicators for output hypercolumns
-	m_connectionFixed->PostLayer()->MPI()->MPICreateCommsHypercolumns();
-	vector<MPI_Comm*> commsAll = m_connectionFixed->PostLayer()->MPI()->MPIGetCommHCs(); // should locally only create the needed comms
+	m_projectionFixed->PostLayer()->MPI()->MPICreateCommsHypercolumns();
+	vector<MPI_Comm*> commsAll = m_projectionFixed->PostLayer()->MPI()->MPIGetCommHCs(); // should locally only create the needed comms
 
 	bool allSame = true;
 	for(int i=1;i<commsAll.size();i++)
@@ -1818,7 +1825,7 @@ void ConnectionModifierCSL::Initialize(Connection* connection)
 	for(int i=0;i<m_idsPost.size();i++)
 	{
 		int hcId = ((RateUnit*)network()->GetUnitFromId(m_idsPost[i]))->GetHypercolumnId();
-		int hcIndex = ((Hypercolumn*)network()->GetUnitFromId(hcId))->GetUnitIdLocal();//m_connectionFixed->PostLayer()->
+		int hcIndex = ((Hypercolumn*)network()->GetUnitFromId(hcId))->GetUnitIdLocal();//m_projectionFixed->PostLayer()->
 
 		bool contains = false;
 		int index=-1;
@@ -1840,7 +1847,7 @@ void ConnectionModifierCSL::Initialize(Connection* connection)
 				m_comms.push_back(commsAll[((Hypercolumn*)network()->GetUnitFromId(hcId))->GetUnitIdLocal()]);//m_comms.size()]);// commsAll[hcIndexes.size()-1]); //this ok?
 				//m_comms.push_back(commsAll[hcIndex]);
 			hcAllIndexes.push_back(1);//hcIndex);
-			//nrCodeVectors.push_back(m_connectionFixed->PostLayer()->GetStructure()[hcIndex]);
+			//nrCodeVectors.push_back(m_projectionFixed->PostLayer()->GetStructure()[hcIndex]);
 			nrCodeVectors.push_back(((Hypercolumn*)network()->GetUnitFromId(hcId))->GetTotalNrRateUnits()); // nr minicolumns in hypercolumn
 		}
 		else
@@ -1849,19 +1856,19 @@ void ConnectionModifierCSL::Initialize(Connection* connection)
 
 	for(int i=0;i<hcIndexes.size();i++)
 	{
-		CSL* csl = new CSL();
+		CSL* csl = new CSL(m_epsilon,m_eta);
 		csl->SetMPIParameters(this->network()->MPIGetNodeId(), this->network()->MPIGetNrProcs());
 		m_csl.push_back(csl);
 		vector<vector<float> > data;
 		m_x.push_back(data);
 
-		vector<long> nodeIds = ((PopulationColumns*)m_connectionFixed->PostLayer())->GetNodeIndexes(hcIndexes[i]);
-		//vector<int> locSize(nodeIds.size());
-		//for(int m=0;m<locSize.size();m++) locSize[m] = nodeIds[m];
-		m_mpiLocSize.push_back(nodeIds.size());
+		vector<long> processIds = ((PopulationColumns*)m_projectionFixed->PostLayer())->GetNodeIndexes(hcIndexes[i]);
+		//vector<int> locSize(processIds.size());
+		//for(int m=0;m<locSize.size();m++) locSize[m] = processIds[m];
+		m_mpiLocSize.push_back(processIds.size());
 		int mpiRank = this->network()->MPIGetNodeId();
-//		cout<<nodeIds.size()<<" ";cout.flush();
-		m_mpiLocRank.push_back(mpiRank-nodeIds[0]); // assume a linear distribution of nodes
+//		cout<<processIds.size()<<" ";cout.flush();
+		m_mpiLocRank.push_back(mpiRank-processIds[0]); // assume a linear distribution of nodes
 		m_firstRun.push_back(true);
 	}
 
@@ -1871,12 +1878,12 @@ void ConnectionModifierCSL::Initialize(Connection* connection)
 	m_hcAllIndexes = hcAllIndexes;
 }
 
-void ConnectionModifierCSL::SetConnection(Connection* c)
+void ProjectionModifierCSL::SetProjection(Projection* c)
 {
-	m_connectionFixed = (ConnectionFixed*)c;
+	m_projectionFixed = (ProjectionFixed*)c;
 }
 
-void ConnectionModifierCSL::SaveState()
+void ProjectionModifierCSL::SaveState()
 {
 	for(int i=0;i<m_csl.size();i++)
 	{
@@ -1884,7 +1891,7 @@ void ConnectionModifierCSL::SaveState()
 	}
 }
 
-void ConnectionModifierCSL::LoadState()
+void ProjectionModifierCSL::LoadState()
 {
 	for(int i=0;i<m_csl.size();i++)
 	{
@@ -1892,7 +1899,7 @@ void ConnectionModifierCSL::LoadState()
 	}
 }
 
-void ConnectionModifierCSL::DriftAdaptStep(float eta)
+void ProjectionModifierCSL::DriftAdaptStep(float eta)
 {
 	// not necessary to put in m_x in current impl.
 	for(int i=0;i<m_csl.size();i++)
@@ -1904,7 +1911,7 @@ void ConnectionModifierCSL::DriftAdaptStep(float eta)
 				m_x[i].erase(m_x[i].begin());// remove earliest added
 			}
 
-			vector<float> preValues = m_connectionFixed->GetPreValues(m_mcReprHc[i]);
+			vector<float> preValues = m_projectionFixed->GetPreValues(m_mcReprHc[i]);
 
 			if(preValues.size()>0)
 			{
@@ -1916,7 +1923,7 @@ void ConnectionModifierCSL::DriftAdaptStep(float eta)
 	}
 }
 
-void ConnectionModifierCSL::DriftAdaptStepVector(vector<float> eta)
+void ProjectionModifierCSL::DriftAdaptStepVector(vector<float> eta)
 {
 	// not necessary to put in m_x in current impl.
 	for(int i=0;i<m_csl.size();i++)
@@ -1928,7 +1935,7 @@ void ConnectionModifierCSL::DriftAdaptStepVector(vector<float> eta)
 				m_x[i].erase(m_x[i].begin());// remove earliest added
 			}
 
-			vector<float> preValues = m_connectionFixed->GetPreValues(m_mcReprHc[i]);
+			vector<float> preValues = m_projectionFixed->GetPreValues(m_mcReprHc[i]);
 
 			if(preValues.size()>0)
 			{
@@ -1940,27 +1947,29 @@ void ConnectionModifierCSL::DriftAdaptStepVector(vector<float> eta)
 	}
 }
 
-void ConnectionModifierCSL::Modify()
+void ProjectionModifierCSL::Modify()
 {
 	TimingStart(m_name);
 
 	if(IsOn() == false) return;
 
-	int nodeId = m_connectionFixed->PreLayer()->network()->MPIGetNodeId(); // will be put in mpi-class
+	int processId = m_projectionFixed->PreLayer()->network()->MPIGetNodeId(); // will be put in mpi-class
 
-	if(nodeId == 0)
+	if(processId == 0)
 	{
 		cout<<".";
 		cout.flush();
 	}
 
-	vector<float> postValues = m_connectionFixed->GetPostValues();
-	vector<vector<long> >* preIds;// = m_connectionFixed->PreIds(); // move to initializer (until Invalidate().. called)
+	//vector<float> postValues = m_projectionFixed->GetPostValues();
+	
+	vector<vector<long> >* preIds;// = m_projectionFixed->PreIds(); // move to initializer (until Invalidate().. called)
 
 	long preId, postId;
 	float weight;
 	double totWeights;
 	float dw;
+
 
 	int currentIndex = 0;
 	for(int i=0;i<m_csl.size();i++) // go through all csl:s this process is involved with
@@ -1972,7 +1981,7 @@ void ConnectionModifierCSL::Modify()
 				m_x[i].erase(m_x[i].begin());// remove earliest added
 			}
 
-			vector<float> preValues = m_connectionFixed->GetPreValues(m_mcReprHc[i]);
+			vector<float> preValues = m_projectionFixed->GetPreValues(m_mcReprHc[i]);
 
 			if(preValues.size()>0)
 			{
@@ -2023,7 +2032,7 @@ void ConnectionModifierCSL::Modify()
 
 						int indexInHc = m_idsIndexInHc[postId]; // to determine which codevector should be assigned to the unit
 
-						vector<long> preIdsPart =  m_connectionFixed->GetPreIds(postId);//m_connectionFixed->GetPreIds(postId); // slower method
+						vector<long> preIdsPart =  m_projectionFixed->GetPreIds(postId);//m_projectionFixed->GetPreIds(postId); // slower method
 
 						if(preIdsPart.size()>0) // ! ?
 							for(int k=0;k<preValues.size();k++)//preIdsPart.size();k++)
@@ -2049,7 +2058,7 @@ void ConnectionModifierCSL::Modify()
 		{
 			postId = m_idsPost[j];
 
-			vector<float> preValues = m_connectionFixed->GetPreValues(m_idsPost[j]);
+			vector<float> preValues = m_projectionFixed->GetPreValues(m_idsPost[j]);
 
 			for(int i=0;i<preValues.size();i++)
 			{
@@ -2092,18 +2101,18 @@ void ConnectionModifierCSL::Modify()
 		m_p[j] = m_p[j] + B*(postValues[j] - m_p[j]);
 		m_b[j] = C*(1/N - m_p[j]);
 
-		((RateUnit*)m_connectionFixed->PostLayer()->network()->GetUnitFromId(m_idsPost[j]))->AddInhibBeta(m_b[j]);
+		((RateUnit*)m_projectionFixed->PostLayer()->network()->GetUnitFromId(m_idsPost[j]))->AddInhibBeta(m_b[j]);
 	}*/
 
 	TimingStop(m_name);
 }
 
 // assumes only one csl instance?
-void ConnectionModifierCSL::UpdateWeights(int i, int currentIndex)
+void ProjectionModifierCSL::UpdateWeights(int i, int currentIndex)
 {
 	// set the incoming weights to the code vectors
 	vector<vector<float> >* cvs = m_csl[i]->GetCodeVectors();
-	vector<float> preValues = m_connectionFixed->GetPreValues(m_mcReprHc[i]);
+	vector<float> preValues = m_projectionFixed->GetPreValues(m_mcReprHc[i]);
 
 	for(int j=0;j<m_hcAllIndexes[i];j++)
 	{
@@ -2112,7 +2121,7 @@ void ConnectionModifierCSL::UpdateWeights(int i, int currentIndex)
 
 		int indexInHc = m_idsIndexInHc[postId]; // to determine which codevector should be assigned to the unit
 
-		vector<long> preIdsPart =  m_connectionFixed->GetPreIds(postId);//m_connectionFixed->GetPreIds(postId); // slower method
+		vector<long> preIdsPart =  m_projectionFixed->GetPreIds(postId);//m_projectionFixed->GetPreIds(postId); // slower method
 
 		if(preIdsPart.size()>0) // ! ?
 			for(int k=0;k<preValues.size();k++)
@@ -2126,6 +2135,6 @@ void ConnectionModifierCSL::UpdateWeights(int i, int currentIndex)
 	}
 }
 
-void ConnectionModifierCSL::Simulate(UnitModifier* e)
+void ProjectionModifierCSL::Simulate(UnitModifier* e)
 {
 }

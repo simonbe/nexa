@@ -140,6 +140,9 @@ public:
 	//Default division, puts different populations on different processes if possible
 	vector<vector<vector<long> > > DivideEqualByTotalUnits(vector<int> nrRateUnits, long currentUnit, long totalNrUnits, int mpiRank,int mpiSize);
 
+	//Default division, puts different populations on different processes if possible
+	vector<vector<vector<long> > > DivideEqualByPopulations(vector<int> nrRateUnits, long currentUnit, long totalNrUnits, int mpiRank,int mpiSize);
+
 
 	void MPICreateCommLayer();
 
@@ -168,9 +171,11 @@ public:
 	vector<vector<float> > MPILayerReduceVariable(vector<vector<float> > data);
 	vector<vector<int> > MPILayerGatherVariables(vector<vector<int> > data);
 
+	void MakeActivityValuesLocal(bool fullLayer = false);
+
 private:
 
-	void MPIMakeValuesLocal(bool fullLayer);
+	
 	MPI_Comm* m_mpiCommLayer;
 	int m_mpiSizeLocal;
 	int m_mpiRankLocal;

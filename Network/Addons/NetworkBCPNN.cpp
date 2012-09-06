@@ -1,23 +1,23 @@
 #include "NetworkBCPNN.h"
 
-void ConnectionModifierBcpnnOnline::Modify()
+void ProjectionModifierBcpnnOnline::Modify()
 {
 	// Add mpimakelayerlocal ?
 	if(IsOn() == false) return;
 
-	int nodeId = m_connectionFixed->PreLayer()->network()->MPIGetNodeId();
+	int processId = m_projectionFixed->PreLayer()->network()->MPIGetNodeId();
 
-	if(nodeId == 0) // will be put in mpi-class
+	if(processId == 0) // will be put in mpi-class
 	{
 		cout<<".";
 		cout.flush();
 	}
 
-	vector<float> postValues = m_connectionFixed->GetPostValues();
+	vector<float> postValues = m_projectionFixed->GetPostValues();
 	vector<float> preValues;
 
-	//vector<long> indexesPost = m_connectionFixed->GetPostLocalIds(); // only need to run once
-	//vector<Unit*> postUnits = m_connectionFixed->
+	//vector<long> indexesPost = m_projectionFixed->GetPostLocalIds(); // only need to run once
+	//vector<Unit*> postUnits = m_projectionFixed->
 	long preId;
 	float weight;
 	float oldWeight;
@@ -25,18 +25,18 @@ void ConnectionModifierBcpnnOnline::Modify()
 
 	// here we assume all posts are connecting to the same pres, if not we should change it so that all possible pres should be calculated (whole layer below)
 
-	//vector<float>* allPreValues = m_network->GetIncomingBufferData();//m_connectionFixed->GetPreValuesAll(); // = m_connectionFixed->m_idsPost[0]);//m_connectionFixed->GetPreValues(m_idsPost[0]);
+	//vector<float>* allPreValues = m_network->GetIncomingBufferData();//m_projectionFixed->GetPreValuesAll(); // = m_projectionFixed->m_idsPost[0]);//m_projectionFixed->GetPreValues(m_idsPost[0]);
 
-	vector<float> allPreValues = m_connectionFixed->GetPreValuesAll();
+	vector<float> allPreValues = m_projectionFixed->GetPreValuesAll();
 	
-	if(allPreValues.size()!=m_Ai.size()) // connections have been rebuilt, re-initialize variables (could also run initialize first simulate step)
+	if(allPreValues.size()!=m_Ai.size()) // Projections have been rebuilt, re-initialize variables (could also run initialize first simulate step)
 	{
-		this->Initialize(m_connectionFixed);
+		this->Initialize(m_projectionFixed);
 	}
 
 	map<long,float>::iterator it1;
 
-	// use union of all pre connections
+	// use union of all pre Projections
 	//for(int i=0;i<preValues.size();i++)//m_Ai.size;i++)
 	int i=0;
 	float preVal;
@@ -74,7 +74,7 @@ void ConnectionModifierBcpnnOnline::Modify()
 			}*/
 
 			//float aim = 1.0/(float)preValues.size();
-			float aim = 1.0/(float)m_connectionFixed->GetPreIdsAll()->size();
+			float aim = 1.0/(float)m_projectionFixed->GetPreIdsAll()->size();
 
 			m_inhibBeta[j] += (-m_impactBeta)*(aim - m_Aj[j]);//postValues[j]);//m_Aj[j]);
 
@@ -82,19 +82,19 @@ void ConnectionModifierBcpnnOnline::Modify()
 			//m_inhibBeta[j] = m_impactBeta*log(m_Aj[j]);
 			//m_inhibBeta[j] = -(log(m_Aj[j])-log((float)1/(float)m_Ai.size()))/100;//-log(m_Aj[j]);
 
-			((RateUnit*)m_connectionFixed->PostLayer()->network()->GetUnitFromId(m_postIds[j]))->AddInhibBeta(m_inhibBeta[j]);
+			((RateUnit*)m_projectionFixed->PostLayer()->network()->GetUnitFromId(m_postIds[j]))->AddInhibBeta(m_inhibBeta[j]);
 		}
 		else
 		{
 			m_beta[j] = m_impactBeta * log(m_Aj[j]);
-			((RateUnit*)m_connectionFixed->PostLayer()->network()->GetUnitFromId(m_postIds[j]))->SetBeta(m_beta[j]);//AddBeta(m_beta[j]);
+			((RateUnit*)m_projectionFixed->PostLayer()->network()->GetUnitFromId(m_postIds[j]))->SetBeta(m_beta[j]);//AddBeta(m_beta[j]);
 		}
 
-		preValues = m_connectionFixed->GetPreValues(m_postIds[j]);
+		preValues = m_projectionFixed->GetPreValues(m_postIds[j]);
 
 		if(m_impactWeights != 0.0)
 		{
-			vector<long> preIds = m_connectionFixed->GetPreIds(m_postIds[j]);
+			vector<long> preIds = m_projectionFixed->GetPreIds(m_postIds[j]);
 			//map<long, Network::SynapseStandard>* preSynapses = m_network->GetPreSynapses(m_postIds[j]); // will get all synapses originating from all different populations (!)
 			//map<long, Network::SynapseStandard>::iterator it;
 	
@@ -121,7 +121,7 @@ void ConnectionModifierBcpnnOnline::Modify()
 				//m_Aij[i][j] = m_Aij[i][j] + m_alpha*(((1-m_lambda0*m_lambda0)*preValues[i]*postValues[j] + m_lambda0*m_lambda0) - m_Aij[i][j]);
 				//weight = m_Aij[i][j] / (m_Ai[i]*m_Aj[j]);
 
-				//vector<vector<long> >* preIds = m_connectionFixed->PreIds();
+				//vector<vector<long> >* preIds = m_projectionFixed->PreIds();
 				//preId = (*preIds)[j][i];
 
 				if(m_useNoUpdateIfNoPreActivity)
@@ -148,28 +148,28 @@ void ConnectionModifierBcpnnOnline::Modify()
 	}
 }
 
-void ConnectionModifierBcpnnOnline::Simulate(UnitModifier* e)
+void ProjectionModifierBcpnnOnline::Simulate(UnitModifier* e)
 {
-//	float weight = ((ConnectionFixed*)m_connectionFixed)->GetWeight();
+//	float weight = ((ProjectionFixed*)m_projectionFixed)->GetWeight();
 //	float value = e->GetValue(); 
 //	e->SetValue(weight*value);
 }
 
-void ConnectionModifierBcpnnOnline::Initialize(Connection* connection)
+void ProjectionModifierBcpnnOnline::Initialize(Projection* Projection)
 {
-	network(connection->network());
+	network(Projection->network());
 	network()->SetTrackingHypercolumnIds(true);
 
-	m_connectionFixed = connection;
-	//vector<float> preValues = vector<float>(m_connectionFixed->PreLayer()->GetNrUnits(),0.0);//m_connectionFixed->GetPreValues();
-	vector<float> postValues = m_connectionFixed->GetPostValues();
-	m_postIds = m_connectionFixed->GetPostIds();
+	m_projectionFixed = Projection;
+	//vector<float> preValues = vector<float>(m_projectionFixed->PreLayer()->GetNrUnits(),0.0);//m_projectionFixed->GetPreValues();
+	vector<float> postValues = m_projectionFixed->GetPostValues();
+	m_postIds = m_projectionFixed->GetPostIds();
 	m_Aj = vector<float>(m_postIds.size(),m_lambda0);
 	//for(int i=0;i<m_Aj.size();i++)
 	//	m_Aj[i] = 0.02*(float)rand()/(float)RAND_MAX;
 
 	// get union of all pre ids
-	vector<long>* preIdsUnion = m_connectionFixed->GetPreIdsAll();
+	vector<long>* preIdsUnion = m_projectionFixed->GetPreIdsAll();
 
 	//m_Ai = vector<float>(preIdsUnion->size(),0.01);//= m_Aj = 0.001;
 	m_Aij = vector<vector<float> >(m_postIds.size());//vector<map<long,float> >(m_postIds.size());//vector<vector<float> >(preValues.size(),vector<float>(postValues.size(),0.01*0.01));//0.001*0.001;
@@ -186,7 +186,7 @@ void ConnectionModifierBcpnnOnline::Initialize(Connection* connection)
 		for(it=preSynapses->begin();it!=preSynapses->end();it++)
 			m_Aij[i][it->first] = m_lambda0*0.1;//m_lambda0*m_lambda0;//0.02*(float)rand()/(float)RAND_MAX*0.02*(float)rand()/(float)RAND_MAX;//0.01*0.01;
 			*/
-		vector<long> preIds = m_connectionFixed->GetPreIds(m_postIds[i]);
+		vector<long> preIds = m_projectionFixed->GetPreIds(m_postIds[i]);
 		
 		vector<float> f(preIds.size(),m_lambda0*m_lambda0);//m_lambda0*0.1);
 		m_Aij[i] = f;
@@ -197,10 +197,10 @@ void ConnectionModifierBcpnnOnline::Initialize(Connection* connection)
 		m_inhibBeta = vector<float>(postValues.size(),0.0);
 
 	m_firstRun = true;
-	m_postIds = m_connectionFixed->GetPostIds();
+	m_postIds = m_projectionFixed->GetPostIds();
 }
 
-ConnectionModifierBcpnnOnline::ConnectionModifierBcpnnOnline(float alpha, float lambda, float maxValue)
+ProjectionModifierBcpnnOnline::ProjectionModifierBcpnnOnline(float alpha, float lambda, float maxValue)
 {
 	m_impactWeights = 1.0;
 	m_impactBeta = 1.0;
@@ -211,20 +211,20 @@ ConnectionModifierBcpnnOnline::ConnectionModifierBcpnnOnline(float alpha, float 
 	m_eventId = 1;
 
 	m_transferFunction = new TransferBcpnnOnline(maxValue);
-	//ConnectionModifierBcpnnOnline();
+	//ProjectionModifierBcpnnOnline();
 }
 
-void ConnectionModifierBcpnnOnline::SetAlpha(float alpha)
+void ProjectionModifierBcpnnOnline::SetAlpha(float alpha)
 {
 	m_alpha = alpha;
 }
 
-void ConnectionModifierBcpnnOnline::SetLambda(float lambda)
+void ProjectionModifierBcpnnOnline::SetLambda(float lambda)
 {
 	m_lambda0 = lambda;
 }
 
-ConnectionModifierBcpnnOnline::ConnectionModifierBcpnnOnline()
+ProjectionModifierBcpnnOnline::ProjectionModifierBcpnnOnline()
 {
 	m_impactWeights = 1.0;
 	m_impactBeta = 1.0;
@@ -236,10 +236,10 @@ ConnectionModifierBcpnnOnline::ConnectionModifierBcpnnOnline()
 	m_transferFunction = new TransferBcpnnOnline();
 }
 
-void ConnectionModifierBcpnnOnline::SetConnection(Connection* c)
+void ProjectionModifierBcpnnOnline::SetProjection(Projection* c)
 {
-	m_connectionFixed = (ConnectionFixed*)c;
-/*	m_pre = (RateUnit*)m_connectionFixed->Pre();
-	m_post = (RateUnit*)m_connectionFixed->Post();
+	m_projectionFixed = (ProjectionFixed*)c;
+/*	m_pre = (RateUnit*)m_projectionFixed->Pre();
+	m_post = (RateUnit*)m_projectionFixed->Post();
 	*/
 }

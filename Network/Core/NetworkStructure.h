@@ -6,12 +6,13 @@
 
 class Network;
 
+/// <summary>	Network structure, combining several network objects into one structure/circuit. </summary>
+///				TODO: Complete implementation.
+
 class NetworkStructure : public NetworkObject
 {
-	// structure specifics not added yet
 public:
 
 protected:
-
 };
 #endif

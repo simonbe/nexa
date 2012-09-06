@@ -1,84 +1,43 @@
-#pragma once
-#ifndef NETWORKUNITMOD_H
-#define NETWORKUNITMOD_H
+// file:	Core\NetworkTransferFunctions.h
+//
+// summary:	***ALL CLASSES MOVED**** Available network transfer functions.
 
-#include "Network.h"
+#pragma once
+#ifndef TRANSFCNS_H
+#define TRANSFCNS_H
+
+#include <math.h>
+#include <algorithm>
+#include <sstream>
+
+#include "NetworkProjections.h"
+#include "NetworkUnitModifier.h"
+#include "NetworkPopulation.h"
+#include "NetworkProjectionModifier.h"
 #include "NetworkUnits.h"
 
+//class UnitModifier;
+class Projection;
+class Population;
+class ProjectionModifier;
+class Hypercolumn;
 class Unit;
 
-/// <summary>	Unit modifier. Modifies the responses of a unit.
-/// 			Examples: Transfer functions. </summary>
+using namespace std;
 
-class UnitModifier : public NetworkObject
+
+
+/*class UnitModifier : public NetworkObject
 {
-	#pragma message("Compiling UnitModifier")
-
 public:
-
-	UnitModifier()
+	virtual void Simulate(vector<UnitModifier*> events, vector<float> weights, Unit* unit) = 0; // will change when additional UnitModifier is added
+	virtual void SimulateV2(vector<float>* values, vector<float>* weights, Unit* unit) = 0; // v2, optimized
+	virtual void SimulateV2HypercolumnIds(vector<float> values, vector<float> weights, vector<long> hypercolumnIds, Unit* unit)
 	{
-		m_eventTypeId = 0;
+
 	}
+	// v3, with delays
 
-	virtual ~UnitModifier() {}
-
-	long GetFromUnitId()
-	{
-		return m_fromUnitId;
-	}
-
-	void SetFromUnitId(long unitId)
-	{
-		m_fromUnitId = unitId;
-	}
-
-	long GetFromHypercolumnId()
-	{
-		return m_fromHypercolumnId;
-	}
-
-	void SetFromHypercolumnId(long unitId)
-	{
-		m_fromHypercolumnId = unitId;
-	}
-
-	short GetEventTypeId()
-	{
-		return m_eventTypeId;
-	}
-
-	std::vector<float> GetEventData()
-	{
-		return m_eventData;
-	}
-
-	/// <summary>	Standard version of Simulate.
-	/// 			Override SimulateV2 instead if possible. </summary>
-	///
-	/// <param name="events"> 	Unit modifiers. </param>
-	/// <param name="weights">	Weights. </param>
-	/// <param name="unit">   	Unit. </param>
-
-	virtual void Simulate(vector<UnitModifier*> events, vector<float> weights, Unit* unit){};// = 0; // will change when additional UnitModifier is added
-
-	/// <summary>	Optimized versions of Simulate. </summary>
-	///
-	/// <param name="values"> 	Values. </param>
-	/// <param name="weights">	Weights. </param>
-	/// <param name="unit">   	Unit. </param>
-
-	virtual void SimulateV2(vector<float>* values, vector<float>* weights, Unit* unit){};// = 0; // v2, optimized
-
-	/// <summary>	Version of SimulateV2 for unit modifiers which need to know the hypercolumn ids (e.g. BCPNN) </summary>
-	///
-	/// <param name="values">		 	Values. </param>
-	/// <param name="weights">		 	Weights. </param>
-	/// <param name="hypercolumnIds">	Hypercolumn Ids. </param>
-	/// <param name="unit">			 	Unit. </param>
-
-	virtual void SimulateV2HypercolumnIds(vector<float> values, vector<float> weights, vector<long> hypercolumnIds, Unit* unit) { }
-	
 	void SetId(int id) { m_id = id; }
 	int GetId() { return m_id; }
 	void SetUnit(Unit* unit) { m_unit = unit; }
@@ -91,16 +50,6 @@ public:
 	virtual	void SetValue(float value)
 	{
 		m_value = value;
-	}
-
-	virtual float GetSubThresholdValue()
-	{
-		return m_subThresholdValue;
-	}
-
-	virtual	void SetSubThresholdValue(float value)
-	{
-		m_subThresholdValue = value;
 	}
 
 	void SetName(string name)
@@ -117,40 +66,13 @@ public:
 
 protected:
 
-	short m_eventTypeId;
-	long m_fromUnitId;
-	long m_fromHypercolumnId;
-	std::vector<float> m_eventData;
-		
-	float m_value, m_subThresholdValue;
+	float m_value;
 	int m_id;
-	string m_name; // used (?)
+	string m_name; // use?
 	Unit* m_unit;
-};
+};*/
 
-
-class UnitModifierGraded : public UnitModifier
-{
-public:
-
-	UnitModifierGraded(long fromUnitId, int fromHypercolumnId, float value)
-	{
-		m_eventTypeId = 1;
-		m_fromUnitId = fromUnitId;
-		m_fromHypercolumnId = fromHypercolumnId;
-		//m_value = value; // not used anymore
-		m_eventData.push_back(value);
-	}
-
-	void Send(int processId, long unitId);
-	void Receive(int processId);
-
-private:
-
-};
-
-/// <summary>	Allows a unit to have a geometrical position in 3d space. </summary>
-
+/*
 class GeometryUnit : public UnitModifier
 {
 public:
@@ -182,13 +104,12 @@ private:
 	float x,y,z;
 };
 
-/// <summary>	Transfer function ReTIDe. </summary>
 
 class TransferReTIDe : public UnitModifier
 {
 public:
 
-	TransferReTIDe(Population* layer, float threshold = 1.0, bool useDivNormalization = false, float maxValue = -1, float tau = 20);
+	TransferReTIDe(Population* layer, float threshold = 1.0, float maxValue = -1, float tau = 20);
 
 	void Simulate(vector<UnitModifier*> events, vector<float> weights, Unit* unit);
 	void SimulateV2(vector<float>* values, vector<float>* weights, Unit* unit);
@@ -209,23 +130,20 @@ private:
 
 	bool m_firstRun;
 	bool m_useHashImpl; // differentiates using a index- or hash-based (in case of large, unordered population) implementation
-	bool m_useDivNormalization;
 	float m_threshold, m_tau, m_maxValue;
 	long m_localFirstId;
 	vector<vector<int> > m_incomingHcIndexes;
 };
 
-/// <summary>	Transfer function with a threshold. </summary>
-
 class TransferThreshold : public UnitModifier
 {
 public:
 
-	TransferThreshold(float threshold = 0.8,float tau = 30)
+	TransferThreshold()
 	{
 		m_id = 8;
-		m_threshold = threshold;
-		m_tau = tau;
+		m_threshold = 0.5;//10;
+		m_tau = 30;
 		m_firstRun = true;
 	}
 
@@ -243,9 +161,7 @@ private:
 	vector<vector<int> > m_incomingHcIndexes;
 };
 
-/// <summary>	Transfer function postive - puts negative values to zero.
-/// 			TODO: Check if needed, may get removed. </summary>
-
+// Puts negative values to 0.
 class TransferPositive : public UnitModifier
 {
 public:
@@ -259,8 +175,6 @@ public:
 
 private:
 };
-
-/// <summary>	Transfer function for BCPNN. Used in combination with connection modifier ProjectionModifierBcpnnOnline. </summary>
 
 class TransferBcpnnOnline : public UnitModifier
 {
@@ -305,7 +219,7 @@ class TransferLinear : public UnitModifier
 {
 public:
 
-	TransferLinear(bool useSign = false)
+	TransferLinear(bool useSign)
 	{
 		m_useSign = useSign;
 		m_useThreshold = false;
@@ -357,8 +271,6 @@ private:
 	vector<vector<int> > m_incomingHcIndexes;
 };
 
-/// <summary>	Transfer function Foldiak, used in combination with ProjectionModifierFoldiak. </summary>
- 
 class TransferFoldiak : public UnitModifier
 {
 public:
@@ -370,6 +282,12 @@ public:
 		m_alpha = alpha;
 		m_eta3 = eta3;
 	}
+
+	//void SetParams(float eta3, float alpha)
+	//{
+	//	m_eta3 = eta3;
+	//	m_alpha = alpha;
+	//}
 
 	void Simulate(vector<UnitModifier*> events, vector<float> weights, Unit* unit);
 	void SimulateV2(vector<float>* values, vector<float>* weights, Unit* unit);
@@ -384,8 +302,6 @@ private:
 	vector<vector<int> > m_incomingHcIndexes;
 };
 
-/// <summary>	Transfer function Triesch, used in combination with ProjectionModifierTriesch. </summary>
-
 class TransferTriesch : public UnitModifier
 {
 public:
@@ -396,6 +312,7 @@ public:
 		
 		eta_ip = etaIP;//0.005;
 		mu = mu_;//0.1; // desired activity
+	//	a = b = 0.1;
 		m_isThresholded = thresholded;
 		m_thresholdLastSpike = false; // impl differently
 		m_thresholdLastH = m_thresholdLastY = 0;
@@ -427,8 +344,6 @@ private:
 	vector<vector<int> > m_incomingHcIndexes;
 };
 
-/// <summary>	Sigmoidal transfer function. </summary>
-
 class TransferSigmoid : public UnitModifier
 {
 public:
@@ -454,9 +369,6 @@ private:
 	vector<vector<int> > m_incomingHcIndexes;
 };
 
-/// <summary>	Converts a firing rate to outgoing spikes. Assumes rate units in population and spiking units in receiving population. 
-/// 			TODO: Create test to check it is still working. </summary>
-
 class TransferSpikesToRate : public UnitModifier
 {
 public:
@@ -481,28 +393,21 @@ private:
 	int m_timeStepsWindow;
 	map<long, vector<int> > m_spikesHistory;
 
-};
+};*/
 
-/// <summary>	Used in one spiking unit implementation.
-/// 			TODO: Check if obsolete/replaceable, remove. </summary>
-
-class UnitModifierSpike : public UnitModifier
+/*class TransferIFSoma : public UnitModifier
 {
 public:
 
-	UnitModifierSpike(long fromUnitId, int fromHypercolumnId, float time)
-	{
-		m_eventTypeId = 2;
-		m_fromUnitId = fromUnitId;
-		m_fromHypercolumnId = fromHypercolumnId;
-		m_eventData.push_back(time);
-	}
+	TransferIFSoma();
 
-	void Send(int processId, long unitId) {}
-	void Receive(int processId) {}
+	void Simulate(vector<UnitModifier*> events, vector<float> weights, Unit* unit);
 
 private:
-};
 
+	float Vth,Km,Vahp;
+	map<long, float> Vk;
+
+};*/
 
 #endif

@@ -2,20 +2,20 @@
 #ifndef NETWORKBCM_H
 #define NETWORKBCM_H
 
-#include "NetworkConnectionModifier.h"
+#include "NetworkProjectionModifier.h"
 
-// BCM, Law and Cooper (1994) implementation (derived from ibcm (Intrator and Cooper 1992))
+/// <summary>	BCM implementation, see e.g. Law and Cooper (1994) (derived from ibcm (Intrator and Cooper 1992)) </summary>
 
-class ConnectionModifierBCM : public ConnectionModifier
+class ProjectionModifierBCM : public ProjectionModifier
 {
 public:
 
-	ConnectionModifierBCM();
-	ConnectionModifierBCM(float eta, float decay, float tau);
+	ProjectionModifierBCM();
+	ProjectionModifierBCM(float eta, float decay, float tau);
 
 	void SetEta(float eta);
-	void Initialize(Connection* connection);
-	void SetConnection(Connection* c);
+	void Initialize(Projection* Projection);
+	void SetProjection(Projection* c);
 	void Simulate(UnitModifier* e);
 	void Modify();
 	void Clear();
@@ -29,7 +29,7 @@ private:
 	vector<vector<long> > m_idsPre;
 	vector<float> m_thresholds;
 
-	Connection* m_connectionFixed;
+	Projection* m_projectionFixed;
 };
 
 #endif

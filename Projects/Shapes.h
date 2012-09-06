@@ -21,9 +21,9 @@ public:
 
 private:
 
-	ConnectionModifierBcpnnOnline* recConnBcpnn;
+	ProjectionModifierBcpnnOnline* recConnBcpnn;
 	PopulationModifierAdaptation* recConnAdaptation;
-	ConnectionModifierDepression* recConnDepression;
+	ProjectionModifierDepression* recConnDepression;
 	FullConnectivity* recConn;
 	Threshold* layer1Threshold;
 

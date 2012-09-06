@@ -2,7 +2,7 @@
 #ifndef NETWORKADAPT_H
 #define NETWORKADAPT_H
 
-#include "NetworkConnectionModifier.h"
+#include "NetworkProjectionModifier.h"
 
 class PopulationModifierAdaptation : public PopulationModifier
 {

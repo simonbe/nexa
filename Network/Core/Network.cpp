@@ -7,11 +7,13 @@
 #include "Network.h"
 #include "Meter.h"
 
+// MUSIC specifics
 #if MUSIC_AVAILABLE == 1
 MPI_Comm Network::MPIComm;
 #endif
 
-// Standard initialization
+/// <summary>	Network constructor. Sets start values of ids, flags, default filenames etc. </summary>
+
 Network::Network()
 {
 	// MPI_Init needs to be run before Network object created
@@ -23,7 +25,7 @@ Network::Network()
 	m_currentHypercolumnId = 0;
 	m_currentLayerId = 0;
 	m_currentTimeStep = 0;
-	m_simulationResolution = 0.1; //[ms]
+	m_simulationResolution = 0.1;
 	m_firstRun = true;
 	m_networkDetailsStored = false;
 	m_useTiming = true;
@@ -44,10 +46,8 @@ Network::Network()
 #else
 	m_communicationBufferType = this->CommunicationBufferVector;
 #endif
-
 	m_synapseModel = this->SynapsesStandard;
 
-	// srand(this->MPIGetNodeId()); // default set in SetSeed
 	m_name = "Network";
 	m_useExtraFilenameString = false;
 	m_networkParameters = new NetworkParameters();
@@ -56,7 +56,7 @@ Network::Network()
 	m_mpiNrUnitsParallelizationDefault = 0; // keep track of division for default parallelization scheme
 	m_mpiCurrentUnitParallelizationDefault = 0;
 
-	this->SetSeed(false);//false); // default seeds (different important for e.g. random connectivities)
+	this->SetSeed(false, GetSeed()); // default seeds (different important for e.g. random connectivities),
 }
 
 // Additional standard filenames for recording
@@ -78,22 +78,27 @@ void Network::SetExtraFilenameString(char* extraString)
 	sprintf(m_filenameAnalysis,"NetworkAnalysis%d_%s.txt",m_mpiNrProcs,extraString);
 }
 
-// Depending on connectivity pattern, may want same seed on all processes
-void Network::SetSeed(bool allSame)//, float x);
+/// <summary>	Sets random number generator seed. 
+/// 			- Can use srand anywhere in code instead.
+/// 			- Some connectivitys use it to set same seed on all processes during network initialization. </summary>
+///
+/// <param name="allSame">	true to set same seed on all processes. </param>
+/// <param name="x">	  	Seed value. </param>
+
+void Network::SetSeed(bool allSame, float x)
 {
 	if(allSame == false)
-		srand(this->MPIGetNodeId() + m_runId);
+		srand(this->MPIGetNodeId() + m_runId + x);
 	else
-		srand(8);//10);//x);
+		srand(x);
 }
+
+/// <summary>	Destructor. Called during simulation for multiple parameters runs.
+/// 			TODO: Check difference to Dispose. </summary>
 
 Network::~Network()
 {
 	this->ClearEventsIncoming();
-
-	//delete m_filenameNetworkDetails;
-	//delete m_filenameTimings;
-	//delete m_filenameAnalysis;
 
 	m_hashSynapses.clear();
 
@@ -118,14 +123,11 @@ Network::~Network()
 	}
 }
 
-// Decide if record timing from the main class
-// includes timing of
-// - Communication
-// - Initializations
-void Network::SetUseTiming(bool useTiming)
-{
-	m_useTiming = useTiming;
-}
+/// <summary>	 Adds extra string to files that are outputted by default (such as NetworkTimings.txt if timing is used).
+/// 			 For multiple parameters runs, this is called for each new independent run to get different filenames. 
+/// 			 TODO: May get moved to meter or some utils class instead.</summary>
+///
+/// <param name="additional">	Additional filename string. </param>
 
 void Network::SetFilenamesAdditional(string additional)
 {
@@ -137,25 +139,21 @@ void Network::SetFilenamesAdditional(string additional)
 	sprintf(m_filenameAnalysis,"NetworkAnalysis%d_%s.txt",m_mpiNrProcs,additional.c_str());
 }
 
-// Builds network structures and initializes all units
+/// <summary>	Builds network structures and initializes all units. </summary>
+
 void Network::Initialize()
 {
 	MPI_Barrier(NETWORK_COMM_WORLD);
 	TimingStart("InitializeNetwork");
-	int nodeId = this->MPIGetNodeId();
+	int processId = this->MPIGetNodeId();
 
 	for(int i=0;i<m_populations.size();i++)
 	{
-	//	if(m_populations[i]->IsInitialized() == false) // now taken care of in each network object
-			m_populations[i]->Initialize();
+		m_populations[i]->Initialize();
 	}
 
-	for(int i=0;i<m_populations.size();i++)
-	{
-		m_populations[i]->InitializeParallelization();
-	}
-
-	// create communicators for populations
+	// create communicators for populations 
+	// TODO: Check if this has any effect any longer (called anyway when asked to be used in a simulation)
 	for(int i=0;i<m_populations.size();i++)
 	{
 		m_populations[i]->MPI()->MPICreateCommLayer();
@@ -163,10 +161,11 @@ void Network::Initialize()
 
 	for(int i=0;i<m_populations.size();i++)
 	{
-		m_populations[i]->InitializeConnectionsEventsAndParameters();
+		m_populations[i]->InitializeProjectionsEventsAndParameters();
 	}
 
 	// optimization cache of all possible input ids (derived from hashed synapses)
+	// TODO: not necessary to have in most cases (and uses extra memory) so could be made optional
 	if(this->MPIGetNodeId() == 0)
 	{
 		cout<<"Create tables all pre ids union...";
@@ -183,7 +182,7 @@ void Network::Initialize()
 
 	for(int i=0;i<m_populations.size();i++)
 	{
-		if(m_populations[i]->GetUnitsAll()->size() != 0)//m_populations[i]->GetNrUnits() != 0)
+		if(m_populations[i]->GetUnitsAll()->size() != 0)
 			m_populationIndexesThisProc.push_back(i);
 	}
 	
@@ -196,7 +195,7 @@ void Network::Initialize()
 	}
 
 	// create which post processes to send each event output from a unit
-	// not needed for all setups (change to check if needed) (not correctly scalable)
+	// TODO: could be made optional, not needed for all setups
 	this->CreateAllPostProcs();
 
 	TimingStop("CreateAllPostProcs");
@@ -217,7 +216,9 @@ void Network::Initialize()
 	MPI_Barrier(NETWORK_COMM_WORLD);
 }
 
-
+/// <summary>	Simulates a number of timesteps after each other. </summary>
+///
+/// <param name="nrTimesteps">	Number of timesteps to simulate. </param>
 
 void Network::Simulate(int nrTimesteps)
 {
@@ -225,21 +226,22 @@ void Network::Simulate(int nrTimesteps)
 		Simulate();
 }
 
-// Main simulation routine for advancing one time step
+/// <summary>	Advances simulation one time step </summary>
+
 void Network::Simulate()
 {
-	if(m_firstRun == true) // can move
+	if(m_firstRun == true)
 	{
+		// run first time step in simulation
+
 		// store network details to disk
 		if(this->MPIGetNodeId() == 0)
 		{
 			StoreNetworkDetails();
 		}
 
-		MPI_Barrier(NETWORK_COMM_WORLD); // to get start of timing right
+		MPI_Barrier(NETWORK_COMM_WORLD); // to get start of timing right, may be removed
 	}
-
-	MPI_Barrier(NETWORK_COMM_WORLD);
 
 	TimingStart(m_name);
 
@@ -247,51 +249,29 @@ void Network::Simulate()
 
 	TimingStart("Simulate");
 
-	for(int i=0;i<m_populationIndexesThisProc.size();i++)//m_populations.size();i++)
+	for(int i=0;i<m_populationIndexesThisProc.size();i++)
 	{
-		// distribute all events, allgather-version
-		//		SendAndReceiveVersionAllgather();
-		//m_populations[i]->ResetLocalities(); // needed?
-		//	if(m_populations[i]->GetNrUnits() != 0)
-		m_populations[m_populationIndexesThisProc[i]]->Simulate();//m_populations[i]->Simulate();
+		m_populations[m_populationIndexesThisProc[i]]->Simulate();
 	}
 	TimingStop("Simulate");
 
-//	for(int i=0;i<m_minicolumns.size();i++)
-	//((RateUnit*)m_minicolumns[i])->SetBeta(0.0); // special case reset - if >1 connections, reset needs to be outside 
-
-	
-	// put in correct place ?
-	MPI_Barrier(NETWORK_COMM_WORLD);
-
 	// additional timing for comm
-//	TimingStart("SendAndReceiveVersionAllgather");
 	
-#if USE_COMMUNICATION_ALLTOALL == 1 // not needed to be on compile level
-	CommunicationVersionAlltoall();
+#if USE_COMMUNICATION_ALLTOALL == 1 // TODO: not needed to be on compile level
+	CommunicationVersionAlltoall();  // Communicates outgoing activity only to receiving populations
 #else
-	CommunicationVersionAllgather(); // Communicate all messages
+	CommunicationVersionAllgather(); // Communicates all outgoing activity to all processes
 #endif
 
-	
-//	TimingStop("SendAndReceiveVersionAllgather");
-
-	MPI_Barrier(NETWORK_COMM_WORLD);
-
-	// Modify
+	// Call population and Projection modifiers, e.g. synaptic plasticity
 	TimingStart("Modify");
 	for(int i=0;i<m_populationIndexesThisProc.size();i++)//m_populations.size();i++)
 	{
-		//if(m_populations[i]->GetNrUnits() != 0)
-		//	m_populations[i]->Modify();
 		m_populations[m_populationIndexesThisProc[i]]->Modify();
-//		m_populations[i]->ResetLocalities(); // needed?
 	}
 	TimingStop("Modify");
 
-	MPI_Barrier(NETWORK_COMM_WORLD);
-
-	// Analysis
+	// Call analysis classes
 	TimingStart("Analysis");
 	for(int i=0;i<this->m_analysis.size();i++)
 	{
@@ -300,9 +280,7 @@ void Network::Simulate()
 	}
 	TimingStop("Analysis");
 
-	//this->ClearMemory();
 	m_currentTimeStep+=this->GetTimeResolution();
-
 
 	TimingStop(m_name);
 
@@ -310,10 +288,9 @@ void Network::Simulate()
 		m_firstRun = false;
 }
 
+/// <summary>	Communication routine which uses Allgather as main mpi routine
+/// 			 - will transmit outgoing messages to all processes. </summary>
 
-// Communication routine
-// - uses Allgather as main mpi routine
-// - will transmit outgoing messages to all processes.
 void Network::CommunicationVersionAllgather()
 {
 	TimingStart("SendAndReceiveVersionAllgather");
@@ -335,33 +312,6 @@ void Network::CommunicationVersionAllgather()
 
 	TimingStart("CommunicationGetEvents");
 
-	/*//	- (currently) getting all possible events
-	for(int i=0;i<m_populations.size();i++)
-	{
-		vector<Unit*> localUnits = ((PopulationColumns*)m_populations[i])->GetLocalRateUnits(); // "minicolumn"...
-
-		for(int j=0;j<localUnits.size();j++)
-		{
-			if(localUnits[j]->IsNewEvent() == true)
-			{
-				// also sending type of event info atm, not necessary in case of one-type network (+1 short)
-				vector<UnitModifier*> events = localUnits[j]->GetEvents();
-
-				for(int k=0;k<events.size();k++)
-				{
-					eventTypes.push_back(events[k]->GetEventTypeId());
-					eventIds.push_back(events[k]->GetFromUnitId());
-					eventHypercolumnIds.push_back(events[k]->GetFromHypercolumnId());
-					vector<float> eData = events[k]->GetEventData();
-					for(int m=0;m<eData.size();m++)
-						eventData.push_back(eData[m]);
-				}
-
-				localUnits[j]->IsNewEvent(false); // will be set true again by by unit's simulateeventque fcn or CreateEvent fcn
-			}
-		}
-	}*/
-
 	//	get all events and where to send them
 	int currentIndex = 0;
 	int nrEvents = 0;
@@ -377,9 +327,9 @@ void Network::CommunicationVersionAllgather()
 		{
 			vector<int> toProcesses;
 
-			for(int m=0;m<m_populations[m_populationIndexesThisProc[i]]->GetOutgoingConnections().size();m++)
+			for(int m=0;m<m_populations[m_populationIndexesThisProc[i]]->GetOutgoingProjections().size();m++)
 			{
-				vector<int> prcs = m_populations[m_populationIndexesThisProc[i]]->GetOutgoingConnections()[m]->PostLayer()->MPIGetProcessesUsed();
+				vector<int> prcs = m_populations[m_populationIndexesThisProc[i]]->GetOutgoingProjections()[m]->PostLayer()->MPIGetProcessesUsed();
 
 				if(prcs.size()==0) // all procs take part in population so send to all
 				{
@@ -421,42 +371,12 @@ void Network::CommunicationVersionAllgather()
 					eventId = events[k]->GetFromUnitId();
 					eventHypercolumnId = events[k]->GetFromHypercolumnId();
 
-					//eventTypes.push_back(eventType);
-					//eventIds.push_back(eventId);
-					//eventHypercolumnIds.push_back(eventHypercolumnId);
-
 					vector<float> eData = events[k]->GetEventData();
-					//for(int m=0;m<eData.size();m++)
-					//	eventData.push_back(eData[m]);
 
 					bool onlyLocal = true;
 
 					if( postProcesses->size()>0)
 						onlyLocal = false;
-
-					/*for(int n=0;n<m_communicationToProcs[i].size();n++)
-					{
-						if(m_communicationToProcs[i][n] == m_mpiNodeId) // local data, no need to send
-						{
-							//localEventIds.push_back(eventId);
-							//localEventData.push_back(eData[0]);
-							//if(m_isTrackingHypercolumnIds)
-							//	localEventHypercolumnIds.push_back(eventHypercolumnId);
-						}
-						else // non-local data
-						{
-							onlyLocal = false;
-							//eventDestinationsProcs[m_communicationToProcs[i][n]].push_back(currentIndex);
-							//totalEventIds[m_communicationToProcs[i][n]].push_back(eventId);
-							//if(m_isTrackingHypercolumnIds)
-							//	totalEventHypercolumnIds[m_communicationToProcs[i][n]].push_back(eventHypercolumnId);
-
-							// unnecessary atm? all models currently only use one data point
-							//for(int p=0;p<eData.size();p++)
-							//	totalEventData[m_communicationToProcs[i][n]].push_back(eData[p]);
-						}
-					}*/
-
 					if(onlyLocal == false)
 					{
 						eventIds.push_back(eventId);
@@ -485,24 +405,17 @@ void Network::CommunicationVersionAllgather()
 	TimingStop("CommunicationGetEvents");
 
 	// redistribute nr events
-//	int nrEvents = eventIds.size();
 	int totalNrEvents = 0;
-	//TimingStart("CommunicationBarrierTest");
-	//MPI_Barrier(NETWORK_COMM_WORLD);
-	//TimingStop("CommunicationBarrierTest");
-	
-	//TimingStart("CommunicationReduceEvents");
 	TimingStart("Allreduce");
 
 	MPI_Allreduce(&nrEvents,&totalNrEvents, 1,MPI_INT,MPI_SUM,NETWORK_COMM_WORLD); // could switch to multiple MPI communicators as network becomes large (and is modular enough to benefit).
 
 	TimingStop("Allreduce");
 
-	// debug - will be removed
+	// TODO: may get removed
 	if(this->MPIGetNodeId() == 0)
 		cout<<"{"<<localEventIds.size()<<"/"<<totalNrEvents<<"} ";
 	
-	//TimingStop("CommunicationReduceEvents");
 	vector<long> allIds(totalNrEvents);
 	vector<long> allHypercolumnIds(totalNrEvents);
 	vector<short> allTypes(totalNrEvents);
@@ -603,26 +516,9 @@ void Network::CommunicationVersionAllgather()
 				}
 			}
 #else		//}
-		//else if(m_communicationBufferType == this->CommunicationBufferHash)
-		//{
-			// atm using map instead of hash impl
-			//this->m_incomingBufferDataHash = map<long,float>(allIds.size());
-	//m_incomingBufferDataHash = unordered_map<long,float>(allIds.size());
 
-
-	// remove unused 
-	// (not optimized, slow - remove lowest/highest mixed, switch search)
+	// TODO: (not optimized - could remove lowest/highest mixed, switch search method)
 	TimingStart("HashBuffersPrepare");
-
-/*	TimingStart("HashBuffersPrepare00");
-	sort(allIds.begin(),allIds.end());
-	TimingStop("HashBuffersPrepare00");
-	TimingStart("HashBuffersPrepare01");
-	//sort(allData.begin(),allData.end());
-	TimingStop("HashBuffersPrepare01");
-	if(m_isTrackingHypercolumnIds)
-		sort(allHypercolumnIds.begin(),allHypercolumnIds.end());
-		*/
 	
 	vector<long> tempIds = allIds;
 	vector<int> useIds;
@@ -632,11 +528,11 @@ void Network::CommunicationVersionAllgather()
 	{
 		vector<long>::iterator lb = m_allPreIds.begin();
 		if(m_allPreIds[0]<tempIds[0])
-			lb = lower_bound(m_allPreIds.begin(),m_allPreIds.end(),tempIds[0]);//m_allPreIds.begin();
+			lb = lower_bound(m_allPreIds.begin(),m_allPreIds.end(),tempIds[0]);
 
 		vector<long>::iterator ub = m_allPreIds.end();
 		if(m_allPreIds[m_allPreIds.size()-1]>tempIds[tempIds.size()-1])
-			ub = upper_bound(m_allPreIds.begin(),m_allPreIds.end(),tempIds[tempIds.size()-1]);//m_allPreIds.end();
+			ub = upper_bound(m_allPreIds.begin(),m_allPreIds.end(),tempIds[tempIds.size()-1]);
 
 		int ubInt,lbInt;
 		ubInt = int(ub-m_allPreIds.begin());
@@ -645,57 +541,23 @@ void Network::CommunicationVersionAllgather()
 
 		//TimingStart("HashBuffersPrepare2");
 
-		for(int i=tempIds.size()-1;i>-1;i--)//0;i<tempIds.size();i++)//
+		for(int i=tempIds.size()-1;i>-1;i--)
 		{
-			if(tempIds[i] <= m_allPreIds[ubInt-1] && tempIds[i]>= m_allPreIds[lbInt])//minId) // often enough
+			if(tempIds[i] <= m_allPreIds[ubInt-1] && tempIds[i]>= m_allPreIds[lbInt])// often enough
 			{
-				vector<long>::iterator it;//,it2;
-				//it2 = upper_bound(lb,ub,tempIds[i]);
-				//ub = it2;
-				it = lower_bound(lb,ub,tempIds[i]);//upper_bound(lb,ub,tempIds[i]);//lower_bound(lb,ub, tempIds[i]);
+				vector<long>::iterator it;
+				it = lower_bound(lb,ub,tempIds[i]);
 				
-				//ub = it;
-				//if(it!=ub)
-				//{
-				
-				//lb = it;
-				//ubInt = int(ub-m_allPreIds.begin());
-				//lbInt = int(lb-m_allPreIds.begin());
-
-				if(tempIds[i]==*it)//tempIds[i]//m_allPreIds[int(it-m_allPreIds.begin()-1)])// && !(tempIds[i]>*it))
+				if(tempIds[i]==*it)
 				{
 					//	if(m_allPreIds[int(lb-m_allPreIds.begin())] == tempIds[i])	// change check
 					useIds.push_back(i);
 				}
-				//}
 			}
 		}
 		
 		//TimingStop("HashBuffersPrepare2");
 
-		/*for(int i=0;i<m_populations.size();i++)
-		{
-			long startId,endId;
-			if(m_populations[i]->GetUnitsAll()->size()>0 && m_populations[i]->IsOn()) // only continue if this process is part of population
-			{
-				startId = m_populations[i]->GetUnitsAll()->at(0)->GetUnitId();
-				endId = m_populations[i]->GetUnitsAll()->at(m_populations[i]->GetUnitsAll()->size()-1)->GetUnitId();
-
-				vector<Connection*> conns = m_populations[i]->GetIncomingConnections();
-				for(int j=0;j<conns.size();j++)
-				{
-					if(conns[j]->KeepActiveBuffer() == false)
-					{
-						conns[j]->ClearActiveBuffer();
-
-						//for(int k=0;k<allIds.size();k++)
-						//	m_populations[i]->GetIncomingConnections()[j]->AddActiveEvent(allIds[k],allData[k]);//,allData[k]);
-						if(allIds.size()>0)
-							conns[j]->AddActiveEvents(allIds,allData);
-					}
-				}
-			}
-		}*/
 	}
 
 	//TimingStart("HashBuffersPrepare3");
@@ -746,25 +608,6 @@ void Network::CommunicationVersionAllgather()
 	m_incomingBufferDataHash.clear();
 	m_incomingBufferHypercolumnIdsHash.clear();
 
-	/*if(this->MPIGetNodeId() == 0)
-	{
-		cout<<"["<<allIds.size()<<"]";
-	}
-	else if(this->MPIGetNodeId() == 1)
-	{
-		cout<<"/"<<allIds.size()<<"/";
-	}
-	else if(this->MPIGetNodeId() == this->MPIGetNrProcs()-1)
-	{
-		cout<<"|"<<allIds.size()<<"|";
-	}
-	else if(this->MPIGetNodeId() == this->MPIGetNrProcs()-2)
-	{
-		cout<<"*"<<allIds.size()<<"*";
-	}
-
-	cout.flush();*/
-
 	if(this->m_keepCommunicationBuffer == true) // used to lower communication in case of static input, e.g. input data from file over some time steps
 	{
 		m_incomingBufferDataHash = this->m_bufferToKeepData;
@@ -800,20 +643,19 @@ void Network::CommunicationVersionAllgather()
 
 	TimingStart("HashBuffersAddEvent");
 
-#if USE_HASHED_ACTIVE_COMMUNICATION == 1
+	// Add incoming events to receiving populations
+	#if USE_HASHED_ACTIVE_COMMUNICATION == 1
 	for(int i=0;i<m_populations.size();i++)
 	{
 		if(m_populations[i]->GetUnitsAll()->size()>0 && m_populations[i]->IsOn()) // only continue if this process is part of population
 		{
-			vector<Connection*> conns = m_populations[i]->GetIncomingConnections();
+			vector<Projection*> conns = m_populations[i]->GetIncomingProjections();
 			for(int j=0;j<conns.size();j++)
 			{
 				if(conns[j]->KeepActiveBuffer() == false)
 				{
 					conns[j]->ClearActiveBuffer();
 
-					//for(int k=0;k<allIds.size();k++)
-					//	m_populations[i]->GetIncomingConnections()[j]->AddActiveEvent(allIds[k],allData[k]);//,allData[k]);
 					if(allIds.size()>0)
 						conns[j]->AddActiveEvents(allIds,allData);
 				}
@@ -829,10 +671,10 @@ void Network::CommunicationVersionAllgather()
 	TimingStop("SendAndReceiveVersionAllgather");
 }
 
+/// <summary>	Communication routine which uses MPI_Alltoall as main mpi routine
+/// // - reduces total nr messages compared to allgather version. Will not transmit messages from a population to another which it is not connected to.
+/// </summary>
 
-// Communication routine
-// - uses MPI_Alltoall as main mpi routine
-// - reduces total nr messages compared to allgather version. Will not transmit messages from a population to another which it is not connected to.
 void Network::CommunicationVersionAlltoall()
 {
 	TimingStart("SendAndReceiveVersionAlltoall");
@@ -868,9 +710,9 @@ void Network::CommunicationVersionAlltoall()
 		{
 			vector<int> toProcesses;
 
-			for(int m=0;m<m_populations[m_populationIndexesThisProc[i]]->GetOutgoingConnections().size();m++)
+			for(int m=0;m<m_populations[m_populationIndexesThisProc[i]]->GetOutgoingProjections().size();m++)
 			{
-				vector<int> prcs = m_populations[m_populationIndexesThisProc[i]]->GetOutgoingConnections()[m]->PostLayer()->MPIGetProcessesUsed();
+				vector<int> prcs = m_populations[m_populationIndexesThisProc[i]]->GetOutgoingProjections()[m]->PostLayer()->MPIGetProcessesUsed();
 
 				if(prcs.size()==0) // all procs take part in population so send to all
 				{
@@ -913,23 +755,12 @@ void Network::CommunicationVersionAlltoall()
 					eventId = events[k]->GetFromUnitId();
 					eventHypercolumnId = events[k]->GetFromHypercolumnId();
 
-					//eventTypes.push_back(eventType);
-					//eventIds.push_back(eventId);
-					//eventHypercolumnIds.push_back(eventHypercolumnId);
-
 					vector<float> eData = events[k]->GetEventData();
-					//for(int m=0;m<eData.size();m++)
-					//	eventData.push_back(eData[m]);
+					localEventIds.push_back(eventId);
+					localEventData.push_back(eData[0]);
+					if(m_isTrackingHypercolumnIds)
+						localEventHypercolumnIds.push_back(eventHypercolumnId);
 
-					//for(int n=0;n<m_communicationToProcs[i].size();n++)
-					//{
-					//if(postProcesses->size()==0)//m_communicationToProcs[i][n] == m_mpiNodeId) // local data, no need to send
-					//{
-						localEventIds.push_back(eventId);
-						localEventData.push_back(eData[0]);
-						if(m_isTrackingHypercolumnIds)
-							localEventHypercolumnIds.push_back(eventHypercolumnId);
-					//}
 					if(postProcesses->size() != 0)//else // non-local data
 					{
 						for(int m = 0;m<postProcesses->size();m++)
@@ -942,19 +773,9 @@ void Network::CommunicationVersionAlltoall()
 							// unnecessary atm? all models currently only use one data point
 							for(int p=0;p<eData.size();p++)
 								totalEventData[postProcesses->at(m)].push_back(eData[p]);
-							/*
-							eventDestinationsProcs[m_communicationToProcs[i][n]].push_back(currentIndex);
-							totalEventIds[m_communicationToProcs[i][n]].push_back(eventId);
-							if(m_isTrackingHypercolumnIds)
-								totalEventHypercolumnIds[m_communicationToProcs[i][n]].push_back(eventHypercolumnId);
-
-							// unnecessary atm? all models currently only use one data point
-							for(int p=0;p<eData.size();p++)
-								totalEventData[m_communicationToProcs[i][n]].push_back(eData[p]);*/
 						}
 						nrEvents++;
 					}
-					//}
 
 					currentIndex++;
 				}
@@ -966,7 +787,7 @@ void Network::CommunicationVersionAlltoall()
 
 	TimingStop("CommunicationGetEvents");
 
-	// change to not send the local events, only external
+	// TODO: change to not send the local events, only external
 
 	// redistribute nr events
 	//int nrEvents = eventIds.size();
@@ -988,19 +809,12 @@ void Network::CommunicationVersionAlltoall()
 
 	if(totalNrEvents>0)
 	{
-		//TimingStart("CommunicationBarrierTest");
-		//MPI_Barrier(NETWORK_COMM_WORLD);
-		//TimingStop("CommunicationBarrierTest");
-
-		//TimingStart("CommunicationReduceEvents");
-
 		// send nr this process wants to send to everyone
 		vector<int> nrMessagesSend(m_mpiNrProcs);
 		vector<int> nrMessagesRecv(m_mpiNrProcs);
 		vector<int> strideSend(m_mpiNrProcs);
 		vector<int> strideRecv(nrMessagesRecv.size());
-		//int nrMessages = eventIds.size();
-
+		
 		int totMessToSend = 0;
 		for(int i=0;i<eventDestinationsProcs.size();i++)
 		{
@@ -1050,19 +864,37 @@ void Network::CommunicationVersionAlltoall()
 		allData = vector<float>(totMessToRecv);
 		
 		TimingStart("Alltoall2");
-		// all-scatter/-gather ids
+		
+		// all-to-all ids
+		// all-to-all data
 		if(sendIds.size()==0)
-			MPI_Alltoallv(NULL, &nrMessagesSend[0], &strideSend[0], MPI_LONG, &allIds[0], &nrMessagesRecv[0], &strideRecv[0], MPI_LONG, NETWORK_COMM_WORLD);
+		{	
+			if(totMessToRecv == 0)
+			{
+				MPI_Alltoallv(NULL, &nrMessagesSend[0], &strideSend[0], MPI_LONG, NULL, &nrMessagesRecv[0], &strideRecv[0], MPI_LONG, NETWORK_COMM_WORLD);
+				MPI_Alltoallv(NULL, &nrMessagesSend[0], &strideSend[0], MPI_FLOAT, NULL, &nrMessagesRecv[0], &strideRecv[0], MPI_FLOAT, NETWORK_COMM_WORLD);
+			}
+			else
+			{
+				MPI_Alltoallv(NULL, &nrMessagesSend[0], &strideSend[0], MPI_LONG, &allIds[0], &nrMessagesRecv[0], &strideRecv[0], MPI_LONG, NETWORK_COMM_WORLD);
+				MPI_Alltoallv(NULL, &nrMessagesSend[0], &strideSend[0], MPI_FLOAT, &allData[0], &nrMessagesRecv[0], &strideRecv[0], MPI_FLOAT, NETWORK_COMM_WORLD);
+			}
+		}
 		else
-			MPI_Alltoallv(&sendIds[0], &nrMessagesSend[0], &strideSend[0], MPI_LONG, &allIds[0], &nrMessagesRecv[0], &strideRecv[0], MPI_LONG, NETWORK_COMM_WORLD);
+		{
+			if(totMessToRecv == 0)
+			{
+				MPI_Alltoallv(&sendIds[0], &nrMessagesSend[0], &strideSend[0], MPI_LONG, NULL, &nrMessagesRecv[0], &strideRecv[0], MPI_LONG, NETWORK_COMM_WORLD);
+				MPI_Alltoallv(&sendData[0], &nrMessagesSend[0], &strideSend[0], MPI_FLOAT, NULL, &nrMessagesRecv[0], &strideRecv[0], MPI_FLOAT, NETWORK_COMM_WORLD);
+			}
+			else
+			{
+				MPI_Alltoallv(&sendIds[0], &nrMessagesSend[0], &strideSend[0], MPI_LONG, &allIds[0], &nrMessagesRecv[0], &strideRecv[0], MPI_LONG, NETWORK_COMM_WORLD);
+				MPI_Alltoallv(&sendData[0], &nrMessagesSend[0], &strideSend[0], MPI_FLOAT, &allData[0], &nrMessagesRecv[0], &strideRecv[0], MPI_FLOAT, NETWORK_COMM_WORLD);
+			}
+		}
 
-		// all-scatter/-gather data
-		if(sendData.size()==0)
-			MPI_Alltoallv(NULL, &nrMessagesSend[0], &strideSend[0], MPI_FLOAT, &allData[0], &nrMessagesRecv[0], &strideRecv[0], MPI_FLOAT, NETWORK_COMM_WORLD);
-		else
-			MPI_Alltoallv(&sendData[0], &nrMessagesSend[0], &strideSend[0], MPI_FLOAT, &allData[0], &nrMessagesRecv[0], &strideRecv[0], MPI_FLOAT, NETWORK_COMM_WORLD);
-
-		// all-scatter/-gather hypercolumn ids if applicable (bcpnn uses)
+		// all-to-all hypercolumn ids if applicable (bcpnn uses)
 		if(m_isTrackingHypercolumnIds)
 		{
 			allHypercolumnIds = vector<long>(totMessToRecv);
@@ -1131,7 +963,7 @@ void Network::CommunicationVersionAlltoall()
 	{
 		if(m_populations[i]->GetUnitsAll()->size()>0 && m_populations[i]->IsOn()) // only continue if this process is part of population
 		{
-			vector<Connection*> conns = m_populations[i]->GetIncomingConnections();
+			vector<Projection*> conns = m_populations[i]->GetIncomingProjections();
 
 			for(int j=0;j<conns.size();j++)
 			{
@@ -1139,8 +971,6 @@ void Network::CommunicationVersionAlltoall()
 				{
 					conns[j]->ClearActiveBuffer();
 
-					//for(int k=0;k<allIds.size();k++)
-					//	m_populations[i]->GetIncomingConnections()[j]->AddActiveEvent(allIds[k],allData[k]);//,allData[k]);
 					if(allIds.size()>0)
 						conns[j]->AddActiveEvents(allIds,allData);
 				}
@@ -1153,54 +983,25 @@ void Network::CommunicationVersionAlltoall()
 	TimingStop("SendAndReceiveVersionAlltoall");
 }
 
+/// <summary>	Adds a recording meter to network. </summary>
+///
+/// <param name="meter">	The meter. </param>
 
-
-long Network::AddUnitModifierIncoming(UnitModifier* e)
-{
-	long id = e->GetFromUnitId();
-	delete m_eventsUnitIncoming[id];
-	m_eventsUnitIncoming[id] = e;
-	return id;
-	//m_eventsUnitIncoming.push_back(e);
-	//return m_eventsUnitIncoming.size() - 1;
-}
-
-// Recording routine
 void Network::AddMeter(Meter* meter)
 {
 	m_meters.push_back(meter);
 	meter->network(this);
 }
 
-UnitModifier* Network::GetUnitModifierIncoming(int id)
-{
-	return m_eventsUnitIncoming[id];
-	//return m_eventsUnitIncoming[index];
-}
+/// <summary>
+/// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged
+/// resources.
+/// (Resetting have been moved to Reset function)
+/// </summary>
 
-// not used atm.
-void Network::ClearMemory()
-{
-	// moved to dispose
-
-/*	int nr = m_eventsUnitIncoming.size();
-	for(int i=0;i<nr;i++)
-	{
-		delete m_eventsUnitIncoming[i];
-		m_eventsUnitIncoming[i] = NULL;
-	}
-
-	m_eventsUnitIncoming.clear();
-	*/
-}
-
-void Network::Dispose() // also used for reset
+void Network::Dispose()
 {
 	this->ClearEventsIncoming();
-
-	//delete m_filenameNetworkDetails;
-	//delete m_filenameTimings;
-	//delete m_filenameAnalysis;
 
 	m_hashSynapses.clear();
 
@@ -1230,35 +1031,13 @@ void Network::Dispose() // also used for reset
 	m_connectivityTypes.clear();
 	m_networkObjectsToDelete.clear();
 
-	/*for(int i=0;i<m_populations.size();i++)
-	{
-		m_populations[i]->Dispose();
-	}
-
-	m_firstRun = true;
-	m_currentUnitId = 0;
-	m_currentHypercolumnId = 0;
-	m_currentLayerId = 0;
-	m_currentTimeStep = 0;
-
-	// meters - should they be disposed here?
-
-	for(int i=0;i<m_meters.size();i++)
-	{
-		delete m_meters[i];
-	}
-	
-	m_meters.clear();*/
-
 }
+
+/// <summary>	Resets network. Run in-between multiple indepent simulation runs (as decided from parameter class). </summary>
 
 void Network::Reset()
 {
 	this->ClearEventsIncoming();
-
-	//delete m_filenameNetworkDetails;
-	//delete m_filenameTimings;
-	//delete m_filenameAnalysis;
 
 	m_hashSynapses.clear();
 
@@ -1270,9 +1049,7 @@ void Network::Reset()
 	for(int i=0;i<m_meters.size();i++)
 		delete m_meters[i];
 
-//	for(int i=0;i<m_analysis.size();i++)
-//		delete m_analysis[i];
-	m_analysis.clear(); // Error in timing if deleting, change
+	m_analysis.clear(); // TODO: Check if could get error in timing if deleting and change
 
 	for(int i=0;i<m_connectivityTypes.size();i++)
 		delete m_connectivityTypes[i];
@@ -1292,8 +1069,9 @@ void Network::Reset()
 	this->Parameters()->Reset();
 }
 
-// Remove all the current events/messages in this time step which are about to arrive
-// - use to reset the communication in a network, e.g. if stimuli is changed or something
+/// <summary>	 Removes all the current events/messages in this time step which are about to arrive
+/// - use to reset the communication in a network, e.g. if an input stimuli is changed and we want a clean responding network.</summary>
+
 void Network::ClearEventsIncoming()
 {
 	for(int i=0;i<m_populations.size();i++)
@@ -1330,43 +1108,41 @@ void Network::ClearEventsIncoming(vector<long> fromPreIds)
 	}
 }
 
-void ConnectionModifier::SetConnection(Connection* c)
+void ProjectionModifier::SetProjection(Projection* c)
 {
-	m_connection = c;
+	m_projection = c;
 }
 
-// Adds population of units to this network
-void Network::AddLayer(Population* layer)
-{
-	layer->network(this);
+/// <summary>	Adds population of units to this network. </summary>
+///
+/// <param name="layer">	The population. </param>
 
-	layer->SetLayerId(m_currentLayerId);
+void Network::AddPopulation(Population* population)
+{
+	population->network(this);
+
+	population->SetLayerId(m_currentLayerId);
 	stringstream ss;
 	ss<<"Layer"<<m_currentLayerId;
-	if(layer->GetName().size() == 0)
-		layer->SetName(ss.str());
+	if(population->GetName().size() == 0)
+		population->SetName(ss.str());
 
-	m_populations.push_back(layer);
+	m_populations.push_back(population);
 	m_currentLayerId++;
 }
 
-/*void Network::AddUnitToHash(Unit* unit)
-{
-	m_hashIdUnit[unit->GetUnitId()] = unit;
-}*/
+/// <summary>	Maps a unit id to unit. </summary>
+///
+/// <param name="unit">	The unit. </param>
 
-// Hashes a unit
 void Network::AddUnit(Unit* unit)
 {
 	m_hashIdUnit[unit->GetUnitId()] = unit;
-	/*if(m_listIdUnit.size()<unit->GetUnitId()+1)
-	{
-		for(int i=m_listIdUnit.size();i<unit->GetUnitId()+1;i++)
-			m_listIdUnit.push_back(NULL);
-	}
-
-	m_listIdUnit[unit->GetUnitId()] = unit;*/
 }
+
+/// <summary>	Gets the same random seed on all processes. </summary>
+///
+/// <returns>	The random seed. </returns>
 
 int Network::GetSeed()
 {
@@ -1385,7 +1161,9 @@ int Network::GetSeed()
 	return seed;
 }
 
-// In-between simulation steps or post-run: Save all output data to new files or add to existing files (depending on how meter was set up)
+/// <summary>	Save all output data to new files or add to existing files (depending on how meter was set up). 
+/// 			Can be called during a simulation or after all time steps have been completed. </summary>
+
 void Network::RecordAll()
 {
 	TimingStart("RecordAll");
@@ -1404,101 +1182,101 @@ void Network::RecordAll()
 	TimingStop("RecordAll");
 }
 
-// Stores the details about the network setup to file, resulting file currently not used to load in details at a later time.
+/// <summary>	Stores the details about the network setup to default file.</summary>
+
 void Network::StoreNetworkDetails()
 {
-	if(true)//m_networkDetailsStored == false)
+	ofstream myfile;
+	myfile.open (m_filenameNetworkDetails);
+	myfile << "Network Details - do not change manually\n";
+
+	// computer info
+	myfile<<"NrProcesses: "<< this->MPIGetNrProcs()<<"\n"; // imp for nr Projections files
+
+	// Populations
+	myfile << "Populations: "<< m_populations.size() << "\n";
+
+	ofstream geomfile;
+	bool isGeomOpen = false;
+
+	for(int i=0;i<m_populations.size();i++)
 	{
-		ofstream myfile;
-		myfile.open (m_filenameNetworkDetails);
-		myfile << "Network Details - do not change manually\n";
+		myfile<<"Id: "<<m_populations[i]->GetLayerId();
+		myfile<<" Type: "<<m_populations[i]->GetPopulationType();
+		myfile<<" NrUnits: "<<m_populations[i]->GetNrUnitsTotal();
 
-		// computer info
-		myfile<<"Nodes: "<< this->MPIGetNrProcs()<<"\n"; // imp for nr connections files
-
-		// Layers
-		myfile << "Layers: "<< m_populations.size() << "\n";
-		//	myfile << "Connections: not ava\n";
-
-		ofstream geomfile;
-		bool isGeomOpen = false;
-
-		for(int i=0;i<m_populations.size();i++)
+		// should be layer type specific
+		int nrHcs = ((PopulationColumns*)m_populations[i])->GetHypercolumns().size();
+		myfile<<" NrHypercolumns: "<<nrHcs;
+		myfile<<" NrRateUnits:";
+		for(int j=0;j<nrHcs;j++)
 		{
-			myfile<<"Id: "<<m_populations[i]->GetLayerId();
-			myfile<<" Type: "<<m_populations[i]->GetPopulationType();
-			myfile<<" NrUnits: "<<m_populations[i]->GetNrUnitsTotal();
-
-			// should be layer type specific
-			int nrHcs = ((PopulationColumns*)m_populations[i])->GetHypercolumns().size();
-			myfile<<" NrHypercolumns: "<<nrHcs;
-			myfile<<" NrRateUnits:";
-			for(int j=0;j<nrHcs;j++)
-			{
-				int nrMcs = ((PopulationColumns*)m_populations[i])->GetHypercolumns()[j]->GetRateUnits().size();
-				myfile<<" "<<nrMcs;
-			}
-
-			// replace to get from connection
-			if(m_populations[i]->GetUnits().size()>0 && m_populations[i]->GetIncomingConnections().size()>0)
-				if(m_populations[i]->GetIncomingConnections()[0]->GetUnitModifier("geometry") != NULL)//if(m_populations[i]->GetUnits()[0]->GetUnitModifier("geometry") != NULL)
-				{
-					if(isGeomOpen == false)
-					{
-						geomfile.open ("geometry.txt");
-						isGeomOpen = true;
-					}
-
-					//	myfile<<" Geometries: ";
-					vector<RateUnit*> mcs = ((PopulationColumns*)m_populations[i])->GetRateUnits();
-					for(int j=0;j<mcs.size();j++)
-					{
-						geomfile<<((GeometryUnit*)m_populations[i]->GetIncomingConnections()[0]->GetUnitModifier(7))->GetValuesAsString()<<"\n";//((GeometryUnit*)mcs[j]->GetUnitModifier(7))->GetValuesAsString()<<"\n";
-						//		myfile<<((GeometryUnit*)m_populations[i]->GetUnits()[j]->GetUnitModifier(7))->GetValuesAsString()<<" ";
-					}
-				}
-
-				myfile<<"\n";
+			int nrMcs = ((PopulationColumns*)m_populations[i])->GetHypercolumns()[j]->GetRateUnits().size();
+			myfile<<" "<<nrMcs;
 		}
 
-		if(isGeomOpen)
-			geomfile.close();
-
-		// Meters info
-		myfile << "Meters: "<<m_meters.size()<<"\n";
-
-		for(int i=0;i<m_meters.size();i++)
-		{
-			vector<Meter::MeterType> meterTypes = m_meters[i]->GetMeterTypes();
-			myfile << "Filename: "<<m_meters[i]->GetFilename()<<" Type: ";
-			for(int j=0;j<meterTypes.size();j++)
+		// Save a geometry file if units have added geometry to have positions
+		// TODO: could replace to get from Projection
+		if(m_populations[i]->GetUnits().size()>0 && m_populations[i]->GetIncomingProjections().size()>0)
+			if(m_populations[i]->GetIncomingProjections()[0]->GetUnitModifier("geometry") != NULL)
 			{
-				myfile<<meterTypes[j];
-				if(j!=meterTypes.size()-1)
-					myfile<<" ";
-			}
-
-			vector<int> additionalInfo = m_meters[i]->GetAdditionalInfo();
-			if(additionalInfo.size()>0)
-			{
-				myfile<<" Info: ";
-
-				for(int j=0;j<additionalInfo.size();j++)
+				if(isGeomOpen == false)
 				{
-					myfile<<additionalInfo[j];
-					if(j!=additionalInfo.size()-1)
-						myfile<<" ";
+					geomfile.open ("geometry.txt");
+					isGeomOpen = true;
+				}
+
+				//	myfile<<" Geometries: ";
+				vector<RateUnit*> mcs = ((PopulationColumns*)m_populations[i])->GetRateUnits();
+				for(int j=0;j<mcs.size();j++)
+				{
+					geomfile<<((GeometryUnit*)m_populations[i]->GetIncomingProjections()[0]->GetUnitModifier(7))->GetValuesAsString()<<"\n";
 				}
 			}
 
 			myfile<<"\n";
+	}
+
+	if(isGeomOpen)
+		geomfile.close();
+
+	// Meters info
+	myfile << "Meters: "<<m_meters.size()<<"\n";
+
+	for(int i=0;i<m_meters.size();i++)
+	{
+		vector<Meter::MeterType> meterTypes = m_meters[i]->GetMeterTypes();
+		myfile << "Filename: "<<m_meters[i]->GetFilename()<<" Type: ";
+		for(int j=0;j<meterTypes.size();j++)
+		{
+			myfile<<meterTypes[j];
+			if(j!=meterTypes.size()-1)
+				myfile<<" ";
 		}
 
-		myfile.close();
+		vector<int> additionalInfo = m_meters[i]->GetAdditionalInfo();
+		if(additionalInfo.size()>0)
+		{
+			myfile<<" Info: ";
 
-		m_networkDetailsStored = true;
+			for(int j=0;j<additionalInfo.size();j++)
+			{
+				myfile<<additionalInfo[j];
+				if(j!=additionalInfo.size()-1)
+					myfile<<" ";
+			}
+		}
+
+		myfile<<"\n";
 	}
+
+	myfile.close();
+	m_networkDetailsStored = true;
 }
+
+/// <summary>	Print details about network to screen and put specific details in return vector. </summary>
+///
+/// <returns>	[nr processes, nr local units on process 0, total nr units in network, total nr connections in network]. </returns>
 
 vector<float> Network::PrintNetworkDetails()
 {
@@ -1519,16 +1297,9 @@ vector<float> Network::PrintNetworkDetails()
 
 	for(int i=0;i<this->m_populations.size();i++)
 	{
-		vector<Connection*> inconns = m_populations[i]->GetIncomingConnections();
+		vector<Projection*> inconns = m_populations[i]->GetIncomingProjections();
 		vector<Unit*> units = m_populations[i]->GetLocalUnits();
 		nrUnits+=units.size();
-
-		/*for(int j=0;j<inconns.size();j++)
-		{
-			vector<vector<long>* > ids = inconns[j]->GetPreIds();
-			for(int k=0;k<ids.size();k++)
-				sum+= (*ids[k]).size();
-		}*/
 	}
 
 	long totSum = 0;
@@ -1541,8 +1312,8 @@ vector<float> Network::PrintNetworkDetails()
 		cout<<"Total nr units = "<<totUnits<<"\n";
 		cout<<"Av units/node = "<<(float)totUnits/(float)this->MPIGetNrProcs()<<"\n";
 		cout<<"Connections = "<<totSum<<"\n";
-		cout<<"Av connections/node = "<<(float)totSum/(float)this->MPIGetNrProcs()<<"\n";
-		cout<<"Av connections/unit = "<<(float)totSum/(float)totUnits<<"\n";
+		cout<<"Av Connections/node = "<<(float)totSum/(float)this->MPIGetNrProcs()<<"\n";
+		cout<<"Av Connections/unit = "<<(float)totSum/(float)totUnits<<"\n";
 
 		out.push_back(totUnits);
 		out.push_back(totSum);
@@ -1564,6 +1335,9 @@ vector<float> Network::PrintNetworkDetails()
 
 	return out;
 }
+
+/// <summary>	Stores data that has been put in the analysis and
+/// 			do not have their own file writing to a default csv file. </summary>
 
 void Network::StoreAnalysis()
 {
@@ -1655,6 +1429,9 @@ void Network::StoreAnalysis()
 	StoreTimings();
 }
 
+/// <summary>	Stores timing details about simulation to default file
+/// 			(contains information for all network objects where timing has been turned on).  </summary>
+
 void Network::StoreTimings()
 {
 	if(this->MPIGetNodeId() == 0)
@@ -1664,6 +1441,9 @@ void Network::StoreTimings()
 		ofstream myfile;
 		stringstream ss;
 		myfile.open (m_filenameTimings);
+
+		myfile<<"Name / Average time / Std dev / Time max / Mean max time / Std dev max time /  Min time / Min process / Max time / Max process\n";
+		myfile<<"------------------------------------------------------------------------------------------------------------------------------\n\n";
 
 		if(this->IsTiming())
 		{
@@ -1702,13 +1482,13 @@ void Network::StoreTimings()
 				}
 			}
 
-			for(int j=0;j<m_populations[i]->GetIncomingConnections().size();j++)
+			for(int j=0;j<m_populations[i]->GetIncomingProjections().size();j++)
 			{
-				for(int k=0;k<m_populations[i]->GetIncomingConnections()[j]->GetConnectionModifiers().size();k++)
+				for(int k=0;k<m_populations[i]->GetIncomingProjections()[j]->GetProjectionModifiers().size();k++)
 				{
-					if(m_populations[i]->GetIncomingConnections()[j]->GetConnectionModifiers()[k]->IsTiming())
+					if(m_populations[i]->GetIncomingProjections()[j]->GetProjectionModifiers()[k]->IsTiming())
 					{
-						string s = m_populations[i]->GetIncomingConnections()[j]->GetConnectionModifiers()[k]->Timing()->GetTimingString();
+						string s = m_populations[i]->GetIncomingProjections()[j]->GetProjectionModifiers()[k]->Timing()->GetTimingString();
 						myfile<<i+1<<".C"<<j+1<<" "<<s;
 					}
 				}
@@ -1721,35 +1501,54 @@ void Network::StoreTimings()
 	}
 }
 
-// Hashed weights and delays put in main network
+/// <summary>	Sets a weight between two units. 
+/// 			TODO: Move to be dependent on synapse class/structure. </summary>
+///
+/// <param name="weight">	The weight. </param>
+/// <param name="preId"> 	Pre id of a unit. </param>
+/// <param name="postId">	Post id of a unit. </param>
+
 void Network::SetWeight(float weight, long preId, long postId)
 {
-	/*if(m_hashSynapses.size()<postId+1)
-	{
-		while(m_hashSynapses.size()<postId+1)
-			m_hashSynapses.push_back(map<long,SynapseStandard>());
-	}*/
-
 	m_hashSynapses[postId][preId].weight = weight;
 }
 
-// may get replaced
+/// <summary>	Sets a delay between two units.
+/// 			TODO: Move to be dependent on synapse class/structure. </summary>
+///
+/// <param name="delay"> 	The delay. </param>
+/// <param name="preId"> 	Id of pre-unit. </param>
+/// <param name="postId">	Id of post-unit. </param>
+
 void Network::SetDelay(float delay, long preId, long postId)
 {
-	/*if(m_hashSynapses.size()<postId+1)
-	{
-		while(m_hashSynapses.size()<postId+1)
-			m_hashSynapses.push_back(map<long,SynapseStandard>());
-	}*/
 #if USE_DELAYS==1
 	m_hashSynapses[postId][preId].delay = delay;
 #endif
 }
 
+/// <summary>	Gets a weight between two units. </summary>
+///
+/// <remarks>	Post Lazarus, 9/5/2012. </remarks>
+///
+/// <param name="preId"> 	Id of pre-unit. </param>
+/// <param name="postId">	Id of post-unit. </param>
+///
+/// <returns>	The weight. </returns>
+
 float Network::GetWeight(long preId, long postId)
 {
 	return m_hashSynapses[postId][preId].weight;
 }
+
+/// <summary>	Gets a delay between two units. </summary>
+///
+/// <remarks>	Post Lazarus, 9/5/2012. </remarks>
+///
+/// <param name="preId"> 	Id of pre-unit. </param>
+/// <param name="postId">	Id of post-unit. </param>
+///
+/// <returns>	The delay. </returns>
 
 float Network::GetDelay(long preId, long postId)
 {
@@ -1760,36 +1559,12 @@ float Network::GetDelay(long preId, long postId)
 #endif
 }
 
-// not used anymore - remove
-bool Network::ConnectionExists(long preId, long postId)
-{
-	/*if(m_hashSynapses.count(postId)>0)
-		if(m_hashSynapses[postId].count(preId)>0)
-			return true;
-	*/
-	return false;
-}
+/// <summary>	Creates all union of all pre ids on process.
+/// 			Run in cases we need to have easy access to all pre unit-ids
+///				Needs to be called every rebuild of connections.
+///				TODO: optimize.
+///				TODO: add a function that can add the new Projection pre id (if needed). </summary>
 
-
-/*void Network::AddPostIds(vector<long> preIds, long postId)
-{
-	for(int i=0;i<preIds.size();i++)
-	{
-		if(m_listPosts.size()<preIds[i]+1) // change
-		{
-			for(int j=m_listPosts.size();j<preIds[i]+1;j++)
-				m_listPosts.push_back(vector<long>());
-		}
-
-		//used? remove
-		m_listPosts[preIds[i]].push_back(postId);
-	}
-}*/	
-
-// Run in cases we need to have easy access to all pre unit-ids
-// can optimize if needed
-// need to call every rebuild
-// (or add a function that can add the new connection pre id if needed)
 void Network::CreateAllPreIdsUnion()
 {
 	m_allPreIds.clear();
@@ -1803,22 +1578,14 @@ void Network::CreateAllPreIdsUnion()
 	map<long, map<long, SynapseStandard> >::iterator it1; // post
 	map<long, SynapseStandard>::iterator it2; //pre
 #endif
-	/*for(it1 = m_hashSynapses.begin();it1!=m_hashSynapses.end();it1++)
-	{
-		for(it2 = it1->second.begin();it2!=it1->second.end();it2++)
-		{*/
 
-	// high memory usage (!)
+	// could lead to high memory usage
+	// TODO: check memory and change logic if needed
 	long totalLocalSynapses = 0;
-//	for(int i=0;i<m_hashSynapses.size();i++)
-//	{
 	for(it1 = m_hashSynapses.begin();it1!=m_hashSynapses.end();it1++)
 	{
-		for(it2= it1->second.begin();it2!=it1->second.end();it2++)//it2 = m_hashSynapses[i].begin();it2!=m_hashSynapses[i].end();it2++)
+		for(it2= it1->second.begin();it2!=it1->second.end();it2++)
 		{
-			// no duplicates (not using nr times)
-			//if(find(m_allPreIds.begin(),m_allPreIds.end(),it2->first) == m_allPreIds.end())
-//				m_allPreIds.push_back(it2->first);
 			tempMap[it2->first] = tempMap[it2->first]+1;
 			totalLocalSynapses++;
 		}
@@ -1859,7 +1626,10 @@ void Network::CreateAllPreIdsUnion()
 	}
 }
 
-// optimize (!)
+/// <summary>	Creates a vector for each unit to which processes to send an output
+///				TODO: Make non-manually activated.
+///				(depending on communication method, sparse send methods esp, this may or may not be needed) </summary>
+
 void Network::CreateAllPostProcs()
 {
 	for(int i=0;i<this->MPIGetNrProcs();i++)
@@ -1868,8 +1638,10 @@ void Network::CreateAllPostProcs()
 		{
 			int nrPreIds = m_allPreIds.size();
 			MPI_Bcast(&nrPreIds,1,MPI_INT,i,NETWORK_COMM_WORLD);
-
-			MPI_Bcast(&m_allPreIds[0],nrPreIds,MPI_LONG,i,NETWORK_COMM_WORLD);
+			if(nrPreIds>0)
+				MPI_Bcast(&m_allPreIds[0],nrPreIds,MPI_LONG,i,NETWORK_COMM_WORLD);
+			else
+				MPI_Bcast(NULL,nrPreIds,MPI_LONG,i,NETWORK_COMM_WORLD);
 		}
 		else
 		{
@@ -1877,47 +1649,38 @@ void Network::CreateAllPostProcs()
 			MPI_Bcast(&nrPreIds,1,MPI_INT,i,NETWORK_COMM_WORLD);
 
 			vector<long> preIds(nrPreIds);
-			MPI_Bcast(&preIds[0],nrPreIds,MPI_LONG,i,NETWORK_COMM_WORLD);
+			if(nrPreIds>0)
+				MPI_Bcast(&preIds[0],nrPreIds,MPI_LONG,i,NETWORK_COMM_WORLD);
+			else
+				MPI_Bcast(NULL,nrPreIds,MPI_LONG,i,NETWORK_COMM_WORLD);
 
-			//for(int j=0;j<preIds.size();j++)
-			//{
 				for(int k=0;k<m_populationIndexesThisProc.size();k++)
 				{
-					// if no connectivity in between populations, skip checking
-					//bool isConnectivityInBetween = true;
-					//for(int n=0;n<m_populations[m_populationIndexesThisProc[k]]->Float
-
-					//if(isConnectivityInBetween)
-					//{
 						vector<Unit*>* units = m_populations[m_populationIndexesThisProc[k]]->GetUnitsAll();
 						long unitId;
 						for(int m=0;m<units->size();m++)
 						{
 							unitId = units->at(m)->GetUnitId();
-							if(binary_search(preIds.begin(),preIds.end(),unitId))//find(preIds.begin(),preIds.end(),units->at(m)->GetUnitId()) != preIds.end())
-							//if(preIds[j] == units->at(m)->GetUnitId())
+							if(binary_search(preIds.begin(),preIds.end(),unitId))
 							{
 								units->at(m)->AddPostProcess(i);
 							}
 						}
-					//}
 				}
-			//}
 		}
 	}
 }
-/*
-void Network::AddMeter(char* filename, NetworkObject* object, Meter::MeterType type)
-{
-	Meter* meter = new Meter(filename, Storage::CSV);
-	meter->AttachObject(object,type);
-	m_meters.push_back(meter);
-}
-*/
 
-// Copies post synapses, same pre
-// - useful to copy a part of the network to another part (learnt set of connections to an empty set of connections at another place)
-void Network::CopyConnectionsPost(Connection* from, Connection* to, bool copyValues)
+/// <summary>	Copies post synapses, same pre
+///				- useful to copy a part of the network to another part   
+///				(learnt set of Projections to an empty set of Projections at another place) 
+///				TODO: make copy values synapse specific.</summary>
+///
+/// <param name="from">		 	Source projection. </param>
+/// <param name="to">		 	Target projection. </param>
+/// <param name="copyValues">	true if values in connections should be copied as well. </param>
+
+void Network::CopyProjections(Projection* from, Projection* to, bool copyValues)
 {
 	// assumes linearly distributed / sorted unit ids
 	map<long, SynapseStandard>::iterator it;
@@ -1931,7 +1694,7 @@ void Network::CopyConnectionsPost(Connection* from, Connection* to, bool copyVal
 	{
 		long postId = from->GetPostIds()[i];
 		vector<long> preIds = from->GetPreIds(postId);//this->GetPreSynapses(postId);
-		to->AddConnections(preIds,newPostIds[i],newPostLocalIds[i]);
+		to->AddProjections(preIds,newPostIds[i],newPostLocalIds[i]);
 
 		for(int j=0;j<preIds.size();j++)
 		{
@@ -1947,11 +1710,18 @@ void Network::CopyConnectionsPost(Connection* from, Connection* to, bool copyVal
 		}
 	}
 
+	// Re-map/-hash
+	// not necessary if getpreidsall never used (TODO: check it gets recreated if it has not been run and remove here)
 	to->CreatePreIdsUnion();
 }
 
+/// <summary>	Keep communication buffer. 
+/// 			Can be used to reduce communication by keeping a buffer for the next time step (only one time step).</summary>
+///				TODO: Change so not dependent on linear assumption of unit ids.
+///
+/// <param name="startId">	Start id of unit to keep incoming information for. </param>
+/// <param name="endId">  	End id of unit to keep incoming information for. </param>
 
-/// To reduce communication, keep buffer (only!) next time step
 void Network::KeepCommunicationBuffer(long startId, long endId)
 {
 	this->m_keepCommunicationBuffer = true;
@@ -1984,19 +1754,22 @@ void Network::KeepCommunicationBuffer(long startId, long endId)
 	}
 }
 
-// Main run file, overridable
+/// <summary>	Main run routine. Call to start initialization and run a network model. </summary>
+
 void Network::Run()
 {
+	// retrieve description of network
 	this->NetworkSetupStructure();
 
 	// retrieve extra parameters here
+	// TODO: check if this is natural to have at all
 	this->NetworkSetupParameters();
 
+	// Run for first parameter (special as most runs may only be done for one set of parameters)
 	m_runId =0;
 	char* extraString;
 	extraString = new char[50];
 	
-
 	if(this->Parameters()->ParametersLeft())
 	{	
 		sprintf(extraString,"%d",m_runId);
@@ -2010,7 +1783,6 @@ void Network::Run()
 
 	this->NetworkRun();
 
-	
 	// Rerun network if multiple parameters specified in setup
 	while(this->Parameters()->ParametersLeft() == true)
 	{
@@ -2031,27 +1803,6 @@ void Network::Run()
 		m_runId++;
 	}
 
-/*	if(true)//m_parameterValues.size() == 0) // only run for original parameters setup in NetworkSetupStructure
-	{
-		this->Initialize();
-		this->NetworkSetupMeters();
-		this->NetworkRun();
-
-		//~this();
-	}
-	else
-	{
-		// run as defined in SetupParameters
-		for(int i=0;i<1;i++)//m_parameterValues.size();i++)
-		{
-			// set current file names as defined from parameters
-			//this->SetExtraFilenameString(...);
-
-			this->Initialize();
-			this->NetworkSetupMeters();
-			this->NetworkRun();
-
-			//~this();
-		}
-	}*/
+	RecordAll(); // Write to disk anything that has not already been written at the end of a simulation
+	StoreAnalysis(); // Write analysis at end by default
 }

@@ -2,7 +2,7 @@
 #ifndef NETWORKADAPT_H
 #define NETWORKADAPT_H
 
-#include "NetworkConnectionModifier.h"
+#include "NetworkProjectionModifier.h"
 
 class PopulationModifierAdaptation2 : public PopulationModifier
 {
@@ -45,8 +45,8 @@ private:
 	vector<float> m_Aj; 
 	float m_alpha,m_lambda0;
 	// comments: 
-	// m_alpha can be set either by a) to standard values by ConnectionModifierBcpnnOnline(float alpha, float lambda) or b) SetAlpha(float alpha)
-	// m_lambda0 can be set by a) ConnectionModifierBcpnnOnline(float alpha, float lambda) or b) SetLambda(float lambda)
+	// m_alpha can be set either by a) to standard values by ProjectionModifierBcpnnOnline(float alpha, float lambda) or b) SetAlpha(float alpha)
+	// m_lambda0 can be set by a) ProjectionModifierBcpnnOnline(float alpha, float lambda) or b) SetLambda(float lambda)
 	float m_impactBeta;  
 };
 

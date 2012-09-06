@@ -1,51 +1,51 @@
 #include "NetworkSanger.h"
 
-ConnectionModifierSanger::ConnectionModifierSanger()
+ProjectionModifierSanger::ProjectionModifierSanger()
 {
 	m_eventId = 14;
 	m_etaHebb = 0.005;
 	m_transferFunction = new TransferLinear(false);
 }
 
-ConnectionModifierSanger::ConnectionModifierSanger(float etaHebb)
+ProjectionModifierSanger::ProjectionModifierSanger(float etaHebb)
 {
 	m_eventId = 14;
 	m_etaHebb = etaHebb;
 	m_transferFunction = new TransferLinear(false);
 }
 
-/*void ConnectionModifierSanger::SetEtaHebb(float etaHebb)
+/*void ProjectionModifierSanger::SetEtaHebb(float etaHebb)
 {
 	m_etaHebb = etaHebb;
 }*/
 
-void ConnectionModifierSanger::Initialize(Connection* connection)
+void ProjectionModifierSanger::Initialize(Projection* Projection)
 {
-	network(connection->network());
+	network(Projection->network());
 
-	m_connectionFixed = connection;
+	m_projectionFixed = Projection;
 	m_firstRun = true;
-	m_idsPost = m_connectionFixed->GetPostIds();
+	m_idsPost = m_projectionFixed->GetPostIds();
 }
 
-void ConnectionModifierSanger::SetConnection(Connection* c)
+void ProjectionModifierSanger::SetProjection(Projection* c)
 {
-	m_connectionFixed = (ConnectionFixed*)c;
+	m_projectionFixed = (ProjectionFixed*)c;
 }
 
-void ConnectionModifierSanger::Modify()
+void ProjectionModifierSanger::Modify()
 {
 	if(IsOn() == false) return;
-	int nodeId = m_connectionFixed->PreLayer()->network()->MPIGetNodeId(); // will be put in mpi-class
+	int processId = m_projectionFixed->PreLayer()->network()->MPIGetNodeId(); // will be put in mpi-class
 
-	if(nodeId == 0) 
+	if(processId == 0) 
 	{
 		cout<<".";
 		cout.flush();
 	}
 
-	vector<float> postValues = m_connectionFixed->GetPostValues();
-	vector<vector<long> >* preIds;// = m_connectionFixed->PreIds(); // move to initializer (until Invalidate().. called)
+	vector<float> postValues = m_projectionFixed->GetPostValues();
+	vector<vector<long> >* preIds;// = m_projectionFixed->PreIds(); // move to initializer (until Invalidate().. called)
 
 	long preId, postId;
 	float weight;
@@ -55,7 +55,7 @@ void ConnectionModifierSanger::Modify()
 
 	for(int j=0;j<postValues.size();j++)
 	{
-		vector<float> preValues = m_connectionFixed->GetPreValues(m_idsPost[j]);
+		vector<float> preValues = m_projectionFixed->GetPreValues(m_idsPost[j]);
 		postId = m_idsPost[j];
 		y = postValues[j];
 
@@ -100,24 +100,24 @@ void ConnectionModifierSanger::Modify()
 	}
 }
 
-void ConnectionModifierSanger::Simulate(UnitModifier* e)
+void ProjectionModifierSanger::Simulate(UnitModifier* e)
 {
 
 }
 
-/*void ConnectionModifierTriesch::Clear()
+/*void ProjectionModifierTriesch::Clear()
 {
 	// 1. Clear weight values
 
-	vector<float> postValues = m_connectionFixed->GetPostValues();
-	vector<vector<long> >* preIds = m_connectionFixed->PreIds(); // move to initializer (until Invalidate().. called)
+	vector<float> postValues = m_projectionFixed->GetPostValues();
+	vector<vector<long> >* preIds = m_projectionFixed->PreIds(); // move to initializer (until Invalidate().. called)
 
 	long preId, postId;
 
 	// need max post id for N-function
 	for(int j=0;j<postValues.size();j++)
 	{	
-		vector<float> preValues = m_connectionFixed->GetPreValues(m_idsPost[j]);
+		vector<float> preValues = m_projectionFixed->GetPreValues(m_idsPost[j]);
 		postId = m_idsPost[j];
 		for(int i=0;i<preValues.size();i++)
 		{

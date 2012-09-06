@@ -240,7 +240,7 @@ protected:
 
 };
 
-class AnalysisConnection : public Analysis
+class AnalysisProjection : public Analysis
 {
 public:
 

@@ -2,15 +2,15 @@
 #ifndef NETWORKMI_H
 #define NETWORKMI_H
 
-#include "NetworkConnectionModifier.h"
+#include "NetworkProjectionModifier.h"
 
 
 
-class ConnectionModifierMIHypercolumn : public ConnectionModifier
+class ProjectionModifierMIHypercolumn : public ProjectionModifier
 {
 public:
 
-	ConnectionModifierMIHypercolumn()
+	ProjectionModifierMIHypercolumn()
 	{
 		m_firstRun = true;
 		sprn = prn = 1;
@@ -20,15 +20,15 @@ public:
 		MAX_FLOAT = std::numeric_limits<float>::max();
 		MIN_FLOAT = -MAX_FLOAT;
 		EPS_FLOAT = numeric_limits<float>::min();
-		m_name = "ConnectionModifierMIHypercolumn";
+		m_name = "ProjectionModifierMIHypercolumn";
 	}
 
-	/*void AddChildEventConnMC(ConnectionModifierMIRateUnit* e) // corresponding to all outgoing connections from a minicolumn
+	/*void AddChildEventConnMC(ProjectionModifierMIRateUnit* e) // corresponding to all outgoing Projections from a minicolumn
 	{
 		m_presMImc.push_back(e);
 	}*/
 
-	void SetConnection(Connection* c);
+	void SetProjection(Projection* c);
 	void Simulate(UnitModifier* e) {}
 	void Modify();
 
@@ -46,23 +46,23 @@ private:
 
 	vector<vector<float> > miDij, hmi, hji;
 
-	//vector<ConnectionModifierMIRateUnit*> m_presMImc;
-	//vector<ConnectionModifierMIRateUnit*> m_postsMImc;
+	//vector<ProjectionModifierMIRateUnit*> m_presMImc;
+	//vector<ProjectionModifierMIRateUnit*> m_postsMImc;
 
-	Connection* m_connectionFixedHCs;
+	Projection* m_projectionFixedHCs;
 };
 
-class ConnectionModifierMIRateUnit : public ConnectionModifier
+class ProjectionModifierMIRateUnit : public ProjectionModifier
 {
 public:
 
-	ConnectionModifierMIRateUnit(ConnectionModifier* eventHc);
+	ProjectionModifierMIRateUnit(ProjectionModifier* eventHc);
 
-	~ConnectionModifierMIRateUnit();
+	~ProjectionModifierMIRateUnit();
 
-	void SetConnection(Connection* c);
+	void SetProjection(Projection* c);
 
-	void Initialize(Connection* connection);
+	void Initialize(Projection* Projection);
 	void Simulate(UnitModifier* e){};
 	void Modify();
 
@@ -86,9 +86,9 @@ public:
 	}
 
 
-	Connection* GetConnection()
+	Projection* GetProjection()
 	{
-		return (Connection*)m_connectionFixedMCs;
+		return (Projection*)m_projectionFixedMCs;
 	}
 
 	void Reset()
@@ -110,7 +110,7 @@ private:
 	vector<float> miCi,miCj;
 	vector<vector<float> > miCij;
 
-	Connection* m_connectionFixedMCs;
+	Projection* m_projectionFixedMCs;
 };
 
 

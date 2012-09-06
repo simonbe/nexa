@@ -5,44 +5,32 @@
 #include <deque>
 
 
-UnitIF::UnitIF()
+UnitIF::UnitIF(float km, float vth, float vahp, float vk, float ik)
 {
-	//m_unitType = "minicolumn";
-	Km = 0.0041;
-	Vth = 60000;
-	Vahp = 0;
-	Vk = 0;
-	Ik = 0;
+	Km = km;
+	Vth = vth;
+	Vahp = vahp;
+	Vk = vk;
+	Ik = ik;
 }
 
 void UnitIF::SimulateEventQueue()
 {
-//	if(m_eventsIncoming.size()>0)
-//	{
-		//vector<long> currentIncomingSpikes = m_eventsIncoming[0];
-		vector<long> currentIncomingSpikes;// = m_eventsIncoming[0];
+		vector<long> currentIncomingSpikes;
 
-		//if(currentIncomingSpikes.size()>0)
-		//{
 			float totWeights = 0;
 
-			//			m_eventsIncoming[0].clear();
-
-			vector<Connection*> conns = this->GetPopulation()->GetIncomingConnections();
+			vector<Projection*> conns = this->GetPopulation()->GetIncomingProjections();
 			vector<UnitModifier*> eus;
 			vector<float> weights;
 
-			// put connection vars in network instead of connection to avoid check
-
 			for(int m=0;m<conns.size();m++)
 			{
-				//for(int j=0;j<1;j++)//conns.size();j++)
-				//{
+
 				if(conns[m]->IsOn())
 				{
-
-					// currently fix after eventsIncoming removed, used as in graded units, even though incoming non-spikes should not need to be checked
-					// change into storing incoming spike-ids in bufferSpikes or something similar
+					// currently fix after eventsIncoming removed, used as in rate units, even though incoming non-spikes should not need to be checked
+					// TODO: change into storing incoming spike-ids in bufferSpikes or something similar
 
 					vector<long> preIds = conns[m]->GetPreIds(this->GetUnitId());
 
@@ -51,39 +39,22 @@ void UnitIF::SimulateEventQueue()
 						for(int j=0;j<preIds.size();j++)
 						{
 
-							//for(int i=0;i<currentIncomingSpikes.size();i++)//m_eventsIncoming.size();i++)
-							//{
-							float incomingBufferData = m_network->GetPreValue(preIds[j]);//GetIncomingBufferData(preIds[j]);//it->first);
+							float incomingBufferData = m_network->GetPreValue(preIds[j]);
 
 							if(incomingBufferData!=0)
 							{
-								//UnitModifier* eu = network()->GetUnitModifierIncoming(currentIncomingSpikes[i]);
-
-								//m_value += m_eventsIncoming[i]->GetValue() * conns[j]->GetWeight(m_eventsIncoming[i]->GetFromUnitId(),this->GetUnitId());
 								bool exists = true;
 
-								if(conns.size()>1) // if more than one incoming connection we need to know which connection it is coming from
+								if(conns.size()>1) // if more than one incoming Projection we need to know which Projection it is coming from
 								{
-									exists = true;//network()->ConnectionExists(eu->GetFromUnitId(),this->GetUnitId());//conns[j]->ConnectionExists(eu->GetFromUnitId(),this->GetUnitId());
+									exists = true;
 								}
 
 								if(exists)
 								{
-									//totWeights += conns[j]->GetWeight(eu->GetFromUnitId(),this->GetUnitId());
-									float weight = network()->GetWeight(preIds[j],this->GetUnitId());//eu->GetFromUnitId(),this->GetUnitId());//conns[j]->GetWeight(eu->GetFromUnitId(),this->GetUnitId());
-									//if(weight<0) // inhibitory
-									//{
-									Ik+=weight*incomingBufferData;//weight*eu->GetEventData()[0];
-									//if(eu->GetEventTypeId()==2)
-//										bool b=false;
-									//	S_.y_[DG_IN] += -weight * V_.g0_in_;
-									//}
-									//else // excitatory
-									//	;//S_.y_[DG_EX] += weight * V_.g0_ex_;
+									float weight = network()->GetWeight(preIds[j],this->GetUnitId());
 
-									//weights.push_back(weight);
-									//eus.push_back(eu);
-									//eu->SetValue(eu->GetValue() * weight);
+									Ik+=weight*incomingBufferData;
 								}
 							}
 						}
@@ -91,15 +62,7 @@ void UnitIF::SimulateEventQueue()
 				}
 			}
 
-			//if(S_.y_[DG_EX] > 300 * V_.g0_ex_)
-			//	S_.y_[DG_EX] = 300 * V_.g0_ex_;
-			//}
-
-			// elsewhere now
-			//m_eventsIncoming.erase(m_eventsIncoming.begin(),m_eventsIncoming.begin()+1);
-			//	}
-
-	// matlab code
+	// original matlab code
 	/*	% output: spikes
 	% Vk1: updated potential
 	% Vk: previous potential
@@ -121,6 +84,7 @@ void UnitIF::SimulateEventQueue()
 	output=0;
 	end
 	*/
+	
 	m_value = 0.0; // for Population recording
 
 	float Ke = 0.27;
@@ -166,12 +130,11 @@ void UnitIF::SimulateEventQueue()
 
 UnitModifier* UnitIF::CreateEvent(float time)
 {
-	// m_hypercolumnId ?
 	UnitModifierSpike* e = new UnitModifierSpike(m_unitId,m_hypercolumnId,time);
 	return e;
 }
 
 
 #if GSL_AVAILABLE==1
-
+// implementation excluded from this release
 #endif

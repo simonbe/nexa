@@ -1,6 +1,6 @@
 #include "Network.h"
 
-class NetworkDemoVis0 : public Network
+class NetworkDemo0 : public Network
 {
 public:
 

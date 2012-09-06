@@ -1,9 +1,7 @@
 #include "NetworkUnitModifier.h"
+#include "NetworkTransferFunctions.h"
 
-
-
-
-
+/*
 void GeometryUnit::SetPosition(float x, float y, float z)
 {
 	this->x = x;
@@ -27,7 +25,7 @@ void GeometryUnit::SetPosition(float x, float y, float z)
 	}
 }
 
-TransferReTIDe::TransferReTIDe(Population* layer, float threshold, bool useDivNormalization, float maxValue, float tau)
+TransferReTIDe::TransferReTIDe(Population* layer, float threshold, float maxValue, float tau)
 {
 	m_id = 8;
 	m_threshold = threshold;//1;
@@ -35,9 +33,6 @@ TransferReTIDe::TransferReTIDe(Population* layer, float threshold, bool useDivNo
 	m_tau = tau;//10;
 	m_firstRun = true;
 	m_useHashImpl = false;
-	m_useDivNormalization = useDivNormalization;
-	m_nrUnits = 0;
-
 	if(m_useHashImpl == false)
 	{
 		vector<Unit*> units = layer->GetUnits(); // assumes ordered units
@@ -75,56 +70,28 @@ void TransferReTIDe::Simulate(vector<UnitModifier*> events, vector<float> weight
 	long id;
 	float mx;
 
-	float totActivity = 0;
-
-	if(m_useDivNormalization)
-	{
-		totActivity = 0;
-		// no need to calc every time
-		#if USE_UNORDERED_MAP == 1
-			unordered_map<long,float>::iterator itr;
-		#else
-			map<long,float>::iterator itr;
-		#endif
-
-		for(itr = m_xt.begin(); itr != m_xt.end(); ++itr){
-			totActivity += (*itr).second;
-		}
-
-		//if(totActivity == 0)
-		//	totActivity = 1;
-	}
-
 	if(m_useHashImpl == true)
 	{
 		id = unit->GetUnitId();
 		mx =  m_xt[id];
-		if(m_useDivNormalization)
-			m_xt[id] = mx + ((-mx+xt)/(1+totActivity))/m_tau;
-		else
-			m_xt[id] = mx + (-mx+xt)/m_tau; 
-		
+		m_xt[id] = mx + (-mx+xt)/m_tau; 
 		mx = m_xt[id];
 	}
 	else
 	{
 		id = unit->GetUnitIdLocal() - m_lowestUnitLocalId; // assumes ordered local unit ids
-		if(m_useDivNormalization)
-			m_xtList[id] = m_xtList[id] + ((-m_xtList[id]+xt)/(1+totActivity))/m_tau; 
-		else
-			m_xtList[id] = m_xtList[id] + (-m_xtList[id]+xt)/m_tau; 
-
+		m_xtList[id] = m_xtList[id] + (-m_xtList[id]+xt)/m_tau; 
 		mx = m_xtList[id];
 	}
 	
 	if(mx>m_threshold)
 	{
 		m_value = mx-m_threshold;
-		/*if(m_value>10)
-		{
-			bool b=false;
-			cout<<"|";cout.flush();
-		}*/
+		//if(m_value>10)
+		//{
+		//	bool b=false;
+		//	cout<<"|";cout.flush();
+		//}
 		if(m_maxValue > 0)
 		{
 			if(m_value > m_maxValue)
@@ -136,28 +103,28 @@ void TransferReTIDe::Simulate(vector<UnitModifier*> events, vector<float> weight
 //	TimingStop("TransferReTIDe_calc");
 
 	// index-based impl
-	/*
-	if(m_firstRun == true)
-	{
-		vector<Unit*> localUnits = unit->Population()->GetLocalUnits();
-		m_localFirstId = localUnits[1]->GetUnitIdLocal(); // assumes we use Populationcolumns and first unit is a hypercolumn (not used)
-		m_firstRun = false;
-	}
-
-	int index = unit->GetUnitIdLocal() - m_localFirstId;
-	while(index>=m_xt.size())
-	{
-		m_xt.push_back(0.0);
-	}
-
-	float mx =  m_xt[index];
-	m_xt[index] = mx + (-mx+xt)/m_tau; 
-	mx =  m_xt[index];
-
-	if(mx>m_threshold)
-		m_value = mx-m_threshold;
-	else m_value = 0;
-	*/
+	
+	//if(m_firstRun == true)
+	//{
+	//	vector<Unit*> localUnits = unit->Population()->GetLocalUnits();
+	//	m_localFirstId = localUnits[1]->GetUnitIdLocal(); // assumes we use Populationcolumns and first unit is a hypercolumn (not used)
+	//	m_firstRun = false;
+	//}
+//
+//	int index = unit->GetUnitIdLocal() - m_localFirstId;
+//	while(index>=m_xt.size())
+//	{
+//		m_xt.push_back(0.0);
+//	}
+//
+//	float mx =  m_xt[index];
+//	m_xt[index] = mx + (-mx+xt)/m_tau; 
+//	mx =  m_xt[index];
+//
+//	if(mx>m_threshold)
+//		m_value = mx-m_threshold;
+//	else m_value = 0;
+//	
 }
 
 void TransferReTIDe::SimulateV2(vector<float>* values, vector<float>* weights, Unit* unit)
@@ -172,81 +139,19 @@ void TransferReTIDe::SimulateV2(vector<float>* values, vector<float>* weights, U
 	long id;
 	float mx;
 
-	float totActivity = 0;
-
 	if(m_useHashImpl == true)
+	{
 		id = unit->GetUnitId();
-	else
-		id = unit->GetUnitIdLocal() - m_lowestUnitLocalId; // assumes ordered local unit ids
-
-	/*if(m_useDivNormalization)
-	{
-		totActivity = 0;
-		// no need to calc every time
-		#if USE_UNORDERED_MAP == 1
-			unordered_map<long,float>::iterator itr;
-		#else
-			map<long,float>::iterator itr;
-		#endif
-
-		if(m_useHashImpl == true)
-		{
-			if(m_xt[id]>m_threshold)
-			{
-				for(itr = m_xt.begin(); itr != m_xt.end(); ++itr)
-					totActivity += (*itr).second-m_threshold;
-			}
-		}
-		else
-		{
-			if(m_xtList[id]>m_threshold)
-			{
-				for(int i=0;i<m_xtList.size();i++)
-					totActivity+=m_xtList[i]-m_threshold;
-			}
-		}
-
-		//if(totActivity == 0)
-		//	totActivity = 1;
-	}*/
-
-
-	if(m_useHashImpl == true)
-	{
-		mx = m_subThresholdValue;//m_xt[id];
-		
-		/*if(m_useDivNormalization)
-		{
-			m_xt[id] = mx + ((-mx+xt)/(1+totActivity))/m_tau;
-		}
-		else*/
-			m_xt[id] = mx + (-mx+xt)/m_tau;
-
-		//m_xt[id] = mx + (-mx+xt)/m_tau; 
+		mx =  m_xt[id];
+		m_xt[id] = mx + (-mx+xt)/m_tau; 
 		mx = m_xt[id];
 	}
 	else
 	{
-		/*if(m_useDivNormalization)
-		{
-			m_xtList[id] = m_xtList[id] + (-m_xtList[id]+xt)/m_tau; 
-			
-			if(m_xtList[id]>m_threshold)
-			{
-			//	m_xtList[id] = m_xtList[id]+(100-totActivity)/m_tau;
-				//m_xtList[id] = (m_xtList[id] + ((m_xtList[id])/(1+totActivity)))/2;
-			}
-		}
-		else*/
-		
-		mx = m_subThresholdValue;
-		mx = mx + (-mx+xt)/m_tau;
-		//m_xtList[id] = m_xtList[id] + (-m_xtList[id]+xt)/m_tau; 
-	
-		//mx = m_xtList[id];
+		id = unit->GetUnitIdLocal() - m_lowestUnitLocalId; // assumes ordered local unit ids
+		m_xtList[id] = m_xtList[id] + (-m_xtList[id]+xt)/m_tau; 
+		mx = m_xtList[id];
 	}
-
-	m_subThresholdValue = mx;
 	
 	if(mx>m_threshold)
 	{
@@ -266,10 +171,10 @@ void TransferReTIDe::SimulateV2(vector<float>* values, vector<float>* weights, U
 void TransferThreshold::Simulate(vector<UnitModifier*> events, vector<float> weights, Unit* unit)
 {
 	float xt = unit->GetValue();//0;
-	/*for(int i=0;i<events.size();i++)
-	{
-		xt += events[i]->GetEventData()[0] * weights[i];
-	}*/
+	//for(int i=0;i<events.size();i++)
+	//{
+	//	xt += events[i]->GetEventData()[0] * weights[i];
+	//}
 
 	// hash impl
 	long id = unit->GetUnitId();
@@ -285,10 +190,10 @@ void TransferThreshold::Simulate(vector<UnitModifier*> events, vector<float> wei
 void TransferThreshold::SimulateV2(vector<float>* values, vector<float>* weights, Unit* unit)
 {
 	float xt = unit->GetValue();//0;
-	/*for(int i=0;i<events.size();i++)
-	{
-		xt += events[i]->GetEventData()[0] * weights[i];
-	}*/
+	//for(int i=0;i<events.size();i++)
+	//{
+	//	xt += events[i]->GetEventData()[0] * weights[i];
+	//}
 
 	// hash impl
 	long id = unit->GetUnitId();
@@ -433,11 +338,11 @@ void TransferLinear::Simulate(vector<UnitModifier*> events, vector<float> weight
 
 	if(m_useSign == true)
 	{
-		/*
-		if(m_value>0.5)
-			m_value = 1;
-		else
-			m_value = 0.0;*/
+		//
+		//if(m_value>0.5)
+		//	m_value = 1;
+		//else
+		//	m_value = 0.0;
 		if(m_value>1)
 			m_value = 1;
 	}
@@ -495,11 +400,11 @@ void TransferLinear::SimulateV2(vector<float>* values, vector<float>* weights, U
 
 	if(m_useSign == true)
 	{
-		/*
-		if(m_value>0.5)
-			m_value = 1;
-		else
-			m_value = 0.0;*/
+		
+		//if(m_value>0.5)
+		//	m_value = 1;
+		//else
+		//	m_value = 0.0;
 		if(m_value>1)
 			m_value = 1;
 	}
@@ -862,32 +767,67 @@ void TransferPositive::SimulateV2(vector<float>* values, vector<float>* weights,
 		m_value = 0;
 		//unit->SetValue(0.0);
 	}
-}
+}*/
 
-void UnitModifierGraded::Send(int processId, long unitId)
+/*TransferIFSoma::TransferIFSoma()
 {
-	int tagAct = 0;
-	MPI_Send(&unitId,1,MPI_LONG,processId,tagAct,NETWORK_COMM_WORLD); // id of sender (unit, not node)
-	tagAct = 1;
-	float value = this->GetEventData()[0];
-	MPI_Send(&value,1,MPI_FLOAT,processId,tagAct,NETWORK_COMM_WORLD);
-	tagAct = 2;
-	MPI_Send(&m_fromHypercolumnId,1,MPI_INT,processId,tagAct,NETWORK_COMM_WORLD); // id of sender (hypercolumn)
+	m_id = 7;
+	Vth = 60000;
+	Km = 0.0041;
+	Vahp = 0;
 }
 
-void UnitModifierGraded::Receive(int processId)
+void TransferIFSoma::Simulate(vector<UnitModifier*> events, vector<float> weights, Unit* unit)
 {
-	long unitId;
-	float value;
-	int tagAct = 0;
-	MPI_Status status;
+	m_value = 0.0;
 
-	MPI_Recv(&unitId,1,MPI_LONG,processId,tagAct,NETWORK_COMM_WORLD,&status);
-	tagAct = 1;
-	MPI_Recv(&value,1,MPI_FLOAT,processId,tagAct,NETWORK_COMM_WORLD,&status);
+	for(int i=0;i<events.size();i++)
+	{
+		m_value += events[i]->GetEventData()[0] * weights[i];
+	}
 
-	tagAct = 2;
-	MPI_Recv(&m_fromHypercolumnId,1,MPI_INT,processId,tagAct,NETWORK_COMM_WORLD,&status);
+	
+}*/
 
-	//m_value = value;
-}
+
+/*function current = synapse (I,w,input)
+% input: spikes
+% w: weight
+% I: previous potential
+% current: updated potential
+
+% Ke = 0.0004;
+% Ke=0.001;
+% Ke=0.27;%0.054;
+Ke=0.27;
+    if (input == 1)
+        current = I-I*Ke+w;
+    else if (input == 0)
+            current = I-I*Ke;
+        end
+    end*/
+
+
+/*def sigmoid(c_numpy.ndarray Y,int output_type,double output_bottom,double output_top):
+    
+    cdef int num_neurons,n
+    cdef double *y
+    
+    y=<double *>Y.data
+    num_neurons=Y.dimensions[1]
+    
+    for n from 0<= n < num_neurons:
+        
+        if output_type==0: # nothing
+            pass
+        elif output_type==1: # tanh sigmoid
+            if y[n]<0:
+                y[n]=output_bottom*(2.0/(1.0+exp(-2.0*(y[n]/output_bottom)))-1.0)
+            else:            
+                y[n]=output_top*(2.0/(1.0+exp(-2.0*(y[n]/output_top)))-1.0)
+        elif output_type==2: # piecewise linear
+            if y[n]<output_bottom:
+                y[n]=output_bottom
+            elif y[n]>output_top:
+                y[n]=output_top
+        else:*/

@@ -9,31 +9,34 @@
 #include "NetworkPopulationModifier.h"
 //#include "NetworkUnitModifier.h"
 #include "NetworkPopulation.h"
-#include "NetworkConnections.h"
+#include "NetworkProjections.h"
 #include "NetworkObject.h"
 
 class PopulationModifier;
-class Connection;
+class Projection;
 class RateUnit;
 class Hypercolumn;
 class UnitModifier;
 
 using namespace std;
 
-class ConnectionModifier : public NetworkObject
+/// <summary>	Projection modifier: Changes state variables of a projection.
+/// 			Examples include synaptic plasticity and synaptic depression.  </summary>
+
+class ProjectionModifier : public NetworkObject
 {
 public:
 
-	ConnectionModifier()
+	ProjectionModifier()
 	{
 		m_value = 0;
 		m_eventId = -1;
 		m_transferFunction = NULL;
 	}
 
-	virtual ~ConnectionModifier();
+	virtual ~ProjectionModifier();
 
-	virtual void Initialize(Connection* connection);
+	virtual void Initialize(Projection* Projection);
 	virtual void Simulate(UnitModifier* e) = 0;//{ }
 	virtual void Modify() = 0;
 
@@ -42,11 +45,11 @@ public:
 		return m_value;
 	}
 
-	virtual void SetConnection(Connection* c);
+	virtual void SetProjection(Projection* c);
 
-	virtual Connection* GetConnection()
+	virtual Projection* GetProjection()
 	{
-		return m_connection;
+		return m_projection;
 	}
 
 	int GetEventId()
@@ -54,14 +57,14 @@ public:
 		return m_eventId;
 	}
 
-	void AddParentConnectionModifier(ConnectionModifier* e)
+	void AddParentProjectionModifier(ProjectionModifier* e)
 	{
-		m_parentConnectionModifier.push_back(e);
+		m_parentProjectionModifier.push_back(e);
 	}
 
-	void AddChildConnectionModifier(ConnectionModifier* e)
+	void AddChildProjectionModifier(ProjectionModifier* e)
 	{
-		m_childConnectionModifier.push_back(e);
+		m_childProjectionModifier.push_back(e);
 	}
 
 	virtual void AddParentPopulationModifier(PopulationModifier* e)
@@ -101,12 +104,12 @@ protected:
 	//Unit* m_pre;
 	//Unit* m_post;
 	
-	Connection* m_connection;
+	Projection* m_projection;
 	UnitModifier* m_transferFunction;
 	
-	vector<ConnectionModifier*> m_parentConnectionModifier;
-	vector<ConnectionModifier*> m_childConnectionModifier;
-	vector<PopulationModifier*> m_parentPopulationModifier; // allows event layer to have direct access to this event connection
+	vector<ProjectionModifier*> m_parentProjectionModifier;
+	vector<ProjectionModifier*> m_childProjectionModifier;
+	vector<PopulationModifier*> m_parentPopulationModifier; // allows event layer to have direct access to this event Projection
 };
 
 

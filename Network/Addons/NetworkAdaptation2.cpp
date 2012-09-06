@@ -33,7 +33,7 @@ void PopulationModifierAdaptation2::Simulate()
 
 	vector<float> data = vector<float>(minicolumns.size());
 	// pulling the values from BCPNN? Or having it independent of BCPNN? 
-	// ConnectionModifierBcpnnOnline* bcpnn = (ConnectionModifierBcpnnOnline*)this->Layer()->GetIncomingConnections()[0]->GetEvent("bcpnn"); // assumes bcpnn is in incoming connection 0 and that bcpnn is used
+	// ProjectionModifierBcpnnOnline* bcpnn = (ProjectionModifierBcpnnOnline*)this->Layer()->GetIncomingProjections()[0]->GetEvent("bcpnn"); // assumes bcpnn is in incoming Projection 0 and that bcpnn is used
 	// m_adampl = bcpnn->GetBeta();
 
 	for(int i=0;i<minicolumns.size();i++){

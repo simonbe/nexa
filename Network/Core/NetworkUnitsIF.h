@@ -20,7 +20,7 @@ using namespace std;
 class UnitIF : public Unit
 {
 public:
-	UnitIF();
+	UnitIF(float km = 0.0041, float vth = 60000, float vahp = 0, float vk = 0, float ik = 0);
 
 	void SimulateEventQueue();
 	UnitModifier* CreateEvent() { return CreateEvent(0.0); }
@@ -59,15 +59,14 @@ private:
 };
 #if GSL_AVAILABLE==1
 
+// Model brought in with small modifications from NEST
+// Equation solving exactly as in NEST
 
 class UnitadEIF : public Unit
 {
- // not included atm in repository.
+public:
+private:
 };
-
-
-
-
 #endif
 
 #endif

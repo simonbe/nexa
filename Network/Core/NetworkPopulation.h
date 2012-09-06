@@ -4,9 +4,8 @@
 
 #include "Network.h"
 #include "NetworkPopulationModifier.h"
-#include "NetworkConnections.h"
+#include "NetworkProjections.h"
 #include "NetworkUnits.h"
-//#include "NetworkUnitsIF.h"
 #include "MPIDistribution.h"
 
 class Network;
@@ -16,6 +15,8 @@ class Meter;
 class MPIDistribution;
 
 using namespace std;
+
+/// <summary>	Population of neural units. </summary>
 
 class Population : public NetworkObject
 {
@@ -35,31 +36,30 @@ public:
 		return m_layerId;
 	}
 
-	Population(Network* net, unsigned long nrUnits);
-
 	enum PopulationType
 	{
 		FixedWeightsAndRateUnits,
 		Data
 	};
 
+	// Initializations
 	virtual void Initialize() = 0;
-	void InitializeParallelization();
-	virtual void InitializeConnectionsEventsAndParameters() = 0;
+	virtual void InitializeProjectionsEventsAndParameters() = 0;
+	
+	// Run before global communication
 	virtual void Simulate() = 0;
-	virtual void Reset() = 0;
-
+	
+	// Run after global communication
 	virtual void Modify();
 
-	//virtual void SendAndReceiveVersionISend() = 0;
-	//virtual void SendAndReceiveVersionAllgather() = 0;
+	virtual void Reset() = 0;
 
 	virtual void ResetLocalities();
 	virtual void SetValuesLocal(vector<float> values) = 0;
 	virtual void SetValuesAll(vector<float> values, bool alsoSimulate = false) = 0;
 
-	void AddPre(Population* layer, Connectivity* connectionType);
-	void AddPost(Population* layer, Connectivity* connectionType);
+	void AddPre(Population* layer, Connectivity* ProjectionType, bool calledFromAddPost = false);
+	void AddPost(Population* layer, Connectivity* ProjectionType, bool calledFromAddPre = false);
 
 	virtual void AddUnit(Unit* unit)
 	{
@@ -76,21 +76,14 @@ public:
 		return &m_units;
 	}
 
-	void AddUnitsPropertyToInitialize(UnitModifier* p);
+	void AddUnitsModifierToInitialize(UnitModifier* p);
 
 	virtual vector<Unit*> GetUnits(string type)
 	{
 		return m_units;
 	}
 
-	
-	/*{
-		for(int i=0;i<m_units.size();i++)
-		
-	}*/
-
 	vector<Unit*> GetLocalUnits();
-
 	
 	virtual long GetNrUnitsTotal()
 	{
@@ -107,18 +100,6 @@ public:
 		return m_populationType;
 	}
 
-	/*void network(Network* net)
-	{
-		m_network = net;
-	}
-
-	Network* network()
-	{
-		return m_network;
-	}*/
-
-	virtual vector<int> GetMPIDistribution(int nodeId);
-
 	int MPIBelongsToNode(unsigned long localUnitId) // default method, will be put in MPI class instead
 	{
 		for(int i=0;i<m_unitIndexesInterval.size();i++)
@@ -133,12 +114,10 @@ public:
 		return -1;
 	}
 
-	//void MPICreateCommLayer();
-
 	vector<vector<float> > GetWeights();
 	vector<vector<float> > GetLocalWeights();
 
-	void AddLayerEvent(PopulationModifier* eventLayer);
+	void AddPopulationModifier(PopulationModifier* eventLayer);
 
 	void AddPostNode(int node)
 	{
@@ -188,8 +167,6 @@ public:
 		return m_preNodes;
 	}
 
-	virtual void GenerateHashTables();
-
 	MPIDistribution* MPI()
 	{
 		return m_mpiDistribution;
@@ -210,29 +187,29 @@ public:
 		return m_hashIdUnit[id];
 	}*/
 
-	void AddOutgoingConnection(Connection* c)
+	void AddOutgoingProjection(Projection* c)
 	{
-		m_connectionOutgoing.push_back(c);
+		m_projectionOutgoing.push_back(c);
 	}
 
-	void AddIncomingConnection(Connection* c)
+	void AddIncomingProjection(Projection* c)
 	{
-		m_connectionIncoming.push_back(c);
+		m_projectionIncoming.push_back(c);
 	}
 
-	vector<Connection*> GetOutgoingConnections()
+	vector<Projection*> GetOutgoingProjections()
 	{
-		return m_connectionOutgoing;
+		return m_projectionOutgoing;
 	}
 
-	vector<Connection*> GetIncomingConnections()
+	vector<Projection*> GetIncomingProjections()
 	{
-		return m_connectionIncoming;
+		return m_projectionIncoming;
 	}
 
 	vector<PopulationModifier*> GetPopulationModifiers()
 	{
-		return m_eventLayers;
+		return m_populationModifiers;
 	}
 
 	bool IsFirstRun()
@@ -283,9 +260,17 @@ public:
 		m_valuesBuffer = values;
 	}
 
+	virtual vector<float> GetValuesLocal();
+
+	// 
 	vector<float> GetValuesBuffer()
 	{
-		return m_valuesBuffer;
+		if(m_valuesBuffer.size()>0 )
+			return m_valuesBuffer;
+		else
+		{
+			return GetValuesLocal();
+		}
 	}
 
 	void SetTrace(bool useTrace, float traceStrength)
@@ -354,18 +339,18 @@ protected:
 	vector<UnitModifier*> m_unitPropertiesToInitialize;
 	vector<UnitModifier*> m_unitPropertiesLayer;
 	
-	vector<Connection*> m_connectionOutgoing;
-	vector<Connection*> m_connectionIncoming;
+	vector<Projection*> m_projectionOutgoing;
+	vector<Projection*> m_projectionIncoming;
 
 //	map<long,Unit*> m_hashIdUnit; // currently full size on all nodes
 //	map<long, vector<Unit*> > m_hashIdPreUnit;
 
-	vector<ConnectionModifier*> m_preConnectionModifiers; // ?
+	vector<ProjectionModifier*> m_preProjectionModifiers; // ?
 
 	vector<long> m_localUnitIndexesInterval;
 	vector<vector<long> > m_unitIndexesInterval;
 
-	vector<PopulationModifier*> m_eventLayers;
+	vector<PopulationModifier*> m_populationModifiers;
 	
 	MPIDistribution* m_mpiDistribution;
 	vector<int> m_mpiProcessesUsed;
@@ -415,7 +400,7 @@ public:
 	PopulationColumns(Network* net, unsigned long nrHypercolumns, unsigned long nrRateUnits, UnitType unitType, MPIDistribution::ParallelizationSchemeLayer parallelizationScheme = MPIDistribution::ParallelizationDefault, bool useSilentHypercolumns = false, float silentHypercolumnsThreshold = 0);
 
 	void Initialize();
-	void InitializeConnectionsEventsAndParameters();
+	void InitializeProjectionsEventsAndParameters();
 	void Simulate();
 
 	vector<int> GetNrRateUnits()
@@ -440,6 +425,9 @@ public:
 
 	vector<int> GetUnitIdLocals();
 
+	// overridden, will only return minicolumn values
+	vector<float> GetValuesLocal();
+
 	// will only return the minicolumns
 	vector<Unit*> GetUnits()
 	{
@@ -451,7 +439,6 @@ public:
 	void SetValuesLocal(vector<float> values);
 	void SetValue(int localIndex,float value);
 	void SetValuesAll(vector<float> values, bool alsoSimulate = false);
-	virtual vector<float> GetValuesLocal();
 //	void SetValuesAll(vector<short> values);
 
 	void Reset();
@@ -516,8 +503,8 @@ public:
 		return nhi;
 	}
 
-	vector<int> GetMPIDistribution();//int nodeId);
-	vector<int> GetMPIDistributionHypercolumns(int nodeId);
+	vector<int> GetMPIDistribution();//int processId);
+	vector<int> GetMPIDistributionHypercolumns(int processId);
 
 	void ResetLocalities();
 	void Dispose();

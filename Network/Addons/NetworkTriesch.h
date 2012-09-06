@@ -2,18 +2,18 @@
 #ifndef NETWORKTRC_H
 #define NETWORKTRC_H
 
-#include "NetworkConnectionModifier.h"
+#include "NetworkProjectionModifier.h"
 
 // Hebbian + intrinsic (threshold) plasticity
 
-class ConnectionModifierTriesch : public ConnectionModifier
+class ProjectionModifierTriesch : public ProjectionModifier
 {
 public:
 
-	ConnectionModifierTriesch();
-	ConnectionModifierTriesch(float etaHebb, float beta, float etaIP, float mu, bool thresholded);
-	void Initialize(Connection* connection);
-	void SetConnection(Connection* c);
+	ProjectionModifierTriesch();
+	ProjectionModifierTriesch(float etaHebb, float beta, float etaIP, float mu, bool thresholded);
+	void Initialize(Projection* Projection);
+	void SetProjection(Projection* c);
 	void SetBeta(float beta)
 	{
 		m_beta = beta;
@@ -35,7 +35,7 @@ private:
 	vector<long> m_idsPost;
 	vector<vector<long> > m_idsPre;
 
-	Connection* m_connectionFixed;
+	Projection* m_projectionFixed;
 };
 
 #endif

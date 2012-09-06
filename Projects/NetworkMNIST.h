@@ -11,7 +11,6 @@ class PopulationColumns;
 
 using namespace std;
 
-
 class NetworkMNIST2 : public Network
 {
 public:
@@ -39,7 +38,7 @@ private:
 	PopulationColumns* m_layer2, *m_layer3;
 
 	// Plasticity
-	ConnectionModifierBcpnnOnline* m_bcpnn;
+	ProjectionModifierBcpnnOnline* m_bcpnn;
 
 	// Pre-defined structures
 	//vector<StructureReTIDe*> m_reTIDe;
@@ -53,6 +52,9 @@ private:
 
 	// Structures
 	StructureMIMDSVQ* m_structureInput, *m_structureLayer2;
+
+	// Meters
+	Meter* m_inputMeter,*m_layer1Meter,*m_layer2Meter;
 
 	// Probabilities
 	//float m_probRecurr, m_probRecurr2, m_probForward;
@@ -79,7 +81,7 @@ private:
 	std::vector<float> toBinary(int nr, int total);
 	vector<float> toBinary(vector<float> data, int nrHc, int nrMc);
 
-	vector<PopulationColumns*> AttachLayers(Network* network, PopulationColumns* layerInput, int nrMiddleHypercolumns, int nrMiddleRateUnits, int nrOutputHypercolumns, int nrOutputRateUnits);
+	vector<PopulationColumns*> AttachPopulations(Network* network, PopulationColumns* layerInput, int nrMiddleHypercolumns, int nrMiddleRateUnits, int nrOutputHypercolumns, int nrOutputRateUnits);
 
 	int m_architecture;
 };*/

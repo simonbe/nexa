@@ -15,13 +15,14 @@ class CSL
 {
 public:
 
-	CSL()
+	CSL(float epsilon = 0.01, float eta = 0.01)
 	{
-		m_epsilon = 0.01;//0.001;
-		m_eta = 0.01f;//0.0001;//0.5;//0.001;
+		// change with SetEta, SetEpsilon
+		m_epsilon = epsilon;//0.01;//0.001;
+		m_eta = eta;//0.01f;//0.0001;//0.5;//0.001;
 	}
 
-	void Initialize(vector<vector<float> >* x, int nrCodeVectors, int mpiRank, int mpiSize, bool printOutResult, NetworkObject* parent, MPI_Comm comm);
+	void Initialize(vector<vector<float> >* x, int nrCodeVectors, int mpiRank, int mpiSize, bool printOutResult, NetworkObject* parent, MPI_Comm comm, int selectionNrs = 6);//3);
 
 	/*~CSL()
 	{
@@ -69,13 +70,13 @@ public:
 		return &m_c;
 	}
 
-	void SetEta(float eta, bool useSelection)
+	void SetEta(float eta, bool useSelection = true)
 	{
 		m_eta = eta;
 		m_useSelection = useSelection;
 	}
 
-	void SetEtaVector(vector<float> eta, bool useSelection)
+	void SetEtaVector(vector<float> eta, bool useSelection = true)
 	{
 		m_etaVector = eta;
 		m_useSelection = useSelection;
@@ -91,6 +92,7 @@ public:
 	}
 
 	//void Reset();
+	// application specific
 	void DriftAdaptStep(vector<float> x, float eta);
 	void DriftAdaptStepVector(vector<float> x, vector<float> eta);
 
@@ -138,13 +140,13 @@ private:
 };
 
 
-class ConnectionModifierCSL : public ConnectionModifier
+class ProjectionModifierCSL : public ProjectionModifier
 {
 public:
 
-	ConnectionModifierCSL();
+	ProjectionModifierCSL();
 
-	~ConnectionModifierCSL()
+	~ProjectionModifierCSL()
 	{
 		for(int i=0;i<m_csl.size();i++)
 			delete m_csl[i];
@@ -153,8 +155,8 @@ public:
 			delete m_comms[i];
 	}
 
-	void Initialize(Connection* connection);
-	void SetConnection(Connection* c);
+	void Initialize(Projection* Projection);
+	void SetProjection(Projection* c);
 
 	void SetMaxPatterns(int maxPatterns)
 	{
@@ -210,12 +212,22 @@ public:
 
 	void SetEta(float eta)
 	{
+		m_eta = eta;
+		
+		// application specific, disregard most cases
 		m_csl[0]->SetEta(eta, true);
+		for(int i=0;i<m_csl.size();i++)
+			m_csl[i]->SetEta(eta);
 	}
 
 	void SetEtaVector(vector<float> eta, bool useSelection)
 	{
 		m_csl[0]->SetEtaVector(eta, useSelection);
+	}
+
+	void SetEpsilon(float epsilon)
+	{
+		m_epsilon = epsilon;
 	}
 
 	vector<vector<float> >* GetCodeVectors()
@@ -232,7 +244,7 @@ public:
 	void SaveState();
 	void LoadState();
 
-	// only gives info about one of the connection sets atm.
+	// only gives info about one of the Projection sets atm.
 	float GetDistortion()
 	{
 		return m_csl[0]->GetDistortion();
@@ -244,6 +256,8 @@ public:
 	}
 
 private:
+
+	float m_eta,m_epsilon; // see inside csl
 
 	vector<CSL*> m_csl;
 	vector<int> m_hcIndexes; // indexes of the output hcs
@@ -263,18 +277,18 @@ private:
 	vector<vector<long> > m_idsPre;
 	map<long,int> m_idsIndexInHc;
 
-	Connection* m_connectionFixed;
+	Projection* m_projectionFixed;
 };
 
-// shell class to let LayerVQ modify connections (currently only allowing ConnectionModifier to do it)
-class ConnectionModifierVQ : public ConnectionModifier
+// shell class to let LayerVQ modify Projections (currently only allowing ProjectionModifier to do it)
+class ProjectionModifierVQ : public ProjectionModifier
 {
 public:
 
-	ConnectionModifierVQ(LayerVQ* layerVQ);
+	ProjectionModifierVQ(LayerVQ* layerVQ);
 
 	void Simulate(UnitModifier* e) {};
-	void Modify(); // sends forward to LayerVQ::ModifyConnection
+	void Modify(); // sends forward to LayerVQ::ModifyProjection
 
 private:
 	LayerVQ* m_layerVQ;
@@ -297,8 +311,8 @@ public:
 		m_nrCodeVectors = nrCodeVectors;
 		m_firstRun = true;
 		m_type = type;
-		m_isRateUnitPreConnections = false;
-		m_hasCheckedPreConnections = false;
+		m_isRateUnitPreProjections = false;
+		m_hasCheckedPreProjections = false;
 
 		m_csl = NULL;
 
@@ -315,7 +329,7 @@ public:
 			m_csl = new CSL();
 		}
 
-		m_eventConnectionVQ = new ConnectionModifierVQ(this);
+		m_eventProjectionVQ = new ProjectionModifierVQ(this);
 
 		m_name = "LayerVQ";
 		m_nrOverlaps = 1;
@@ -328,17 +342,17 @@ public:
 
 	~LayerVQ()
 	{
-		//delete m_eventConnectionVQ; // added remotely
+		//delete m_eventProjectionVQ; // added remotely
 		delete m_csl;
 	}
 
 	void Simulate();
-	void ModifyConnections(Connection* connections);
+	void ModifyProjections(Projection* Projections);
 	float GetError(){
 		return m_csl->GetDistortion();
 	}
 
-	ConnectionModifierVQ* GetConnectionModifier();
+	ProjectionModifierVQ* GetProjectionModifier();
 	vector<vector<float> > GetValuesToRecord();
 
 
@@ -364,15 +378,15 @@ public:
 private:
 
 	void InitiateVQUnits();
-	ConnectionModifierVQ* m_eventConnectionVQ;
+	ProjectionModifierVQ* m_eventProjectionVQ;
 
 	int m_nrCodeVectors;
 	LayerVQ::VQType m_type;
 	vector<vector<float> >* m_data;
 	bool m_firstRun;
 	vector<vector<int> > m_totalWinnersUnits;
-	bool m_isRateUnitPreConnections;
-	bool m_hasCheckedPreConnections;
+	bool m_isRateUnitPreProjections;
+	bool m_hasCheckedPreProjections;
 
 	// standard
 	void updvqwin(int u);
@@ -446,13 +460,13 @@ public:
 	{
 		m_layerVQ = vq;
 		m_name = "VQ-Layer-Distortion/Selection";
-		m_eventConnectionCSL = NULL;
+		m_eventProjectionCSL = NULL;
 	}
 
-	AnalysisVQ(ConnectionModifierCSL* vq)
+	AnalysisVQ(ProjectionModifierCSL* vq)
 	{
-		m_eventConnectionCSL = vq;
-		m_name = "VQ-Connection-Distortion/Selection";
+		m_eventProjectionCSL = vq;
+		m_name = "VQ-Projection-Distortion/Selection";
 		m_layerVQ = NULL;
 	}
 
@@ -461,15 +475,15 @@ public:
 		if(m_layerVQ == NULL)
 		{
 			vector<float> f(2);
-			if(m_eventConnectionCSL == NULL)
+			if(m_eventProjectionCSL == NULL)
 			{
 				f[0] = -1;
 				f[1] = -1;
 			}
 			else
 			{
-				f[0] = m_eventConnectionCSL->GetDistortion();
-				f[1] = (float)m_eventConnectionCSL->GetSelection();
+				f[0] = m_eventProjectionCSL->GetDistortion();
+				f[1] = (float)m_eventProjectionCSL->GetSelection();
 			}
 
 
@@ -494,7 +508,7 @@ public:
 private:
 
 	LayerVQ* m_layerVQ;
-	ConnectionModifierCSL* m_eventConnectionCSL;
+	ProjectionModifierCSL* m_eventProjectionCSL;
 };
 
 #endif

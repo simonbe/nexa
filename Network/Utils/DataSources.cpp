@@ -1,5 +1,9 @@
 #include <iostream>
 #include <cstdlib>
+#include <sstream>
+#include <string>
+#include <algorithm>
+
 #include "DataSources.h"
 
 
@@ -262,4 +266,27 @@ int DataSources::MaxIndex(vector<float> data)
 	}
 
 	return maxIndex;
+}
+
+vector<string> DataSources::SplitString(string s, char delimiter, bool removeWhitespaces)
+{
+	vector<string> out;
+
+	if(removeWhitespaces)
+			s.erase(remove(s.begin(),s.end(),' '),s.end()); 
+
+	if(delimiter == NULL)
+	{
+		for(int i=0;i<s.length();i++)
+			out.push_back(string(1,s[i]));
+	}
+	else
+	{
+		string spart;
+		stringstream stream(s);
+		while( getline(stream, spart, delimiter) )
+			out.push_back(spart);
+	}
+
+	return out;
 }

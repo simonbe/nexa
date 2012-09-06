@@ -218,7 +218,7 @@ void ShapesNetwork::Test(){
 
 void ShapesNetwork::RemoveUnusedSynapses(){
 
-	Connection* conn = this->GetLayer(1)->GetIncomingConnections()[1];
+	Projection* conn = this->GetLayer(1)->GetIncomingProjections()[1];
 	vector<long> postIds = conn->GetPostIds();
 	vector<long> preIds;
 	int num = 0;
@@ -243,7 +243,7 @@ void ShapesNetwork::RemoveUnusedSynapses(){
 
 void ShapesNetwork::NormalizeWeights(){
 
-	Connection* conn = this->GetLayer(1)->GetIncomingConnections()[1];
+	Projection* conn = this->GetLayer(1)->GetIncomingProjections()[1];
 	vector<long> postIds = conn->GetPostIds();
 	vector<long> preIds;
 	double prod,sum;
@@ -290,12 +290,12 @@ void ShapesNetwork::NetworkSetupStructure() {
 
 	PopulationColumns* layer0 = new PopulationColumns(this, nrHypercolumns,
 			nrRateUnits, PopulationColumns::Graded);
-	this->AddLayer(layer0); // this population/layer will have index 0
+	this->AddPopulation(layer0); // this population/layer will have index 0
 	//layer0->MPI()->MPIMakeLayerValuesLocal();
 
 	PopulationColumns* layer1 = new PopulationColumns(this, nrHypercolumns,
 			nrRateUnits, PopulationColumns::Graded);
-	this->AddLayer(layer1); // this population/layer will have index 1
+	this->AddPopulation(layer1); // this population/layer will have index 1
 
 	OneToOneConnectivity* ffConn = new OneToOneConnectivity(false);
 	ffConn->SetRandomWeights(1,1);
@@ -306,22 +306,22 @@ void ShapesNetwork::NetworkSetupStructure() {
 	recConn = new FullConnectivity();
 	recConn->SetRandomWeights(0,1);
 
-	recConnBcpnn = new ConnectionModifierBcpnnOnline(BCPNN_LEARNING_RATE,0.001);
+	recConnBcpnn = new ProjectionModifierBcpnnOnline(BCPNN_LEARNING_RATE,0.001);
 	((TransferBcpnnOnline*)recConnBcpnn->GetTransferFunction())->SetThreshold(BCPNN_THRESHOLD);
-	recConn->AddConnectionsEvent(recConnBcpnn);
+	recConn->AddProjectionsEvent(recConnBcpnn);
 
-	recConnDepression = new ConnectionModifierDepression(DEPRESSION_STRENGTH);
-	//recConn->AddConnectionsEvent(recConnDepression);
+	recConnDepression = new ProjectionModifierDepression(DEPRESSION_STRENGTH);
+	//recConn->AddProjectionsEvent(recConnDepression);
 
 	recConnAdaptation = new PopulationModifierAdaptation(ADAPTATION_AMP,ADAPTATION_TAU,PopulationModifierAdaptation::Standard);
 	layer1Threshold = new Threshold(ACTIVATION_THRESHOLD);
-	//	layer1->AddLayerEvent(recConnAdaptation);
-	layer1->AddLayerEvent(layer1Threshold);
+	//	layer1->AddPopulationModifier(recConnAdaptation);
+	layer1->AddPopulationModifier(layer1Threshold);
 	layer1->AddPre(layer1,recConn);
 
 	
 	PopulationColumns* layer2 = new PopulationColumns(this,1,60*40,PopulationColumns::Graded);
-	this->AddLayer(layer2);
+	this->AddPopulation(layer2);
 	float probRecurr = 0.2;
 	reTIDe = new StructureReTIDe(probRecurr,-1);
 	
@@ -386,17 +386,17 @@ void ShapesNetwork::NetworkSetupMeters() {
 	// example of file output
 	Meter* layer0Meter = new Meter("activity_0.csv", Storage::CSV,
 			Storage::Append);
-	layer0Meter->AttachLayer(this->GetLayer(0));
+	layer0Meter->AttachPopulation(this->GetLayer(0));
 	this->AddMeter(layer0Meter);
 
 	Meter* layer1Meter = new Meter("activity_1.csv", Storage::CSV,
 			Storage::Append);
-	layer1Meter->AttachLayer(this->GetLayer(1));
+	layer1Meter->AttachPopulation(this->GetLayer(1));
 	this->AddMeter(layer1Meter);
 
 	Meter* layer2Meter = new Meter("activity_2.csv", Storage::CSV,
 			Storage::Append);
-	layer2Meter->AttachLayer(this->GetLayer(2));
+	layer2Meter->AttachPopulation(this->GetLayer(2));
 	this->AddMeter(layer2Meter);
 
 	// also check simulation times
@@ -407,11 +407,11 @@ void ShapesNetwork::NetworkSetupMeters() {
 
 	if(rank == 0){
 		char* readout_conn_fn = new char[30];
-		sprintf(readout_conn_fn, "readout_connections_%d.txt", rank);
-		Meter* readoutConnectionMeter = new Meter(readout_conn_fn, Storage::CSV);
-		Connection* conn = this->GetLayer(1)->GetIncomingConnections()[1];
-		readoutConnectionMeter->AttachConnection(conn,	0);
-		this->AddMeter(readoutConnectionMeter);
+		sprintf(readout_conn_fn, "readout_Projections_%d.txt", rank);
+		Meter* readoutProjectionMeter = new Meter(readout_conn_fn, Storage::CSV);
+		Projection* conn = this->GetLayer(1)->GetIncomingProjections()[1];
+		readoutProjectionMeter->AttachProjection(conn,	0);
+		this->AddMeter(readoutProjectionMeter);
 	}
 
 	reTIDe->SetupStructure(this,(PopulationColumns*)this->GetLayer(2));
@@ -446,7 +446,7 @@ void ShapesNetwork::NetworkRun() {
 /*
 void ShapesNetwork::NormalizeWeights(){
 
-	Connection* conn = this->GetLayer(1)->GetIncomingConnections()[1];
+	Projection* conn = this->GetLayer(1)->GetIncomingProjections()[1];
 	vector<long> postIds = conn->GetPostIds();
 	vector<long> preIds;
 	float sum;

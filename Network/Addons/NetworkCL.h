@@ -2,17 +2,17 @@
 #ifndef NETWORKCL_H
 #define NETWORKCL_H
 
-#include "NetworkConnectionModifier.h"
+#include "NetworkProjectionModifier.h"
 
-// Competitive learning implementation with DeSieno adaptive threshold
+/// <summary>	Competitive learning implementation with adaptive threshold (see papers by DeSieno). </summary>
 
-class ConnectionModifierCL : public ConnectionModifier
+class ProjectionModifierCL : public ProjectionModifier
 {
 public:
-	ConnectionModifierCL(int sizeOutLayer, float eta, float probB, float biasC);
+	ProjectionModifierCL(int sizeOutLayer, float eta, float probB, float biasC);
 
-	void Initialize(Connection* connection);
-	void SetConnection(Connection* c);
+	void Initialize(Projection* Projection);
+	void SetProjection(Projection* c);
 		
 	void SetAlpha(float alpha);
 	void SetLambda(float lambda);
@@ -38,7 +38,7 @@ private:
 	vector<long> m_idsPost;
 	vector<vector<long> > m_idsPre;
 
-	Connection* m_connectionFixed;
+	Projection* m_projectionFixed;
 };
 
 

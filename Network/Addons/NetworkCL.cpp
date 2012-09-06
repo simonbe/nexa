@@ -1,6 +1,6 @@
 #include "NetworkCL.h"
 
-ConnectionModifierCL::ConnectionModifierCL(int sizeOutLayer, float eta, float probB, float biasC)
+ProjectionModifierCL::ProjectionModifierCL(int sizeOutLayer, float eta, float probB, float biasC)
 {
 	m_eta = eta;//0.01;
 	B = probB;// 0.001;
@@ -12,45 +12,45 @@ ConnectionModifierCL::ConnectionModifierCL(int sizeOutLayer, float eta, float pr
 	m_transferFunction = new TransferLinear(false);
 }
 
-void ConnectionModifierCL::Initialize(Connection* connection)
+void ProjectionModifierCL::Initialize(Projection* Projection)
 {
-	network(connection->network());
+	network(Projection->network());
 
-	vector<float> postValues = m_connectionFixed->GetPostValues();
+	vector<float> postValues = m_projectionFixed->GetPostValues();
 	m_p = vector<float>(postValues.size());
 	m_b = vector<float>(postValues.size());
 
-	m_connectionFixed = connection;
+	m_projectionFixed = Projection;
 	m_firstRun = true;
-	m_idsPost = m_connectionFixed->GetPostIds();
+	m_idsPost = m_projectionFixed->GetPostIds();
 }
 
-void ConnectionModifierCL::SetConnection(Connection* c)
+void ProjectionModifierCL::SetProjection(Projection* c)
 {
-	m_connectionFixed = (ConnectionFixed*)c;
+	m_projectionFixed = (ProjectionFixed*)c;
 }
 
 
-void ConnectionModifierCL::SetC(float value)
+void ProjectionModifierCL::SetC(float value)
 {
 	C = value;
 }
 
-void ConnectionModifierCL::Modify()
+void ProjectionModifierCL::Modify()
 {
 	if(IsOn() == false) return;
 
-	int nodeId = m_connectionFixed->PreLayer()->network()->MPIGetNodeId(); // will be put in mpi-class
+	int processId = m_projectionFixed->PreLayer()->network()->MPIGetNodeId(); // will be put in mpi-class
 
-	if(nodeId == 0) 
+	if(processId == 0) 
 	{
 		cout<<".";
 		cout.flush();
 	}
 
-	vector<float> postValues = m_connectionFixed->GetPostValues();
+	vector<float> postValues = m_projectionFixed->GetPostValues();
 
-	vector<vector<long> >* preIds;// = m_connectionFixed->PreIds(); // move to initializer (until Invalidate().. called)
+	vector<vector<long> >* preIds;// = m_projectionFixed->PreIds(); // move to initializer (until Invalidate().. called)
 	
 	long preId, postId;
 	float weight;
@@ -65,7 +65,7 @@ void ConnectionModifierCL::Modify()
 		{
 			postId = m_idsPost[j];
 
-			vector<float> preValues = m_connectionFixed->GetPreValues(m_idsPost[j]);
+			vector<float> preValues = m_projectionFixed->GetPreValues(m_idsPost[j]);
 
 			for(int i=0;i<preValues.size();i++)
 			{
@@ -108,11 +108,11 @@ void ConnectionModifierCL::Modify()
 		m_p[j] = m_p[j] + B*(postValues[j] - m_p[j]);
 		m_b[j] = C*(1/N - m_p[j]);
 
-		((RateUnit*)m_connectionFixed->PostLayer()->network()->GetUnitFromId(m_idsPost[j]))->AddInhibBeta(m_b[j]);
+		((RateUnit*)m_projectionFixed->PostLayer()->network()->GetUnitFromId(m_idsPost[j]))->AddInhibBeta(m_b[j]);
 	}
 }
 
-void ConnectionModifierCL::Simulate(UnitModifier* e)
+void ProjectionModifierCL::Simulate(UnitModifier* e)
 {
 }
 

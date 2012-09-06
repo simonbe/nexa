@@ -24,7 +24,7 @@ public:
 	}
 
 	void Initialize(Network* network, PopulationColumns* layerInput);
-	void SetupStructure(Network* network, PopulationColumns* layerInput);
+	void SetupStructure(Network* network, PopulationColumns* layerInput, bool useDivNormalization = false);
 	void SetupMeters(int index, Storage::SaveDataState state);
 	void SetRecording(bool on);
 

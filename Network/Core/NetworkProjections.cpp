@@ -1,12 +1,14 @@
 #include <iostream>
-//#include <random>
 
-#include "NetworkConnections.h"
+#include "NetworkProjections.h"
 #include "NetworkUnits.h"
-#include "NetworkConnectionModifier.h"
+#include "NetworkProjectionModifier.h"
 #include "NetworkUnitModifier.h"
 
-// need to access plasticity rules here, will be changed
+// Currently need to do the following if adding a new plasticity class:
+// 1. Add .h-file here as they are called in the Projection initializations
+// 2. Initialize them down where the others are initialized (this will be moved to inside these classes to get rid of this)
+
 #include "NetworkBCPNN.h"
 #include "NetworkCL.h"
 #include "NetworkMI.h"
@@ -20,117 +22,18 @@
 #include "NetworkBCM.h"
 #include "NetworkSanger.h"
 #include "NetworkSTDP.h"
-//
 
-//#include "NetworkTransferFunctions.h"
 
-/*m_postIds.clear();
-		m_preIds.clear();
-
-		m_postIds = GetPostIds();
-		for(int i=0;i<m_postIds.size();i++)
-		{
-			vector<long> pres = GetPreIds(m_postIds[i]);
-			m_preIds.push_back(pres);
-		}*/
-
-/*void ConnectionFixed::AddConnection(Unit* pre, Unit* post, bool firstRun)
+void Projection::GenerateHashTables()
 {
-	map<long, map<long, float> >::iterator p;
-
-	if(!firstRun)
-	{
-		map<long,float> w = m_hashWeights[post->GetUnitId()];
-		w[pre->GetUnitId()] = 0.0;
-		m_hashWeights[post->GetUnitId()] = w;
-	}
-	else // empty
-	{
-		map<long,float> w;
-		w[pre->GetUnitId()] = 0.0;
-		m_hashWeights[post->GetUnitId()] = w;
-	}
-
-	post->AddPre(pre); // needed now?
-}*/
-
-
-void Connection::GenerateHashTables()
-{
-/*	if(m_preLayer->network()->MPIGetNodeId() == 0 && DEBUG_LEVEL > 2)
-	{
-		cout<<"Generating hash tables (connections)...";
-	}
-
-	// always keep postIds sorted
-	sort(m_postIds.begin(),m_postIds.end());
-
-	// weights
-
-	srand(this->network()->MPIGetNodeId());
-
-	if(m_postIds.size()==0)
-		cout<<"Warning, m_postIds.size() == 0;";
-
-	for(int i=0;i<m_postIds.size();i++)
-	{
-		map<long,float> w;
-
-		int count = m_hashWeights.count(m_postIds[i]);//m_hashWeights.count(m_postIds[i]);
-		if(count>0)
-			w = m_hashWeights[m_postIds[i]];
-		
-		for(int j=0;j<m_preIds[i].size();j++) // preIds is index-based order
-		{
-			float r = 0;//(float)rand()/(float)RAND_MAX;//0.0;//(rand()/(float(RAND_MAX)+1));
-			w[m_preIds[i][j]] = r;
-		}
-		
-		m_hashWeights[m_postIds[i]] = w;
-	}
-	
-	map<long, map<long, float> >::iterator p;
-
-	if(!firstRun)
-	{
-		map<long,float> w = m_hashWeights[postId];
-		w[preId] = 0.0;
-		m_hashWeights[postId] = w;
-	}
-	else // empty
-	{
-		map<long,float> w;
-		w[preId] = 0.0;
-		m_hashWeights[postId] = w;
-	}
-
-	//post->AddPre(pre);
-
-
-	// remove unused for memory
-	// not implemented/necessary yet
-	
-	if(m_preLayer->network()->MPIGetNodeId() == 0 && DEBUG_LEVEL > 2)
-	{
-		cout<<"done.\n";
-	}
-	*/
+	// any extra hash tables can be initialized here
 }
 
-void Connection::AddConnection(long preId, long postId, long postLocalId, bool firstRun)
+// Used to add a new Projection between units based on their ids. firstRun by default false.
+void Projection::AddProjection(long preId, long postId, long postLocalId, bool firstRun)
 {
 	bool first = true;
 	long postIndex;
-
-/*	for(int i=0;i<m_postIds.size();i++)
-	{
-		if(m_postIds[i] == postId)
-		{
-			postIndex = i;
-			first = false;
-			break;
-		}
-	}*/
 
 	vector<long>::iterator index = std::find(m_postIds.begin(),m_postIds.end(),postId);
 	if(index !=m_postIds.end())
@@ -164,23 +67,11 @@ void Connection::AddConnection(long preId, long postId, long postLocalId, bool f
 #endif
 
 	m_preIds[postIndex].push_back(preId);
-	
-	/*if(m_listPosts.size()<preId+1) // change
-	{
-		for(int i=m_listPosts.size();i<preId+1;i++)
-			m_listPosts.push_back(new vector<long>());
-	}
-	
-	//used? remove
-	m_listPosts[preId]->push_back(postId);*/
 }
 
 
-void Connection::AddConnections(vector<long> preIds, long postId, long postLocalId)
+void Projection::AddProjections(vector<long> preIds, long postId, long postLocalId)
 {
-	//for(int i=0;i<preIds.size();i++)
-	//	AddConnection(preIds[i],postId,true);
-
 	bool first = true;
 	int postIndex;
 
@@ -189,8 +80,8 @@ void Connection::AddConnections(vector<long> preIds, long postId, long postLocal
 	if(find(m_postIds.begin(),m_postIds.end(),postId) == m_postIds.end())
 		m_postIds.push_back(postId);
 
-	if(m_preIds.find(postId) == m_preIds.end())//find(m_preIds.begin(),m_preIds.end(),postId) == m_preIds.end())
-		m_preIds[postId] = preIds; // used in GetPreValues - could be replaced by indexes to synapse hash table (which belongs to which connection)
+	if(m_preIds.find(postId) == m_preIds.end())
+		m_preIds[postId] = preIds;
 	else
 	{
 		vector<long> v = m_preIds[postId];
@@ -199,9 +90,6 @@ void Connection::AddConnections(vector<long> preIds, long postId, long postLocal
 		
 		// remove duplicates
 		sort(v.begin(),v.end());
-		//vector<long>::iterator it;
-		//it = unique (v.begin(), v.end());
-		//v.resize( it - v.begin() );
 		v.erase(unique(v.begin(),v.end()),v.end());
 		m_preIds[postId] = v;
 	}
@@ -224,48 +112,10 @@ void Connection::AddConnections(vector<long> preIds, long postId, long postLocal
 
 #endif
 
-
-	/*if(m_preIds.size()<postIndex+1)
-	{
-		for(int i=m_preIds.size();i<postIndex+1;i++)
-		{
-			vector<long> v;
-			m_preIds.push_back(v);
-		}
-	}
-
-	//used? remove
-	for(int i=0;i<preIds.size();i++)
-	{
-		m_preIds[postIndex].push_back(preIds[i]);
-	}*/
-
-	//m_network->AddPostIds(preIds,postId);
-	
-		
-		// used currently in sendreceiveallgather - change?
-		//if(m_listPosts.size()<preIds[i]+1) // change
-		//{
-		//	for(int j=m_listPosts.size();j<preIds[i]+1;j++)
-		//		m_listPosts.push_back(new vector<long>());
-		//}
-
-		//used? remove
-		//m_listPosts[preIds[i]]->push_back(postId);
 }
 
-void Connection::Clear()
+void Projection::Clear()
 {
-	/*
-	for(int i=0;i<m_listPosts.size();i++)
-	{
-		m_listPosts[i]->clear();
-		delete m_listPosts[i];
-	}
-
-	m_listPosts.clear();
-	*/
-
 	//for(int i=0;i<m_preIds.size();i++)
 #if USE_UNORDERED_MAP == 1
 	for(unordered_map<long, vector<long> >::iterator iter = m_preIds.begin();iter!=m_preIds.end();++iter)
@@ -274,9 +124,8 @@ void Connection::Clear()
 #endif
 	{
 		for(int j=0;j<m_preIds[iter->first].size();j++)
-			m_network->EraseSynapseValues(m_preIds[iter->first][j],iter->first);//iter->first,m_preIds[iter->first][j]);
+			m_network->EraseSynapseValues(m_preIds[iter->first][j],iter->first);
 
-		//m_preIds[i].clear();
 		m_preIds[iter->first].clear();
 	}
 
@@ -297,7 +146,7 @@ void Connection::Clear()
 	m_preIds.clear();
 	m_postIds.clear();
 	
-// old way
+// alternative way
 /*	for(map<long,map<long,float> >::iterator iter =m_hashWeights.begin();iter!=m_hashWeights.end();++iter)
 	{
 		long postId = (*iter).first;
@@ -306,11 +155,9 @@ void Connection::Clear()
 	*/
 }
 
-void Connection::Clear(long postId)
+void Projection::Clear(long postId)
 {
 	map<long,float> empty;
-//	m_hashWeights[postId] = empty;
-	// also remove from preIds?
 
 	int postIndex = -1;
 	for(int i=0;i<m_postIds.size();i++)
@@ -325,23 +172,22 @@ void Connection::Clear(long postId)
 	m_preIds[postIndex].clear();
 }
 
-void Connection::ClearActiveBuffer()
+void Projection::ClearActiveBuffer()
 {
 #if USE_HASHED_ACTIVE_COMMUNICATION == 1
 	m_preIdsActive.clear();
 	m_preIdsActive = vector<vector<pair<long, float> > >(this->PostLayer()->GetNrUnitsTotal());//this->PostLayer()->GetUnits().size());
-	//		m_postIdsPre.clear();
 #endif
 }
 
-void Connection::AddEvent(ConnectionModifier* e, string hashName)
+void Projection::AddEvent(ProjectionModifier* e, string hashName)
 {
-	e->SetConnection(this);
+	e->SetProjection(this);
 	m_events.push_back(e);
 	m_hashEvents[hashName] = e;
 }
 
-void Connection::SetRandomWeights(float minVal, float maxVal)
+void Projection::SetRandomWeights(float minVal, float maxVal)
 {
 	vector<long> postIds = this->GetPostIds();
 
@@ -359,7 +205,7 @@ void Connection::SetRandomWeights(float minVal, float maxVal)
 	}
 }
 
-void Connection::SetRandomWeightsIn(long localPostIndex, float minVal, float maxVal)
+void Projection::SetRandomWeightsIn(long localPostIndex, float minVal, float maxVal)
 {
 	vector<long> postIds = this->GetPostIds();
 	vector<long> localPostIds = this->GetPostLocalIds();
@@ -381,7 +227,7 @@ void Connection::SetRandomWeightsIn(long localPostIndex, float minVal, float max
 	}
 }
 
-void Connection::SetRandomWeightsOut(long localPreIndex, float minVal, float maxVal)
+void Projection::SetRandomWeightsOut(long localPreIndex, float minVal, float maxVal)
 {
 	vector<long> postIds = this->GetPostIds();
 
@@ -403,27 +249,14 @@ void Connection::SetRandomWeightsOut(long localPreIndex, float minVal, float max
 	}
 }
 
-void ConnectionFixed::ModifyConnection()
+void ProjectionFixed::ModifyProjection()
 {
-//	if(IsOn())
-//	{
-		for(int i=0;i<m_events.size();i++)
-		{
-			//ConnectionModifier* e = m_events[i];
-			if(m_events[i]->IsOn())
-				m_events[i]->Modify();
-			/*if(m_events[i]->GetEventId() == 1)
-			{
-			ConnectionModifierBcpnnOnline* e = (ConnectionModifierBcpnnOnline*)m_events[i];
-			e->Modify();
-			}
-			else if(m_events[i]->GetEventId() == 1)
-			{
-			ConnectionModifierBcpnnOnline* e = (ConnectionModifierBcpnnOnline*)m_events[i];
-			e->Modify();
-			}*/
-		}
-//	}
+	for(int i=0;i<m_events.size();i++)
+	{
+		if(m_events[i]->IsOn())
+			m_events[i]->Modify();
+
+	}
 
 	// record new weights if storing on evolution of weights
 
@@ -437,7 +270,7 @@ void ConnectionFixed::ModifyConnection()
 			for(int i=0;i<this->GetPostIds().size();i++)
 			{
 				long postId = this->GetPostIds()[i];
-				vector<long> preIds = this->GetPreIds(postId); // does this function exist anymore ?
+				vector<long> preIds = this->GetPreIds(postId);
 				vector<float> ws(preIds.size());
 
 				for(int j=0;j<preIds.size();j++)
@@ -453,37 +286,21 @@ void ConnectionFixed::ModifyConnection()
 	}
 }
 
-void ConnectionFixed::SimulateEvent(UnitModifier* e)
+void ProjectionFixed::SimulateEvent(UnitModifier* e)
 {
 	for(int i=0;i<m_events.size();i++)
 	{
-		//ConnectionModifier* e = m_events[i];
 		if(m_events[i]->GetEventId() == 1)
 		{
-			ConnectionModifierBcpnnOnline* b = (ConnectionModifierBcpnnOnline*)m_events[i];
+			ProjectionModifierBcpnnOnline* b = (ProjectionModifierBcpnnOnline*)m_events[i];
 			b->Simulate(e);
-
-			//ConnectionModifierBcpnnOnline e2;
-			//e2.Simulate();
 		}
 	}
 }
 
-vector<float> Connection::GetPreValues(long unitId)
+vector<float> Projection::GetPreValues(long unitId)
 {
-/*	map<long, Network::SynapseStandard>* preSynapses = m_network->GetPreSynapses(unitId);	
-	vector<float> out(preSynapses->size());
-	map<long, Network::SynapseStandard>::iterator it;
-	int i = 0;
-	for(it = preSynapses->begin(); it!=preSynapses->end(); it++)
-	{
-		out[i] = m_network->GetPreValue(it->first);
-		i++;
-	}
-
-	return out;*/
-	
-	vector<long> preIds = m_preIds[unitId]; // change to pointer
+	vector<long> preIds = m_preIds[unitId]; // could change to pointer
 	vector<float> out(preIds.size());
 	
 	for(int i=0;i<preIds.size();i++)
@@ -495,7 +312,7 @@ vector<float> Connection::GetPreValues(long unitId)
 }
 
 // re-implement
-vector<long> Connection::GetPreLocalIds(long unitId)
+vector<long> Projection::GetPreLocalIds(long unitId)
 {
 	vector<long> preIds = m_preIds[unitId];
 	vector<long> localPreIds(preIds.size());
@@ -510,36 +327,19 @@ vector<long> Connection::GetPreLocalIds(long unitId)
 		localPreIds[i] = localIndex;
 	}
 
-/*	map<long,float> preUnitWeights = m_hashWeights[unitId];
-	vector<long> indexes(preUnitWeights.size());
-
-	int i=0;
-	for(map<long,float>::iterator iter = preUnitWeights.begin();iter!=preUnitWeights.end();++iter)
-	{
-		long preId = (*iter).first;
-		long localId = ((RateUnit*)m_preLayer->network()->GetUnitFromId(preId))->GetUnitIdLocal();
-
-		indexes[i] = localId;//preId;
-		i++;
-	}
-
-	return indexes;*/
-
-	return localPreIds;//vector<long>(0);
+	return localPreIds;
 }
 
-vector<long> Connection::GetPreIds(long unitId)
+vector<long> Projection::GetPreIds(long unitId)
 {
-	// fix this -> should be index-based (?)
-	//for(int i=0;i<m_postIds.size
-	return m_preIds[unitId];//unitId-m_postIds[0]];
+	return m_preIds[unitId]; // if an index-based implementation were to be used this could be changed to be retrieved by unitId-m_postIds[0];
 }
 
-
-void Connection::AddActiveEvent(long preId, float value)
+void Projection::AddActiveEvent(long preId, float value)
 {
 	vector<long> postIds;
-	// get all the units this unit is connected to on this connection
+
+	// get all the units this unit is connected to on this Projection
 	postIds = GetPostIds(preId);
 	
 	// put in their active queues/buffers
@@ -548,19 +348,19 @@ void Connection::AddActiveEvent(long preId, float value)
 		pair<long, float> p;
 		p.first = preId;
 		p.second = value;
-		// put in vector with position determined by hash (set up once)
-		m_preIdsActive[postIds[i]].push_back(p);//preId);
+		// put in vector with position determined by hash (this is set up once)
+		m_preIdsActive[postIds[i]].push_back(p);
 	}
 }
 
-void Connection::AddActiveEvents(vector<long> preIds, vector<float> values)
+void Projection::AddActiveEvents(vector<long> preIds, vector<float> values)
 {
 	vector<vector<long> > localPostIds(preIds.size());
 	m_preIdsActive = vector<vector<pair<long,float> > >(this->PostLayer()->GetNrUnitsTotal());//this->PostLayer()->GetUnits().size());
 
 	for(int i=0;i<preIds.size();i++)
 	{
-		// get all the units this unit is connected to on this connection
+		// get all the units this unit is connected to on this Projection
 		localPostIds[i] = GetLocalPostIds(preIds[i]);//GetPostIds(preIds[i]);
 		for(int j=0;j<localPostIds[i].size();j++)
 		{
@@ -572,32 +372,21 @@ void Connection::AddActiveEvents(vector<long> preIds, vector<float> values)
 	for(int i=0;i<preIds.size();i++)
 	{
 		// put in their active queues/buffers
-		//pair<long, float> p; // new here will take time (track in profiler)
+
+		//pair<long, float> p; // new here will take time (track in profiler to get exact measures)
 		p.first = preIds[i];
 		p.second = values[i];
 		long localId;
 
 		for(int j=0;j<localPostIds[i].size();j++)//postIds.size();j++)
 		{
-			//localId = this->PostLayer()->GetLocalIdUnitId(postIds[j]);
-			// put in vector with position determined by hash (set up once) - optimize (!) (remove new + slow hash insert)
 			m_preIdsActive[localPostIds[i][j]].push_back(p);
-			//m_preIdsActive[localId].push_back(p);//preId);
-			//m_preIdsActive[postIds[j]].push_back(p);//preId);
-
-			// organized by local id
 		}
 	}
 }
 
-/*vector<pair<long,float> >* Connection::GetPreIdsActive(long unitId)
-{
-	// fix this -> should be index-based (?)
-	//for(int i=0;i<m_postIds.size
-	return &m_preIdsActive[unitId];//unitId-m_postIds[0]];
-}*/
 
-vector<pair<long,float> >* Connection::GetPreIdsActiveLocal(long localUnitId)
+vector<pair<long,float> >* Projection::GetPreIdsActiveLocal(long localUnitId)
 {
 	if(m_preIdsActive.size() == 0) // move (!)
 		this->ClearActiveBuffer();
@@ -610,7 +399,7 @@ vector<pair<long,float> >* Connection::GetPreIdsActiveLocal(long localUnitId)
 }
 
 // Necessary to set USE_HASHED_ACTIVE_COMMUNICATION to 1 to be able to use this (consumes unnecessary memory otherwise (scales with nr synapses))
-vector<long> Connection::GetPostIds(long preId)
+vector<long> Projection::GetPostIds(long preId)
 {
 #if	USE_HASHED_ACTIVE_COMMUNICATION == 1
 	return m_postIdsPre[preId];
@@ -619,7 +408,7 @@ vector<long> Connection::GetPostIds(long preId)
 #endif
 }
 
-vector<long> Connection::GetLocalPostIds(long preId)
+vector<long> Projection::GetLocalPostIds(long preId)
 {
 #if	USE_HASHED_ACTIVE_COMMUNICATION == 1
 	return m_localPostIdsPre[preId];
@@ -628,7 +417,7 @@ vector<long> Connection::GetLocalPostIds(long preId)
 #endif
 }
 
-void Connection::EraseSynapses(vector<pair<long,long> > vectorPostIdPreId)
+void Projection::EraseSynapses(vector<pair<long,long> > vectorPostIdPreId)
 {
 	for(int i=0;i<vectorPostIdPreId.size();i++)
 	{
@@ -640,7 +429,7 @@ void Connection::EraseSynapses(vector<pair<long,long> > vectorPostIdPreId)
 	CreatePreIdsUnion();
 }
 
-void Connection::EraseSynapse(long postId, long preId)
+void Projection::EraseSynapse(long postId, long preId)
 {
 	vector<long> preIds = m_preIds[postId];
 
@@ -689,7 +478,7 @@ void Connection::EraseSynapse(long postId, long preId)
 
 }
 
-vector<long> Connection::GetPostLocalIds()
+vector<long> Projection::GetPostLocalIds()
 {
 	//return m_postIds;//m_network->GetPostIds();
 	
@@ -706,7 +495,7 @@ vector<long> Connection::GetPostLocalIds()
 	return localIds;
 }
 
-vector<long> Connection::GetPostIds()
+vector<long> Projection::GetPostIds()
 {
 	/*vector<long> ids(m_hashWeights.size());
 	//int i=m_hashWeights.size()-1;
@@ -726,7 +515,7 @@ vector<long> Connection::GetPostIds()
 	return m_postIds;
 }
 
-vector<long>* Connection::GetPreIdsAll()//GetPreIdsUnion()
+vector<long>* Projection::GetPreIdsAll()//GetPreIdsUnion()
 {
 	if(m_preIdsUnion.size() == 0)
 	{
@@ -738,12 +527,12 @@ vector<long>* Connection::GetPreIdsAll()//GetPreIdsUnion()
 
 }
 
-// does same as CreateAllPreIdsUnion but only these connections, could merge for build performance (!)
+// does same as CreateAllPreIdsUnion but only these Projections, could merge for build performance (!)
 // default: called in initialization phase
-void Connection::CreatePreIdsUnion()
+void Projection::CreatePreIdsUnion()
 {
 	m_preIdsUnion.clear();
-	m_totalNrLocalConnections = 0; //
+	m_totalNrLocalProjections = 0; //
 
 	map<long,int> tempMap;
 	
@@ -764,7 +553,7 @@ void Connection::CreatePreIdsUnion()
 			{
 				// no duplicates (not using nr times)
 				tempMap[it2->first] = tempMap[it2->first]+1;
-				m_totalNrLocalConnections++;
+				m_totalNrLocalProjections++;
 			}
 		}
 	}
@@ -776,12 +565,12 @@ void Connection::CreatePreIdsUnion()
 
 	if(m_network->MPIGetNodeId() == 0)
 	{
-		cout<<"Total nr incoming local connections (layer "<<m_name<<") == "<<m_totalNrLocalConnections<<"\n";
+		cout<<"Total nr incoming local Projections (layer "<<m_name<<") == "<<m_totalNrLocalProjections<<"\n";
 		cout.flush();
 	}
 }
 
-/*vector<long>* Connection::GetPostIds(long preId)
+/*vector<long>* Projection::GetPostIds(long preId)
 {
 	if(m_listPosts.size() == 0) // will be 0 if node has no local units in layer
 		return NULL;
@@ -791,7 +580,7 @@ void Connection::CreatePreIdsUnion()
 		return m_listPosts[preId]; // use pointer instead
 }*/
 
-vector<float> Connection::GetPostValues()
+vector<float> Projection::GetPostValues()
 {
 	/*vector<float> out(m_hashWeights.size());//network()->HashWeights()->size());
 
@@ -822,7 +611,7 @@ vector<float> Connection::GetPostValues()
 	return out;
 }
 
-vector<float> Connection::GetPreValuesAll()
+vector<float> Projection::GetPreValuesAll()
 {
 	vector<float> out(m_preIdsUnion.size());//network()->HashWeights()->size());
 
@@ -836,17 +625,17 @@ vector<float> Connection::GetPreValuesAll()
 	return out;	
 }
 
-/*float Connection::GetWeight(long preId, long postId)
+/*float Projection::GetWeight(long preId, long postId)
 {
 	return (*network()->HashWeights())[postId][preId];
 }
 
-void Connection::SetWeight(float weight, long preId, long postId)
+void Projection::SetWeight(float weight, long preId, long postId)
 {
 	(*network()->HashWeights())[postId][preId] = weight;
 }*/
 
-std::vector<std::vector<float> > Connection::GetValuesToRecord()
+std::vector<std::vector<float> > Projection::GetValuesToRecord()
 {
 	vector<vector<float> > outData;
 
@@ -909,17 +698,33 @@ std::vector<std::vector<float> > Connection::GetValuesToRecord()
 	return outData;
 }
 
-void Connection::CopyConnectionsOtherPost(Population* newPost)
+// has been moved to Network class
+void Projection::CopyProjectionsOtherPost(Population* newPost)
 {
 	// Get preids and postids
 
 	// Change list of post ids to new population
 
-	// use connectivitytype::AddConnections
+	// use connectivitytype::AddProjections
 
-	// go through all connections, copy weight values etc (optional)
+	// go through all Projections, copy weight values etc (optional)
 }
 
+void Projection::SetWeightValues(float value)
+{
+	vector<long> postIds = this->GetPostIds();
+
+	for(int i=0;i<postIds.size();i++)
+	{
+		long postId = postIds[i];
+		vector<long> preIds = this->GetPreIds(postId);//this->GetPreSynapses(postId);
+
+		for(int j=0;j<preIds.size();j++)
+		{
+			this->network()->SetWeight(value,preIds[j],postId);
+		}
+	}
+}
 
 void FullConnectivity::SetWeightValues(long preId, long postId)//Unit* pre, Unit* post)
 {
@@ -949,7 +754,7 @@ void FullConnectivity::SetWeightValues(long preId, long postId)//Unit* pre, Unit
 	}
 }
 
-void Connectivity::InitializeWeightsAndConnectionModifiers()
+void Connectivity::InitializeWeightsAndProjectionModifiers()
 {
 	TimingStart(m_name);
 
@@ -989,35 +794,35 @@ void Connectivity::InitializeWeightsAndConnectionModifiers()
 			postUnits = m_post->GetUnits();
 		}
 
-		ConnectionFixed* conn = new ConnectionFixed();
+		ProjectionFixed* conn = new ProjectionFixed();
 		conn->Initialize(m_pre,m_post);
 		conn->network(this->network());
 		conn->SetConnectivity(this);
 
-		m_pre->AddOutgoingConnection(conn);
-		m_post->AddIncomingConnection(conn);
+		m_pre->AddOutgoingProjection(conn);
+		m_post->AddIncomingProjection(conn);
 
-		ConnectionModifierBcpnnOnline* eBcpnnOnline; // allocated upon request
-		ConnectionModifierMIRateUnit* eMIRateUnits;
-		ConnectionModifierMIHypercolumn* eMIHypercolumns;
-		ConnectionModifierMDS* eMDS;
-		ConnectionModifierVQ* eVQ;
-		ConnectionModifierCL* eCL;
-		ConnectionModifierKussul* eKussul;
-		ConnectionModifierFoldiak* eFoldiak;
-		ConnectionModifierCSL* eCSL;
-		ConnectionModifierTriesch* eTriesch;
-		ConnectionModifierPearson* ePearson;
-		ConnectionModifierHebbSimple* eHebbSimple;
-		ConnectionModifierBCM* eBCM;
-		ConnectionModifierSanger* eSanger;
-		ConnectionModifierSTDP* eSTDP;
+		ProjectionModifierBcpnnOnline* eBcpnnOnline; // allocated upon request
+		ProjectionModifierMIRateUnit* eMIRateUnits;
+		ProjectionModifierMIHypercolumn* eMIHypercolumns;
+		ProjectionModifierMDS* eMDS;
+		ProjectionModifierVQ* eVQ;
+		ProjectionModifierCL* eCL;
+		ProjectionModifierKussul* eKussul;
+		ProjectionModifierFoldiak* eFoldiak;
+		ProjectionModifierCSL* eCSL;
+		ProjectionModifierTriesch* eTriesch;
+		ProjectionModifierPearson* ePearson;
+		ProjectionModifierHebbSimple* eHebbSimple;
+		ProjectionModifierBCM* eBCM;
+		ProjectionModifierSanger* eSanger;
+		ProjectionModifierSTDP* eSTDP;
 
 		bool bcpnnInit = false, miMcInit = false, miHcInit = false, mdsInit = false, vqInit = false, clInit = false, ksInit = false, foInit = false, cslInit = false, trieschInit = false, pearsonInit = false, hebbSimpleInit = false, bcmInit = false, sangerInit = false, stdpInit = false;
 
 		// pre och post alla local för hypercolumn! borde inte vara så, kolla resetlocalities etc.
 
-		long connectionId = 0;
+		long ProjectionId = 0;
 		bool firstRun = true;
 		int cIndex = -1;
 
@@ -1056,7 +861,7 @@ void Connectivity::InitializeWeightsAndConnectionModifiers()
 			//for(long i=0;i<preUnits.size();i++)
 			long currentPreIndex = 0; // now fixed by startId //nrPreRateUnits.size(); // assumes first ids are reserved for the hypercolumns
 
-			if(isOverHypercolumns == true) // build connections over the hypercolumns
+			if(isOverHypercolumns == true) // build Projections over the hypercolumns
 			{
 				currentPreIndex = 0;
 			}
@@ -1148,9 +953,9 @@ void Connectivity::InitializeWeightsAndConnectionModifiers()
 							{
 								//TimingStart("IterPreAdd");
 
-								steps = IterationAdvance(); // fastest way to put constraint on connections (but cannot use any properties)
+								steps = IterationAdvance(); // fastest way to put constraint on Projections (but cannot use any properties)
 
-								// create new preUnit so that also non-local units get checked (viable while using ExtraConstraint to build connections)
+								// create new preUnit so that also non-local units get checked (viable while using ExtraConstraint to build Projections)
 								// could switch to iterated build to get rid of non-local checks, but then need to build iterators instead of using ExtraConstraint
 								if(IterationPreConstraint(postUnits[j],currentPreIndex,m))
 								{
@@ -1199,8 +1004,8 @@ void Connectivity::InitializeWeightsAndConnectionModifiers()
 
 										if(typePost == Population::FixedWeightsAndRateUnits && typePre == Population::FixedWeightsAndRateUnits) // default
 										{
-											//ConnectionFixed* conn = new ConnectionFixed();
-											//conn->SetConnection(preUnits[i],postUnits[j]);
+											//ProjectionFixed* conn = new ProjectionFixed();
+											//conn->SetProjection(preUnits[i],postUnits[j]);
 
 											// cached for performance
 											if(addedPostCache == false)
@@ -1240,219 +1045,181 @@ void Connectivity::InitializeWeightsAndConnectionModifiers()
 			//TimingStop("IterPre");
 			//}
 
-			//TimingStart("AddConnections");
+			//TimingStart("AddProjections");
 			//for(int m=0;m<postCache.size();m++)
 			//{
 			int m=preCache.size()-1;
-			//m_network->AddConnections(preCache[m],postCache[m]);	// alternative: put the actual connections in Network
+			//m_network->AddProjections(preCache[m],postCache[m]);	// alternative: put the actual Projections in Network
 
 			if(preCache.size()>0)
 			{
-				conn->AddConnections(preCache[m],postCache[m],postLocalCache[m]);			// then put the description on what is in Network in Connections
+				conn->AddProjections(preCache[m],postCache[m],postLocalCache[m]);			// then put the description on what is in Network in Projections
 
 
 				for(int n=0;n<preCache[m].size();n++)
 				{
-
-					//conn->AddConnection(preUnits[i]->GetUnitId(),postUnits[j]->GetUnitId(),firstRun);//, conn->GetCurrentConnectionId());
-					//conn->AddConnection(preUnits[i]->GetUnitId(),postUnits[j]->GetUnitId(),firstRun);//, conn->GetCurrentConnectionId());
-
 					SetWeightValues(preCache[m][n],postCache[m]);
 
+					
+					// adds the available Projection events
+					// the explicit check is temporary, will be put outside in the objects themselves
 
-					//float r = (rand()/(float(RAND_MAX)+1))/2;
-					//network()->SetWeight(0.0,conn->GetCurrentConnectionId());
-					//conn->NextConnectionId();
-
-					//network()->SetWeight(0.0);//r);//1.0);
-
-					/*					if(preUnits[i]->GetNodeId() == m_network->MPIGetNodeId())
-					preUnits[i]->SetLocal(true);
-					else
-					preUnits[i]->SetLocal(false);
-
-					if(postUnits[j]->GetNodeId() == m_network->MPIGetNodeId())
-					postUnits[j]->SetLocal(true);
-					else
-					postUnits[j]->SetLocal(false);
-					*/
-					// connection events - will be made object neutral
-
-					for(int k=0;k<m_eventConnections.size();k++)
+					for(int k=0;k<m_eventProjections.size();k++)
 					{
-						if(m_eventConnections[k]->GetEventId() == 1) // BCPNN-online
+						if(m_eventProjections[k]->GetEventId() == 1) // BCPNN-online
 						{
 							if(bcpnnInit == false)
 							{	
 								bcpnnInit = true;
-								eBcpnnOnline = (ConnectionModifierBcpnnOnline*)m_eventConnections[k];//new ConnectionModifierBcpnnOnline(*((ConnectionModifierBcpnnOnline*)m_eventConnections[k])); // deep copy
+								eBcpnnOnline = (ProjectionModifierBcpnnOnline*)m_eventProjections[k];
 								conn->AddEvent(eBcpnnOnline,"bcpnn");
-								conn->AddUnitsProperty(eBcpnnOnline->GetTransferFunction()); //conn->PostLayer()->AddUnitsProperty(eBcpnnOnline->GetTransferFunction()); // bcpnn transfer function
+								conn->AddUnitsProperty(eBcpnnOnline->GetTransferFunction());
 							}
-
-							/*ConnectionModifierBcpnnOnline* e = new ConnectionModifierBcpnnOnline(*((ConnectionModifierBcpnnOnline*)m_eventConnections[k])); // deep copy
-							e->Initialize();
-							conn->AddEvent(e,"bcpnn");
-							conn->Post()->AddUnitModifier(t); // bcpnn transfer function
-							*/
 						}
-						else if(m_eventConnections[k]->GetEventId() == 2) // MI mincolumns
+						else if(m_eventProjections[k]->GetEventId() == 2) // MI mincolumns
 						{
 							if(miMcInit == false)
 							{
 								miMcInit = true;
-								eMIRateUnits = (ConnectionModifierMIRateUnit*)m_eventConnections[k];//new ConnectionModifierMIRateUnit(*((ConnectionModifierMIRateUnit*)m_eventConnections[k]));
-								//eMIRateUnits->Initialize();
+								eMIRateUnits = (ProjectionModifierMIRateUnit*)m_eventProjections[k];
 								conn->AddEvent(eMIRateUnits,"miminicolumn");
 							}
 						}
-						else if(m_eventConnections[k]->GetEventId() == 3) // MI hypercolumns
+						else if(m_eventProjections[k]->GetEventId() == 3) // MI hypercolumns
 						{
 							if(miHcInit == false)
 							{
 								miHcInit = true;
-								eMIHypercolumns = (ConnectionModifierMIHypercolumn*)m_eventConnections[k];//new ConnectionModifierMIHypercolumn(*((ConnectionModifierMIHypercolumn*)m_eventConnections[k]));
-								//eMIRateUnits->Initialize();
+								eMIHypercolumns = (ProjectionModifierMIHypercolumn*)m_eventProjections[k];
 								conn->AddEvent(eMIHypercolumns,"mihypercolumn");
 							}
-							/*ConnectionModifierMIHypercolumn* e = new ConnectionModifierMIHypercolumn(*((ConnectionModifierMIHypercolumn*)m_eventConnections[k]));
-							e->Initialize();
-							conn->AddEvent(e,"mihypercolumn");*/
 						}
-						else if(m_eventConnections[k]->GetEventId() == 4) // MDS (hypercolumns)
+						else if(m_eventProjections[k]->GetEventId() == 4) // MDS (hypercolumns)
 						{
 							if(mdsInit == false)
 							{
 								mdsInit = true;
-								eMDS = (ConnectionModifierMDS*)m_eventConnections[k];//new ConnectionModifierMDS(*((ConnectionModifierMDS*)m_eventConnections[k]));
-								//e->Initialize();
+								eMDS = (ProjectionModifierMDS*)m_eventProjections[k];
 								conn->AddEvent(eMDS,"mds");
 							}
 						}
-						else if(m_eventConnections[k]->GetEventId() == 5) // VQ shell class
+						else if(m_eventProjections[k]->GetEventId() == 5) // VQ shell class
 						{
 							if(vqInit == false)
 							{
 								vqInit = true;
-								eVQ = (ConnectionModifierVQ*)m_eventConnections[k];
+								eVQ = (ProjectionModifierVQ*)m_eventProjections[k];
 								conn->AddEvent(eVQ,"vq");
 							}
 						}
-						else if(m_eventConnections[k]->GetEventId() == 6) // Competitive Learning
+						else if(m_eventProjections[k]->GetEventId() == 6) // Competitive Learning
 						{
 							if(clInit == false)
 							{	
 								clInit = true;
-								eCL = (ConnectionModifierCL*)m_eventConnections[k];
+								eCL = (ProjectionModifierCL*)m_eventProjections[k];
 								conn->AddEvent(eCL,"cl");
-								conn->AddUnitsProperty(eCL->GetTransferFunction());//conn->PostLayer()->AddUnitsProperty(eCL->GetTransferFunction());
+								conn->AddUnitsProperty(eCL->GetTransferFunction());
 							}
 						}
-						else if(m_eventConnections[k]->GetEventId() == 7) // Kussul (delta rule)
+						else if(m_eventProjections[k]->GetEventId() == 7) // Kussul (delta rule)
 						{
 							if(ksInit == false)
 							{	
 								ksInit = true;
-								eKussul = (ConnectionModifierKussul*)m_eventConnections[k];
+								eKussul = (ProjectionModifierKussul*)m_eventProjections[k];
 								conn->AddEvent(eKussul,"ks");
-								conn->AddUnitsProperty(eKussul->GetTransferFunction());//conn->PostLayer()->AddUnitsProperty(eKussul->GetTransferFunction());
+								conn->AddUnitsProperty(eKussul->GetTransferFunction());
 							}
 						}
-						else if(m_eventConnections[k]->GetEventId() == 8) // Foldiak
+						else if(m_eventProjections[k]->GetEventId() == 8) // Foldiak
 						{
 							if(foInit == false)
 							{	
 								foInit = true;
-								eFoldiak = (ConnectionModifierFoldiak*)m_eventConnections[k];
+								eFoldiak = (ProjectionModifierFoldiak*)m_eventProjections[k];
 								conn->AddEvent(eFoldiak,"fo");
-								conn->AddUnitsProperty(eFoldiak->GetTransferFunction());//conn->PostLayer()->AddUnitsProperty(eFoldiak->GetTransferFunction());
+								conn->AddUnitsProperty(eFoldiak->GetTransferFunction());
 							}
 						}
-						else if(m_eventConnections[k]->GetEventId() == 9) // CSL used for feature extraction
+						else if(m_eventProjections[k]->GetEventId() == 9) // CSL used for clustering and feature extraction
 						{
 							if(cslInit == false)
 							{	
 								cslInit = true;
-								eCSL = (ConnectionModifierCSL*)m_eventConnections[k];
+								eCSL = (ProjectionModifierCSL*)m_eventProjections[k];
 								conn->AddEvent(eCSL,"csl");
-								conn->AddUnitsProperty(eCSL->GetTransferFunction());//conn->PostLayer()->AddUnitsProperty(eCSL->GetTransferFunction());
+								conn->AddUnitsProperty(eCSL->GetTransferFunction());
 							}
 						}
-						else if(m_eventConnections[k]->GetEventId() == 10) // Triesch
+						else if(m_eventProjections[k]->GetEventId() == 10) // Triesch
 						{
 							if(trieschInit == false)
 							{	
 								trieschInit = true;
-								eTriesch = (ConnectionModifierTriesch*)m_eventConnections[k];
+								eTriesch = (ProjectionModifierTriesch*)m_eventProjections[k];
 								conn->AddEvent(eTriesch,"tr");
-								conn->AddUnitsProperty(eTriesch->GetTransferFunction());//conn->PostLayer()->AddUnitsProperty(eTriesch->GetTransferFunction());
+								conn->AddUnitsProperty(eTriesch->GetTransferFunction());
 							}
 						}
-						else if(m_eventConnections[k]->GetEventId() == 11) // Pearson's correlation
+						else if(m_eventProjections[k]->GetEventId() == 11) // Pearson's correlation
 						{
 							if(pearsonInit == false)
 							{	
 								pearsonInit = true;
-								ePearson = (ConnectionModifierPearson*)m_eventConnections[k];
+								ePearson = (ProjectionModifierPearson*)m_eventProjections[k];
 								conn->AddEvent(ePearson,"pearson");
 							}
 						}
-						else if(m_eventConnections[k]->GetEventId() == 12) // standard hebb with weight normalization
+						else if(m_eventProjections[k]->GetEventId() == 12) // standard hebb with weight normalization
 						{
 							if(hebbSimpleInit == false)
 							{	
 								hebbSimpleInit = true;
-								eHebbSimple = (ConnectionModifierHebbSimple*)m_eventConnections[k];
+								eHebbSimple = (ProjectionModifierHebbSimple*)m_eventProjections[k];
 								conn->AddEvent(eHebbSimple,"hs");
-								conn->AddUnitsProperty(eHebbSimple->GetTransferFunction());//conn->PostLayer()->AddUnitsProperty(eHebbSimple->GetTransferFunction());
+								conn->AddUnitsProperty(eHebbSimple->GetTransferFunction());
 							}
 						}
-						else if(m_eventConnections[k]->GetEventId() == 13) // BCM
+						else if(m_eventProjections[k]->GetEventId() == 13) // BCM
 						{
 							if(bcmInit == false)
 							{	
 								bcmInit = true;
-								eBCM = (ConnectionModifierBCM*)m_eventConnections[k];
+								eBCM = (ProjectionModifierBCM*)m_eventProjections[k];
 								conn->AddEvent(eBCM,"bcm");
-								conn->AddUnitsProperty(eBCM->GetTransferFunction());//conn->PostLayer()->AddUnitsProperty(eBCM->GetTransferFunction());
+								conn->AddUnitsProperty(eBCM->GetTransferFunction());
 							}
 						}
-						else if(m_eventConnections[k]->GetEventId() == 14) // Sanger / Oja
+						else if(m_eventProjections[k]->GetEventId() == 14) // Sanger / Oja
 						{
 							if(sangerInit == false)
 							{	
 								sangerInit = true;
-								eSanger = (ConnectionModifierSanger*)m_eventConnections[k];
+								eSanger = (ProjectionModifierSanger*)m_eventProjections[k];
 								conn->AddEvent(eSanger,"sanger");
-								conn->AddUnitsProperty(eSanger->GetTransferFunction());//conn->PostLayer()->AddUnitsProperty(eSanger->GetTransferFunction());
+								conn->AddUnitsProperty(eSanger->GetTransferFunction());
 							}
 
 						}
-						else if(m_eventConnections[k]->GetEventId() == 15) // STDP
+						else if(m_eventProjections[k]->GetEventId() == 15) // STDP
 						{
 							if(stdpInit == false)
 							{	
 								stdpInit = true;
-								eSTDP = (ConnectionModifierSTDP*)m_eventConnections[k];
+								eSTDP = (ProjectionModifierSTDP*)m_eventProjections[k];
 								conn->AddEvent(eSTDP,"stdp");
-								//conn->PostLayer()->AddUnitsProperty(eSTDP->GetTransferFunction());
 							}
 						}
 						else
 						{
-							cout<<"Warning: EventId not recognized." << m_eventConnections[k]->GetEventId();
+							cout<<"Warning: EventId not recognized." << m_eventProjections[k]->GetEventId();
 						}
 					}
 				}
-
-
-				//preCache[m].clear(); // lower temporary memory consumption
 			}
 		}
-
-		//TimingStop("AddConnections");
-
-
+		
 		if(network()->MPIGetNodeId() == 0)
 		{
 			cout<<"ok\n";
@@ -1460,10 +1227,8 @@ void Connectivity::InitializeWeightsAndConnectionModifiers()
 		}
 
 		conn->network(network());
-		//conn->GenerateHashTables();
-
-		// first time need to be run after hash tables generated
-
+		
+		// first time initializations need to be run after hash tables generated
 		if(bcpnnInit == true)
 			eBcpnnOnline->Initialize(conn);
 		if(mdsInit == true)
@@ -1501,18 +1266,14 @@ void Connectivity::InitializeWeightsAndConnectionModifiers()
 
 		if(m_symmetric == true)
 		{
-			// copy all synapses across nodes
+			// also copies all synapses across nodes if needed
 			if(preCache.size()>0 && postCache.size()>0)
-				MakeConnectionsSymmetric(&preCache,&postCache,conn);
+				MakeProjectionsSymmetric(&preCache,&postCache,conn);
 		}
 	}
 
 	m_initialized = true;
 	
-//	if(m_symmetric == true)
-//	{
-	//	this->network()->SetSeed(false);
-//	}
 
 	TimingStop(m_name);
 }
@@ -1520,225 +1281,222 @@ void Connectivity::InitializeWeightsAndConnectionModifiers()
 /// - Assumes an MPI_WORLD distribution
 /// - Assumes ordered distribution of units in a population
 /// Also, only legitimate to use in cases where we have recurrent connectivity
-/// Quite specifically made for the random connections atm.
-void Connectivity::MakeConnectionsSymmetric(vector<vector<long> >* preCache, vector<long>* postCache, ConnectionFixed* conn)
+/// Quite specifically made for the random Projections atm.
+void Connectivity::MakeProjectionsSymmetric(vector<vector<long> >* preCache, vector<long>* postCache, ProjectionFixed* conn)
 {
-	if(true)//this->network()->MPIGetNrProcs()>1)
+	// send version
+	// only gather all data send to node
+	vector<int> nrPreRateUnits = ((PopulationColumns*)m_pre)->GetStructure();
+	vector<long> postsToAdd;
+	vector<vector<long> > presToAdd;
+	vector<vector<float> > weightsToAdd;
+	vector<vector<float> > delaysToAdd;
+
+	vector<int> procsUsed = conn->PreLayer()->MPIGetProcessesUsed();
+
+	MPI_Comm *comm = m_post->MPI()->MPIGetCommLayer();
+
+	bool cont = false;
+	if(procsUsed.size() == 0)
+		cont = true;
+	else if(binary_search(procsUsed.begin(),procsUsed.end(),this->network()->MPIGetNodeId()))
+		cont = true;
+
+	if(cont == true) // only continue if this process takes part in the population
 	{
-		// send version
-		// only gather all data send to node
-		vector<int> nrPreRateUnits = ((PopulationColumns*)m_pre)->GetStructure();
-		vector<long> postsToAdd;
-		vector<vector<long> > presToAdd;
-		vector<vector<float> > weightsToAdd;
-		vector<vector<float> > delaysToAdd;
+		// assumes an ordered distribution
+		long startId = ((PopulationColumns*)m_post)->GetUnits()[0]->GetUnitId();
+		long endId = ((PopulationColumns*)m_post)->GetUnits()[((PopulationColumns*)m_post)->GetUnits().size()-1]->GetUnitId();
 
-		vector<int> procsUsed = conn->PreLayer()->MPIGetProcessesUsed();
+		// assumes that it is
 
-		MPI_Comm *comm = m_post->MPI()->MPIGetCommLayer();
+		int totNr = procsUsed.size();
+		if(procsUsed.size()==0)
+			totNr = this->network()->MPIGetNrProcs();
 
-		bool cont = false;
-		if(procsUsed.size() == 0)
-			cont = true;
-		else if(binary_search(procsUsed.begin(),procsUsed.end(),this->network()->MPIGetNodeId()))
-			cont = true;
-
-		if(cont == true) // only continue if this process takes part in the population
+		for(int i=0;i<totNr;i++)//this->network()->MPIGetNrProcs();i++)
 		{
-			// assumes an ordered distribution
-			long startId = ((PopulationColumns*)m_post)->GetUnits()[0]->GetUnitId();
-			long endId = ((PopulationColumns*)m_post)->GetUnits()[((PopulationColumns*)m_post)->GetUnits().size()-1]->GetUnitId();
+			vector<long> tempPost;
+			vector<long> tempPostLocal;
+			vector<vector<long> > tempPre;
+			vector<vector<float> > weights;
+			vector<vector<float> > delays;
 
-			// assumes that it is
+			int mpiRank;
+			if(procsUsed.size() == 0)
+				mpiRank = i;
+			else
+				mpiRank = procsUsed[i];
 
-			int totNr = procsUsed.size();
-			if(procsUsed.size()==0)
-				totNr = this->network()->MPIGetNrProcs();
-
-			for(int i=0;i<totNr;i++)//this->network()->MPIGetNrProcs();i++)
+			if(procsUsed.size() == 1 || totNr == 1)		// whole population on one process
 			{
-				vector<long> tempPost;
-				vector<long> tempPostLocal;
-				vector<vector<long> > tempPre;
-				vector<vector<float> > weights;
-				vector<vector<float> > delays;
-				
-				int mpiRank;
-				if(procsUsed.size())
-					mpiRank = i;
-				else
-					mpiRank = procsUsed[i];
+				tempPost = *postCache;
+				tempPre = *preCache;
 
-				if(procsUsed.size() == 1)		// whole population on one process
+				int nrPosts = (*postCache).size();
+				for(int j=0;j<nrPosts;j++)
+				{
+					int nrPre = (*preCache)[j].size();
+					vector<float> w(nrPre);
+					vector<float> d(nrPre);
+
+					for(int m=0;m<nrPre;m++)
+					{
+						w[m] = this->network()->GetWeight((*preCache)[j][m],(*postCache)[j]);
+						d[m] = this->network()->GetDelay((*preCache)[j][m],(*postCache)[j]);
+					}
+
+					weights.push_back(w);
+					delays.push_back(d);
+				}
+			}
+			else							// broadcast the Projections and weights to other processes involved in this population
+			{
+				if(mpiRank == this->network()->MPIGetNodeId())
 				{
 					tempPost = *postCache;
 					tempPre = *preCache;
 
+					// send locally corresponding part
 					int nrPosts = (*postCache).size();
-					for(int j=0;j<nrPosts;j++)
+					MPI_Bcast(&nrPosts,1,MPI_INT,mpiRank,*comm);//NETWORK_COMM_WORLD);
+					if(nrPosts>0)
 					{
-						int nrPre = (*preCache)[j].size();
-						vector<float> w(nrPre);
-						vector<float> d(nrPre);
+						MPI_Bcast(&(*postCache)[0],nrPosts,MPI_LONG,mpiRank,*comm);//NETWORK_COMM_WORLD);
 
-						for(int m=0;m<nrPre;m++)
+						for(int j=0;j<nrPosts;j++)
 						{
-							w[m] = this->network()->GetWeight((*preCache)[j][m],(*postCache)[j]);
-							d[m] = this->network()->GetDelay((*preCache)[j][m],(*postCache)[j]);
-						}
+							int nrPre = (*preCache)[j].size();
+							MPI_Bcast(&nrPre,1,MPI_INT,mpiRank,*comm);//NETWORK_COMM_WORLD);
+							vector<float> w(nrPre);
+							vector<float> d(nrPre);
 
-						weights.push_back(w);
-						delays.push_back(d);
-					}
-				}
-				else							// broadcast the connections and weights to other processes involved in this population
-				{
-					if(mpiRank == this->network()->MPIGetNodeId())
-					{
-						tempPost = *postCache;
-						tempPre = *preCache;
-
-						// send locally corresponding part
-						int nrPosts = (*postCache).size();
-						MPI_Bcast(&nrPosts,1,MPI_INT,mpiRank,*comm);//NETWORK_COMM_WORLD);
-						if(nrPosts>0)
-						{
-							MPI_Bcast(&(*postCache)[0],nrPosts,MPI_LONG,mpiRank,*comm);//NETWORK_COMM_WORLD);
-
-							for(int j=0;j<nrPosts;j++)
+							for(int m=0;m<nrPre;m++)
 							{
-								int nrPre = (*preCache)[j].size();
-								MPI_Bcast(&nrPre,1,MPI_INT,mpiRank,*comm);//NETWORK_COMM_WORLD);
-								vector<float> w(nrPre);
-								vector<float> d(nrPre);
-
-								for(int m=0;m<nrPre;m++)
-								{
-									w[m] = this->network()->GetWeight((*preCache)[j][m],(*postCache)[j]);
-									d[m] = this->network()->GetDelay((*preCache)[j][m],(*postCache)[j]);
-								}
-
-								weights.push_back(w);
-								delays.push_back(d);
-
-								if(nrPre>0)
-								{
-									MPI_Bcast(&(*preCache)[j][0],nrPre,MPI_LONG,mpiRank,NETWORK_COMM_WORLD);
-									MPI_Bcast(&w[0],nrPre,MPI_FLOAT,mpiRank,NETWORK_COMM_WORLD);
-									MPI_Bcast(&d[0],nrPre,MPI_FLOAT,mpiRank,NETWORK_COMM_WORLD);
-								}
+								w[m] = this->network()->GetWeight((*preCache)[j][m],(*postCache)[j]);
+								d[m] = this->network()->GetDelay((*preCache)[j][m],(*postCache)[j]);
 							}
-						}
-					}
-					else
-					{
-						// retrieve
-						int nrPosts;
-						MPI_Bcast(&nrPosts,1,MPI_INT,mpiRank,NETWORK_COMM_WORLD);
-						if(nrPosts>0)
-						{
-							tempPost = vector<long>(nrPosts);
-							tempPre = vector<vector<long> >(nrPosts);
-							weights = vector<vector<float> >(nrPosts);
-							delays = vector<vector<float> >(nrPosts);
 
-							MPI_Bcast(&tempPost[0],nrPosts,MPI_LONG,mpiRank,NETWORK_COMM_WORLD);
+							weights.push_back(w);
+							delays.push_back(d);
 
-							for(int j=0;j<nrPosts;j++)
+							if(nrPre>0)
 							{
-								int nrPre;
-								MPI_Bcast(&nrPre,1,MPI_INT,mpiRank,NETWORK_COMM_WORLD);
-								if(nrPre>0)
-								{
-									tempPre[j] = vector<long>(nrPre);
-									weights[j] = vector<float>(nrPre);
-									delays[j] = vector<float>(nrPre);
-
-									MPI_Bcast(&tempPre[j][0],nrPre,MPI_LONG,mpiRank,NETWORK_COMM_WORLD);
-									MPI_Bcast(&weights[j][0],nrPre,MPI_FLOAT,mpiRank,NETWORK_COMM_WORLD);
-									MPI_Bcast(&delays[j][0],nrPre,MPI_FLOAT,mpiRank,NETWORK_COMM_WORLD);
-								}
+								MPI_Bcast(&(*preCache)[j][0],nrPre,MPI_LONG,mpiRank,*comm);//,NETWORK_COMM_WORLD);
+								MPI_Bcast(&w[0],nrPre,MPI_FLOAT,mpiRank,*comm);//,NETWORK_COMM_WORLD);
+								MPI_Bcast(&d[0],nrPre,MPI_FLOAT,mpiRank,*comm);//,NETWORK_COMM_WORLD);
 							}
 						}
 					}
 				}
-
-				vector<long>::iterator it;
-				// put in list to build
-				for(int j=0;j<tempPost.size();j++)
+				else
 				{
-					for(int m=0;m<tempPre[j].size();m++)
+					// retrieve
+					int nrPosts;
+					MPI_Bcast(&nrPosts,1,MPI_INT,mpiRank,*comm);//,NETWORK_COMM_WORLD);
+					if(nrPosts>0)
 					{
-						if(tempPre[j][m] >= startId && tempPre[j][m] <= endId)
+						tempPost = vector<long>(nrPosts);
+						tempPre = vector<vector<long> >(nrPosts);
+						weights = vector<vector<float> >(nrPosts);
+						delays = vector<vector<float> >(nrPosts);
+
+						MPI_Bcast(&tempPost[0],nrPosts,MPI_LONG,mpiRank,*comm);//,NETWORK_COMM_WORLD);
+
+						for(int j=0;j<nrPosts;j++)
 						{
-							it = find(postsToAdd.begin(),postsToAdd.end(),tempPre[j][m]);
-							if(it == postsToAdd.end())
+							int nrPre;
+							MPI_Bcast(&nrPre,1,MPI_INT,mpiRank,*comm);//,NETWORK_COMM_WORLD);
+							if(nrPre>0)
 							{
-								postsToAdd.push_back(tempPre[j][m]);
-								vector<long> preAdd(1);
-								vector<float> weightAdd(1);
-								vector<float> delayAdd(1);
-								preAdd[0] = tempPost[j];
-								weightAdd[0] = weights[j][m];
-								delayAdd[0] = delays[j][m];
-								weightsToAdd.push_back(weightAdd);
-								delaysToAdd.push_back(delayAdd);
-								presToAdd.push_back(preAdd);
-							}
-							else
-							{
-								presToAdd[it-postsToAdd.begin()].push_back(tempPost[j]);
-								weightsToAdd[it-postsToAdd.begin()].push_back(weights[j][m]);
-								delaysToAdd[it-postsToAdd.begin()].push_back(delays[j][m]);
+								tempPre[j] = vector<long>(nrPre);
+								weights[j] = vector<float>(nrPre);
+								delays[j] = vector<float>(nrPre);
+
+								MPI_Bcast(&tempPre[j][0],nrPre,MPI_LONG,mpiRank,*comm);//,NETWORK_COMM_WORLD);
+								MPI_Bcast(&weights[j][0],nrPre,MPI_FLOAT,mpiRank,*comm);//,NETWORK_COMM_WORLD);
+								MPI_Bcast(&delays[j][0],nrPre,MPI_FLOAT,mpiRank,*comm);//,NETWORK_COMM_WORLD);
 							}
 						}
 					}
 				}
 			}
 
-			// build new connections at the same time
-
-			for(int i=0;i<postsToAdd.size();i++)
+			vector<long>::iterator it;
+			// put in list to build
+			for(int j=0;j<tempPost.size();j++)
 			{
-				conn->AddConnections(presToAdd[i],postsToAdd[i],-1); // -1 will force a lookup of the local id value
-
-				for(int j=0;j<presToAdd[i].size();j++)
+				for(int m=0;m<tempPre[j].size();m++)
 				{
-
-					m_network->SetWeight(weightsToAdd[i][j],presToAdd[i][j],postsToAdd[i]);
-					//m_network->SetDelay(delaysToAdd[i][j],presToAdd[i][j],postsToAdd[i]);
-				}
-			}
-
-			// check symmetry
-			bool checkSymmetry = true;
-			if(checkSymmetry)
-			{
-				vector<long> postIds = conn->GetPostIds();
-				bool symmetric = true;
-				for(int i=0;i<postIds.size();i++)
-				{
-					for(int j=0;j<postIds.size();j++)
+					if(tempPre[j][m] >= startId && tempPre[j][m] <= endId)
 					{
-						if(i!=j)
+						it = find(postsToAdd.begin(),postsToAdd.end(),tempPre[j][m]);
+						if(it == postsToAdd.end())
 						{
-							vector<long> preIds1 = conn->GetPreIds(postIds[i]);
-							vector<long> preIds2 = conn->GetPreIds(postIds[j]);
-							if(find(preIds2.begin(),preIds2.end(),postIds[i]) != preIds2.end())
-							{
-								if(find(preIds1.begin(),preIds1.end(),postIds[j]) == preIds1.end())
-									symmetric = false;
-								//							if(find(preIds2.begin(),preIds2.end(),postIds[i]) == preIds2.end())
-								//								symmetric = false;
-							}
+							postsToAdd.push_back(tempPre[j][m]);
+							vector<long> preAdd(1);
+							vector<float> weightAdd(1);
+							vector<float> delayAdd(1);
+							preAdd[0] = tempPost[j];
+							weightAdd[0] = weights[j][m];
+							delayAdd[0] = delays[j][m];
+							weightsToAdd.push_back(weightAdd);
+							delaysToAdd.push_back(delayAdd);
+							presToAdd.push_back(preAdd);
+						}
+						else
+						{
+							presToAdd[it-postsToAdd.begin()].push_back(tempPost[j]);
+							weightsToAdd[it-postsToAdd.begin()].push_back(weights[j][m]);
+							delaysToAdd[it-postsToAdd.begin()].push_back(delays[j][m]);
 						}
 					}
 				}
+			}
+		}
 
-				if(m_network->MPIGetNodeId() == 0)
+		// build new Projections at the same time
+
+		for(int i=0;i<postsToAdd.size();i++)
+		{
+			conn->AddProjections(presToAdd[i],postsToAdd[i],-1); // -1 will force a lookup of the local id value
+
+			for(int j=0;j<presToAdd[i].size();j++)
+			{
+
+				m_network->SetWeight(weightsToAdd[i][j],presToAdd[i][j],postsToAdd[i]);
+				//m_network->SetDelay(delaysToAdd[i][j],presToAdd[i][j],postsToAdd[i]);
+			}
+		}
+
+		// check symmetry
+		bool checkSymmetry = true;
+		if(checkSymmetry)
+		{
+			vector<long> postIds = conn->GetPostIds();
+			bool symmetric = true;
+			for(int i=0;i<postIds.size();i++)
+			{
+				for(int j=0;j<postIds.size();j++)
 				{
-					cout<<"\nSymmetric == "<<symmetric<<"\n";cout.flush();
+					if(i!=j)
+					{
+						vector<long> preIds1 = conn->GetPreIds(postIds[i]);
+						vector<long> preIds2 = conn->GetPreIds(postIds[j]);
+						if(find(preIds2.begin(),preIds2.end(),postIds[i]) != preIds2.end())
+						{
+							if(find(preIds1.begin(),preIds1.end(),postIds[j]) == preIds1.end())
+								symmetric = false;
+							//							if(find(preIds2.begin(),preIds2.end(),postIds[i]) == preIds2.end())
+							//								symmetric = false;
+						}
+					}
 				}
+			}
+
+			if(m_network->MPIGetNodeId() == 0)
+			{
+				cout<<"\nSymmetric == "<<symmetric<<"\n";cout.flush();
 			}
 		}
 	}
@@ -1752,132 +1510,66 @@ bool FullConnectivityNoLocalHypercolumns::ExtraConstraints(Unit* preUnit, Unit* 
 		return true;
 }
 
-// fast version, but not supporting symmetric connections
+// fast version, but not supporting symmetric Projections
 vector<long> RandomConnectivity::IterationSpecificIndexes(Unit* postUnit, vector<int> nrPreRateUnits)
 {
 	m_useIterationSpecificIndexes = true;
-	//if(m_symmetric == false)
-	//{
-		long maxIndexes = 0;
-		for(int i=0;i<nrPreRateUnits.size();i++)
-			maxIndexes+=nrPreRateUnits[i];
+	long maxIndexes = 0;
+	for(int i=0;i<nrPreRateUnits.size();i++)
+		maxIndexes+=nrPreRateUnits[i];
 
-		int nrItems = (int)(maxIndexes*this->m_fracConnected);
-		vector<long> out;
+	int nrItems = (int)(maxIndexes*this->m_fracConnected);
+	vector<long> out;
 
-		// better scaling for sparse conns
-		while(out.size()!=nrItems)
+	// better scaling for sparse conns
+	int nrToAdd = nrItems;
+	while(out.size()!=nrItems)
+	{
+		for(int i=0;i<nrToAdd;i++)
 		{
-			for(int i=0;i<nrItems;i++)
-			{
-				float r = rand()/(float(RAND_MAX)+1);
-				long loc = (long)(((float)maxIndexes)*r); // float limit of population size (*100 .. / 100)
+			float r = rand()/(float(RAND_MAX));
+			long loc = (long)(((float)maxIndexes)*r); // float limit of population size (*100 .. / 100)
 
-				out.push_back(loc);
-			}
-
-			sort(out.begin(),out.end());
-			
-			// remove duplicates
-			out.erase(unique(out.begin(),out.end()),out.end());
-
-			if(out.size()>nrItems)
-				out.erase(out.begin()+nrItems,out.end());
+			out.push_back(loc);
 		}
 
 		sort(out.begin(),out.end());
 
-		/*for(int i=0;i<nrItems;i++)
-		{
-		float r = rand()/(float(RAND_MAX)+1);
-		long loc = (long)((maxIndexes-0)*r + 0);
+		// remove duplicates
+		out.erase(unique(out.begin(),out.end()),out.end());
 
-		while(find(out.begin(),out.end(),loc) != out.end())
-		{
-		r = rand()/(float(RAND_MAX)+1);
-		loc = (long)((maxIndexes-0)*r + 0);
-		}
+		nrToAdd = nrItems-out.size();
+		//if(out.size()>nrItems)
+		//	out.erase(out.begin()+nrItems,out.end());
+	}
 
-		out.push_back(loc);
-		}*/
+	sort(out.begin(),out.end());
 
-		return out;
-	//}
-	//else return vector<long>();
+	return out;
 }
 
 // slow
 bool RandomConnectivity::ExtraConstraints(Unit* preUnit, Unit* postUnit)
 {
-	// currently forced or non-forced self-connections
+	// currently forced or non-forced self-Projections
 	if(preUnit->GetUnitId() == postUnit->GetUnitId())
 	{
-		if(this->m_allowSelfConnections == true)
+		if(this->m_allowSelfProjections == true)
 			return true;
 		else return false;
 	}
 
-
-	/*if(m_symmetric == true)
-	{
-		//unsigned int seed = preUnit->GetUnitId()+postUnit->GetUnitId();
-		//unsigned int seed = (float)60000*(float(preUnit->GetUnitId())/(float(m_pre->GetNrUnits())))+(float)60000*(float(postUnit->GetUnitId())/(float(m_post->GetNrUnits())));
-
-		//srand(seed);//preUnit->GetUnitId()*postUnit->GetUnitId()+preUnit->GetUnitId()+postUnit->GetUnitId()); // guarantee symmetry
-		//srand(rand());
-		float r = rand()/(float(RAND_MAX)+1);
-		if(r<this->m_fracConnected)
-			return true;
-		else
-			return false;
-	}
-	else*/ return false;
+	return false;
 }
 
-/*int RandomConnectivity::IterationAdvance()
-{
-	// go forward X steps based on a poisson process of mean 1/fraction connected
-
-	/*	std::tr1::poisson_distribution<int> pd(1/this->m_fracConnected); // gives compiler error vsc++
-	int val = 0; pd(val);
-	return val;*/
-
-	// approximation to poisson process
-/*	double x,t;
-	t=(double)rand()/(double)RAND_MAX;
-	int step = -log(t)*1/this->m_fracConnected;
-	return step;
-}*/
-
-/*bool RandomConnectivity::IterationPreConstraint(int currentIndex) // faster
-{
-	if((float)rand()/(float)RAND_MAX < m_fracConnected)
-		return true;
-	else
-		return false;
-}*/
-
-/*bool RandomConnectivity::ExtraConstraints(Unit* preUnit, Unit* postUnit)
-{
-	if((float)rand()/(float)RAND_MAX < m_fracConnected)
-		return true;
-	else
-		return false;
-}*/
 
 bool OneToOneConnectivity::ExtraConstraints(Unit* preUnit, Unit* postUnit)
 {
 	if(this->m_useIterationSpecificIndexes == true)
 		return true;
-	//return true;
 
 	if(this->m_betweenHypercolumns == true)
 	{
-	/*	if(((RateUnit*)preUnit)->GetHypercolumns()[0]->GetUnitIdLocal() == ((RateUnit*)postUnit)->GetHypercolumns()[0]->GetUnitIdLocal())
-			return true;
-		else
-			return false;*/
-		
 		return true; // taken care of in iterationpreconstraint instead (faster)
 	}
 	else
@@ -1896,7 +1588,7 @@ vector<long> OneToOneConnectivity::IterationSpecificIndexes(Unit* postUnit, vect
 	vector<long> list(1);
 	list[0] = postUnit->GetUnitIdLocal();// + 1;
 
-	return list; // needs to be sorted lowest to highest!
+	return list; // will be sorted lowest to highest
 }
 
 bool OneToOneConnectivity::IterationPreConstraint(Unit* postUnit,int currentIndex, int currentHcIndex)
@@ -1931,25 +1623,17 @@ bool FanInConnectivity::ExtraConstraints(Unit* preUnit, Unit* postUnit)
 		return false;
 }
 
-Connection::~Connection()
+Projection::~Projection()
 {
-	for(int i=0;i<m_events.size();i++) // they can not be removed here since they are used in resetting
+	for(int i=0;i<m_events.size();i++)
 	{
-		//m_events[i]->Dispose(); 
 		delete m_events[i];
 	}
-
-	/*for(int i=0;i<m_listPosts.size();i++)
-	{
-		m_listPosts[i]->clear();
-		delete m_listPosts[i];
-	}*/
-
 }
 
 bool FullConnectivity::ExtraConstraints(Unit* preUnit, Unit* postUnit)
 {
-	if(m_allowSelfConnections == false)
+	if(m_allowSelfProjections == false)
 	{
 		if(preUnit->GetUnitId() == postUnit->GetUnitId())
 			return false;
@@ -1960,55 +1644,35 @@ bool FullConnectivity::ExtraConstraints(Unit* preUnit, Unit* postUnit)
 		return true;
 }
 
-void EmptyConnectivity::ExtraPostUnit(Unit* postUnit,Connection* conn) 
+void EmptyConnectivity::ExtraPostUnit(Unit* postUnit,Projection* conn) 
 { 
 	conn->AddPostUnit(postUnit->GetUnitId());
 }
 
-// will be removed
-/*void Connection::SetWeight(float weight, long preId, long postId)
+UnitModifier* Projection::GetUnitModifier(int id)
 {
-	network()->SetWeight(weight, preId, postId);
-}
-
-void Connection::SetDelay(float delay, long preId, long postId)
-{
-	network()->SetDelay(delay, preId, postId);
-}
-
-float Connection::GetDelay(long preId, long postId)
-{
-	return network()->GetDelay(preId,postId);
-}
-
-float Connection::GetWeight(long preId, long postId)
-{
-	return network()->GetWeight(preId,postId);
-}*/
-
-
-UnitModifier* Connection::GetUnitModifier(int id)
-{
-	for(int i=0;i<m_unitPropertiesConnection.size();i++)
+	for(int i=0;i<m_unitPropertiesProjection.size();i++)
 	{
-		if(m_unitPropertiesConnection[i]->GetId() == id)
-			return m_unitPropertiesConnection[i];
+		if(m_unitPropertiesProjection[i]->GetId() == id)
+			return m_unitPropertiesProjection[i];
 	}
 
 	return NULL;
 }
 
-UnitModifier* Connection::GetUnitModifier(string name)
+UnitModifier* Projection::GetUnitModifier(string name)
 {
-	for(int i=0;i<m_unitPropertiesConnection.size();i++)
+	for(int i=0;i<m_unitPropertiesProjection.size();i++)
 	{
-		if(m_unitPropertiesConnection[i]->GetName().compare(name) == 0)
-			return m_unitPropertiesConnection[i];
+		if(m_unitPropertiesProjection[i]->GetName().compare(name) == 0)
+			return m_unitPropertiesProjection[i];
 	}
 
 	return NULL;
 }
 
+
+// Needed to support the use of multiple parameters
 void FullConnectivity::SetRandomWeights(vector<float> minVal, float maxVal,Network* net)
 {
 	m_setRandomWeights = true;
@@ -2017,9 +1681,9 @@ void FullConnectivity::SetRandomWeights(vector<float> minVal, float maxVal,Netwo
 	m_weightsMinValParams = minVal;
 	this->network(net);
 	AddParameters();
-	//this->network()->Parameters()->AddParameters(this,&FullConnectivity::SetRandomWeightsMin,minVal);
 }
 
+// Needed to support the use of multiple parameters
 void FullConnectivity::SetRandomWeights(float minVal, vector<float> maxVal,Network* net)
 {
 	m_setRandomWeights = true;
@@ -2028,10 +1692,9 @@ void FullConnectivity::SetRandomWeights(float minVal, vector<float> maxVal,Netwo
 	m_weightsMaxValParams = maxVal;
 	this->network(net);
 	AddParameters();
-	//this->network()->Parameters()->AddParameters(this,&FullConnectivity::SetRandomWeightsMax,maxVal);
 }
 
-// Multiple parameters implementation
+// Needed to support the use of multiple parameters
 void FullConnectivity::AddParameters()
 {
 	if(m_setRandomWeights == true)

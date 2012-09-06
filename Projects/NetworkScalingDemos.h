@@ -52,7 +52,7 @@ private:
 	PopulationColumns* m_layer3;
 
 	// Plasticity
-	ConnectionModifierBcpnnOnline* m_bcpnn;
+	ProjectionModifierBcpnnOnline* m_bcpnn;
 
 	// Pre-defined structures
 	vector<StructureReTIDe*> m_reTIDe;

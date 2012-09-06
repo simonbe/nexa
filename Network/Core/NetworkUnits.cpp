@@ -2,7 +2,7 @@
 #include "NetworkUnits.h"
 #include <deque>
 
-// will be used across all incoming connections - put in a specific connection instead to make it specific
+// will be used across all incoming Projections - put in a specific Projection instead to make it specific
 void Unit::AddUnitModifier(UnitModifier* p)
 {
 	m_unitProperties.insert(m_unitProperties.begin(),p);
@@ -10,73 +10,10 @@ void Unit::AddUnitModifier(UnitModifier* p)
 	p->SetUnit(this);
 }
 
-// not used atm.
-void Unit::SendReceive()
-{
-	// send created events (unit)
-	/*UnitModifier* e = this->CreateEvent();
-	this->SetEventOutgoing(e);
-
-	m_maxNode = -1;
-	for(int i=0;i<m_posts.size();i++)
-	{
-		if(m_posts[i]->IsLocal())
-			m_posts[i]->AddEventIncoming(e);
-		else
-		{
-			int nodeId = m_posts[i]->GetNodeId();
-			if(AlreadySentEventToNode(nodeId) == false)
-			{
-				e->Send(m_posts[i]->GetNodeId(),this->GetUnitId());
-				m_nrEventsSent++;
-			}
-		}
-			//this->SendEvent(&e,,m_posts[i]->GetUnitIdLocal()); // MPI specific
-	}
-
-	m_sentToNode.clear();
-
-	cout<<GetUnitId()<<": events sent = "<< m_nrEventsSent<<", ";
-
-	// retrieve events (unit)
-	ReceiveEvents();*/
-}
-
-// not used atm.
-void Unit::SendReceiveNext()
-{
-	// send created events (unit)
-	/*UnitModifier* e = this->CreateEvent();
-	this->SetEventOutgoing(e);
-
-	m_maxNode = -1;
-	for(int i=0;i<m_posts.size();i++)
-	{
-		if(m_posts[i]->IsLocal())
-			m_posts[i]->AddEventIncoming(e);
-		else
-		{
-			int nodeId = m_posts[i]->GetNodeId();
-			if(AlreadySentEventToNode(nodeId) == false)
-			{
-				e->Send(m_posts[i]->GetNodeId(),this->GetUnitId());
-				m_nrEventsSent++;
-			}
-		}
-			//this->SendEvent(&e,,m_posts[i]->GetUnitIdLocal()); // MPI specific
-	}
-
-	m_sentToNode.clear();
-	cout<<GetUnitId()<<": events sent = "<< m_nrEventsSent<<", ";
-
-	// retrieve events (unit)
-	ReceiveEvents();*/
-}
-
 // Loop around all units in population ends up here, overridable
 void Unit::Simulate()
 {
-	// work on the event queues for unit and connections
+	// work on the event queues for unit and Projections
 	SimulateEventQueue();
 
 	/*int nr = m_eventsIncoming.size();
@@ -104,18 +41,18 @@ void Unit::Simulate()
 }*/
 
 // not used atm.
-bool Unit::AlreadySentEventToNode(int nodeId)
+bool Unit::AlreadySentEventToNode(int processId)
 {
 	bool alreadySent = false;
 
-	if(nodeId == m_maxNode)
+	if(processId == m_maxNode)
 	{
 		alreadySent = true;
 	}
-	else if(nodeId < m_maxNode)
+	else if(processId < m_maxNode)
 	{
 		for(int i=0;i<m_sentToNode.size();i++)
-			if(nodeId == m_sentToNode[i])
+			if(processId == m_sentToNode[i])
 			{
 				alreadySent = true;
 				break;
@@ -123,101 +60,25 @@ bool Unit::AlreadySentEventToNode(int nodeId)
 	}
 	else
 	{
-		m_maxNode = nodeId;
+		m_maxNode = processId;
 	}
 
 	if(alreadySent == false)
 	{
-		m_sentToNode.push_back(nodeId);
+		m_sentToNode.push_back(processId);
 	}
 
 	return alreadySent;
-}
-
-// not used atm.
-void Unit::ReceiveEvents()
-{
-	for(int i=0;i<m_pres.size();i++)
-	{
-		if(m_pres[i]->IsLocal() == true)
-		{
-			//this->AddEventIncoming(m_pres[i]->GetEventOutgoing());
-		}
-		else
-		{
-			UnitModifier* e = this->CreateEvent();
-			int nodeId = m_pres[i]->GetNodeId();
-			e->Receive(m_pres[i]->GetNodeId());
-			m_pres[i]->SetEventOutgoing(e);
-			
-			// ok to remove? only place local set
-			//m_pres[i]->SetLocal(true); // fetch locally from now on
-
-			m_nrEventsReceived++;
-		}
-	}
-
-	cout<<" received = "<< m_nrEventsReceived<<"\n";
-
-	/*for(int i=0;i<m_pres.size();i++)
-	{
-		if(m_pres[i]->IsLocal() == false)
-		{
-			MPI_Status status;
-			long unitIdLocal;
-			float value;
-
-			int tagAct = 0;
-			MPI_Recv(&unitIdLocal,1,MPI_LONG,m_pres[i]->GetNodeId(),tagAct,NETWORK_COMM_WORLD,&status);
-			tagAct = 1;
-			MPI_Recv(&value,1,MPI_FLOAT,m_pres[i]->GetNodeId(),tagAct,NETWORK_COMM_WORLD,&status);
-
-			UnitModifier* eg = new UnitModifierGraded;
-			eg->SetValue(value);
-			eg->SetPreLocalIndex(unitIdLocal);
-		}
-		else // check if event has been sent
-		{
-
-		}
-
-		// if 
-	}*/
 }
 
 // Simulates and handles all incoming data (from other units most of the time) to unit
 // currently:
 // - have some separate cases for certain transfer functions (such as bcpnn which has log around hypercolumns)
 // - not data-driven as loops would need to change their order in that case
-// - main optimize place (check timing results)
+// - has been optimized, hence the reserves and all different cases
 void RateUnit::SimulateEventQueue()
 {
-//	this->Population()->TimingStart(m_name);
-	// let connections modify incoming
 	int index=0;
-	/*for(int i=0;i<m_preConnections.size();i++)
-	{
-		if(m_preConnections[i]->Pre()->IsLocal() == true)
-		{
-			Connection* c = m_preConnections[i];
-			c->SimulateEvent(m_eventsIncoming[index]);
-			index++;
-		}
-	}*/
-
-	/*for(int i=0;i<m_eventsIncoming.size();i++)
-	{
-		Connection* c = m_hashIdConnection[m_eventsIncoming[i]->GetFromUnitId()];
-		c->SimulateEvent(m_eventsIncoming[index]);
-	}*/
-
-	// currently creating and adding new events here, this should be changed for performance
-	// change to iterate over synapses instead
-	
-	//int nrProperties = m_unitProperties.size();
-	
-	//if(nrProperties>1)
-	//	nrProperties = 1; // debug setting
 
 	bool doNoUpdating = false;
 
@@ -233,34 +94,17 @@ void RateUnit::SimulateEventQueue()
 	}
 	else if(this->GetPopulation()->KeepValues() == true)
 	{
-		bool b = false;
-		if(m_value > 0.0)
-			b = true;
-		// values have been manually set but unit (m_value) should be updated as well
+		// do nothing
 	}
 	else
 	{
 		m_value = 0.0;
-
-		/*if(m_useThreshold == false)
-			m_value = 0.0;
-		else
-		{
-			if(m_value == 1.0)	// right after send
-				//m_value = 0.0;
-				doNoUpdating = true; // no updating until reset called
-		}*/
 	}
 
 	if(doNoUpdating == false)
 	{
-		vector<Connection*> conns = this->GetPopulation()->GetIncomingConnections(); // change to pointer
-		
-		/*if(nrProperties > conns.size()) // currently assuming max one unit property per connection
-			if(m_network->MPIGetNodeId()==0)
-			cout<<"Error: More transfer functions used than currently possible.";*/
-		
-//		vector<UnitModifier*> allEus;
+		vector<Projection*> conns = this->GetPopulation()->GetIncomingProjections(); // optionally change to pointer
+
 		vector<float> allValues;
 		vector<float> allWeights;
 		vector<long> allHypercolumnIds;
@@ -270,14 +114,16 @@ void RateUnit::SimulateEventQueue()
 		vector<pair<long, float> >* preIdsValues;
 		vector<UnitModifier*>* unitProperties;
 
-		// may be more allocation and weight fetching if connection level check here, could move it down (but then check if preId exist in connection is needed)
+		// may be more allocation and weight fetching if Projection level check here, could move it down (but then check if preId exist in Projection is needed)
 		for(int m=0;m<conns.size();m++)
 		{
+			preIds.clear();
+
 			if(conns[m]->IsOn())
 			{
-				unitProperties = conns[m]->GetUnitPropertiesConnection();
+				unitProperties = conns[m]->GetUnitPropertiesProjection();
 
-				// move so this is not in inner loop
+				// could move so this is not in inner loop, special case for CSL-type of classes
 				bool isTransferCSL = false;
 				for(int n=0;n<unitProperties->size();n++)
 				{
@@ -285,24 +131,16 @@ void RateUnit::SimulateEventQueue()
 						isTransferCSL = true;
 				}
 
-				//map<long, Network::SynapseStandard>* preSynapses = m_network->GetPreSynapses(this->GetUnitId());
-				//this->Population()->TimingStart("GetPreIds");
-
 				if(isTransferCSL == true)
 					preIds = conns[m]->GetPreIds(this->GetUnitId());
 				else
 #if USE_HASHED_ACTIVE_COMMUNICATION == 1
-					//preIdsValues = conns[m]->GetPreIdsActive(this->GetUnitId()); // optimization
+					//preIdsValues = conns[m]->GetPreIdsActive(this->GetUnitId()); // optimization, turned off
 					preIdsValues = conns[m]->GetPreIdsActiveLocal(this->GetUnitIdLocal()); // optimization
 #else
 					preIds = conns[m]->GetPreIds(this->GetUnitId());
 #endif
 
-				//this->Population()->TimingStop("GetPreIds");
-				//map<long, Network::SynapseStandard>::iterator it;
-				// iterate
-
-	//			vector<UnitModifier*> eus;
 				vector<float> weights;
 				vector<float> values;
 				vector<long> hypercolumnIds; // only filled if hypercolumn ids tracked
@@ -313,18 +151,15 @@ void RateUnit::SimulateEventQueue()
 
 				bool cont = false;
 
-//#if USE_UNORDERED_MAP == 0
-				//				map<long,float>::iterator iter;
-				//#endif
 #if USE_HASHED_ACTIVE_COMMUNICATION == 1
-
 				if(isTransferCSL)
 				{
 					if(preIds.size()>0)
 					{
-						weights.reserve(preIds.size()); // allocates but does not construct (fastest?)
+						// reserve allocates but does not construct
+						weights.reserve(preIds.size()); 
 						values.reserve(preIds.size());
-						allWeights.reserve(preIds.size()); // allocates but does not construct (fastest?)
+						allWeights.reserve(preIds.size());
 						allValues.reserve(preIds.size());
 
 						if(this->network()->IsTrackingHypercolumnIds())
@@ -338,9 +173,9 @@ void RateUnit::SimulateEventQueue()
 				}
 				else if(preIdsValues->size()>0)
 				{
-					weights.reserve(preIdsValues->size()); // allocates but does not construct (fastest?)
+					weights.reserve(preIdsValues->size());
 					values.reserve(preIdsValues->size());
-					allWeights.reserve(preIdsValues->size()); // allocates but does not construct (fastest?)
+					allWeights.reserve(preIdsValues->size());
 					allValues.reserve(preIdsValues->size());
 
 					if(this->network()->IsTrackingHypercolumnIds())
@@ -354,9 +189,9 @@ void RateUnit::SimulateEventQueue()
 #else
 				if(preIds.size()>0)
 				{
-					weights.reserve(preIds.size()); // allocates but does not construct (fastest?)
+					weights.reserve(preIds.size());
 					values.reserve(preIds.size());
-					allWeights.reserve(preIds.size()); // allocates but does not construct (fastest?)
+					allWeights.reserve(preIds.size());
 					allValues.reserve(preIds.size());
 
 					if(this->network()->IsTrackingHypercolumnIds())
@@ -368,27 +203,18 @@ void RateUnit::SimulateEventQueue()
 					cont = true;
 				}
 #endif
-				//this->Population()->TimingStart("GetBufferHashData");
 
 				if(cont == true)
 				{
-					int nrIter;
+					int nrIterations;
 
 					if(preIds.size()>0)
-						nrIter = preIds.size();
+						nrIterations = preIds.size();
 					else
-						nrIter = preIdsValues->size();
+						nrIterations = preIdsValues->size();
 
-					for(int j=0;j<nrIter;j++)
-						/*#if USE_HASHED_ACTIVE_COMMUNICATION == 1
-						for(int j=0;j<preIdsValues->size();j++)
-						#else
-						for(int j=0;j<preIds.size();j++)
-						#endif*/
+					for(int j=0;j<nrIterations;j++)
 					{
-						//vector<float>* incomingBufferData = m_network->GetIncomingBufferData(it->first);
-
-						//this->Population()->TimingStart("GetPreValue");
 #if USE_HASHED_ACTIVE_COMMUNICATION == 1
 
 						if(isTransferCSL)
@@ -405,10 +231,6 @@ void RateUnit::SimulateEventQueue()
 						preIdIter = preIds[j];
 						incomingBufferData = m_network->GetPreValue(preIdIter);//GetIncomingBufferData(preIds[j]);//it->first);
 #endif
-						//this->Population()->TimingStop("GetPreValue");
-						//if((*incomingBufferData).size()>0)
-
-						//this->Population()->TimingStart("GetWeights");
 						if(incomingBufferData!=0 || isTransferCSL)
 						{
 							if(this->network()->IsTrackingHypercolumnIds())
@@ -421,93 +243,31 @@ void RateUnit::SimulateEventQueue()
 								}
 							}
 
-//							UnitModifier* eu = new UnitModifierGraded(preIdIter,hId,incomingBufferData);//it->first,hId,incomingBufferData);//(*incomingBufferData)[0]); // assumes no delays
-//							eus.push_back(eu);
-							
 							w = m_network->GetWeight(preIdIter,this->GetUnitId());
 
-							// speed up (!)
 							weights.push_back(w);//it->first,this->GetUnitId()));
 							values.push_back(incomingBufferData);
 							if(m_unitProperties.size()>0 || layerUnitProperties->size()>0) // if global unit properties exist
 							{ 
-								//allEus.push_back(eu);
 								allWeights.push_back(w);
 								allValues.push_back(incomingBufferData);
 							}
 						}
-						//this->Population()->TimingStop("GetWeights");
-					}
-					//this->Population()->TimingStop("GetBufferHashData");
-
-					/*for(int j=0;j<1;j++)//conns.size();j++)
-					{
-					if(m_eventsIncoming.size()>0)
-					for(int i=0;i<m_eventsIncoming[0].size();i++)//m_eventsIncoming.size();i++)
-					{
-					UnitModifier* eu = network()->GetUnitModifierIncoming(m_eventsIncoming[0][i]);
-
-					//m_value += m_eventsIncoming[i]->GetValue() * conns[j]->GetWeight(m_eventsIncoming[i]->GetFromUnitId(),this->GetUnitId());
-					bool exists = true;
-
-					if(conns.size()>1) // if more than one incoming connection we need to know which connection it is coming from
-					{
-					exists = true;//network()->ConnectionExists(eu->GetFromUnitId(),this->GetUnitId());//conns[j]->ConnectionExists(eu->GetFromUnitId(),this->GetUnitId());
 					}
 
-					if(exists)
-					{
-					float weight = network()->GetWeight(eu->GetFromUnitId(),this->GetUnitId());//conns[j]->GetWeight(eu->GetFromUnitId(),this->GetUnitId());
-					weights.push_back(weight);
-					eus.push_back(eu);
-					//eu->SetValue(eu->GetValue() * weight);
-					}
-					else
-					{
-					float test = network()->GetWeight(eu->GetFromUnitId(),this->GetUnitId());
-					bool b=false;
-					}
-					}
-					}
-					*/
-					//for(int i=0;i<nrProperties;i++) // will do it twice atm for transfer bcpnn if rec+ff
-					//{
-
-					//int i = m;
-
-					// unit properties on a connection level
-					//SimulateUnitProperties(unitProperties,eus,weights);
 					SimulateUnitPropertiesV2(unitProperties,&values,&weights,&hypercolumnIds);
-					//}
-
-					//m_beta = 0; // reset, not used
-
-					// change to not use allocated vector !
-					/*if(m_unitProperties.size()==0 && layerUnitProperties.size() == 0) // if no global unit properties exist / deleted afterwards otherwise	
-						for(int i=0;i<eus.size();i++)
-							delete eus[i];*/
 				}
 			}
 		}
 
 		if(layerUnitProperties->size()>0)
 		{
-			//SimulateUnitProperties(layerUnitProperties,allEus,allWeights);
 			SimulateUnitPropertiesV2(layerUnitProperties,&allValues,&allWeights,&allHypercolumnIds);
-
-			/*if(m_unitProperties.size() == 0)
-			{
-				for(int i=0;i<allEus.size();i++)
-					delete allEus[i];
-			}*/
 		}
 
 		if(m_unitProperties.size()>0) // if no global unit properties exist / deleted afterwards otherwise	
 		{	
 			SimulateUnitPropertiesV2(layerUnitProperties,&allValues,&allWeights,&allHypercolumnIds);
-			/*SimulateUnitProperties(m_unitProperties,allEus,allWeights);
-			for(int i=0;i<allEus.size();i++)
-				delete allEus[i];*/
 		}
 
 		if(m_value!=0.0)
@@ -516,17 +276,15 @@ void RateUnit::SimulateEventQueue()
 			m_isNewEvent = false;
 	}
 
-	if(m_useThreshold == true)
+/*	if(m_useThreshold == true)
 	{
 		float tau = 40;
-		//m_value+=m_beta;
 		m_subThreshValue = m_subThreshValue + (-m_subThreshValue + m_value)/tau;//m_tau; 
 
 		float threshold = 1;
-		if(m_subThreshValue > threshold)//m_threshold)
+		if(m_subThreshValue > threshold)
 		{
-			m_value = m_subThreshValue-threshold;//threshold;//mx-m_threshold;
-			//m_subThreshValue = threshold;
+			m_value = m_subThreshValue-threshold;
 			m_isNewEvent = true;
 		}
 		else
@@ -534,110 +292,84 @@ void RateUnit::SimulateEventQueue()
 			m_value = 0;
 			m_isNewEvent = false;
 		}
-
-		/*
-		// above threshold dynamics determined by transfer fcn and (wta) eventlayer
-		if(m_value == 1.0)
-			m_isNewEvent = true;
-		else
-			m_isNewEvent = false;
-		*/
 	}
-	else m_subThreshValue = m_value;
+*/
 
-	if(m_isNewEvent == true)
-	{
-		//m_eventsOutgoing.push_back(this->CreateEvent(m_value));
-	}
-
-//	this->Population()->TimingStop(m_name);
 }
 
 // unit properties and transfer functions
-// special cases for certain transfer functions
+// special cases for certain transfer functions which do need global information at the moment
+// these are separated for performance.
 void RateUnit::SimulateUnitProperties(vector<UnitModifier*> unitProperties, vector<UnitModifier*> eus, vector<float> weights)
 {
-	//this->Population()->TimingStart("SimulateUnitProperties");
 	bool bcpnnRun = false;
 
 	for (int j=0;j<unitProperties.size();j++)
 	{
 		if(unitProperties[j]->IsOn())
 		{
-			if(unitProperties[j]->GetId() == 2)//m_unitProperties[i]->GetId() == 2) // transfer bcpnn
+			if(unitProperties[j]->GetId() == 2) // transfer bcpnn
 			{
 				if(bcpnnRun == false)
 				{
-					((TransferBcpnnOnline*)unitProperties[j])->SetValue(0.0);//((TransferBcpnnOnline*)m_unitProperties[i])->SetValue(0.0);
-					if(m_beta != 0.0) // fix ?
-						((TransferBcpnnOnline*)unitProperties[j])->SetBeta(m_beta);//((TransferBcpnnOnline*)m_unitProperties[i])->SetBeta(m_beta);
-					unitProperties[j]->Simulate(eus,weights, this);//m_unitProperties[i]->Simulate(eus,weights, this);
-					m_value += ((TransferBcpnnOnline*)unitProperties[j])->GetValue();//m_value += ((TransferBcpnnOnline*)m_unitProperties[i])->GetValue();
+					((TransferBcpnnOnline*)unitProperties[j])->SetValue(0.0);
+					if(m_beta != 0.0) // unnecessary (?)
+						((TransferBcpnnOnline*)unitProperties[j])->SetBeta(m_beta);
+					unitProperties[j]->Simulate(eus,weights, this);
+					m_value += ((TransferBcpnnOnline*)unitProperties[j])->GetValue();
 					bcpnnRun = true;
 				}
 			}
-			else// if(m_unitProperties[i]->GetId() == 1) // transfer linear (+ nonlinearity) (CSL, foldiak, triesch)
+			else // e.g. linear transfer functions (+ nonlinearity) (CSL, foldiak, triesch)
 			{
-				unitProperties[j]->SetValue(m_value);//m_unitProperties[i]->SetValue(m_value);
-				unitProperties[j]->Simulate(eus,weights, this);//m_unitProperties[i]->Simulate(eus,weights, this);
-				m_value += unitProperties[j]->GetValue();//m_value += m_unitProperties[i]->GetValue();//((TransferBcpnnOnline*)m_unitProperties[i])->GetValue();
-
-				// fix (!) - should unit properties instead be able to either add or set value (?)
-				//if(this->Population()->KeepValues() == true)
-				//	m_value = unitProperties[j]->GetValue();
+				unitProperties[j]->SetValue(m_value);
+				unitProperties[j]->Simulate(eus,weights, this);
+				m_value += unitProperties[j]->GetValue();
 			}
 
 			if(m_value != 1.0)
 				bool b = false;
 		}
 	}
-
-	//this->Population()->TimingStop("SimulateUnitProperties");
 }
 
+// unit properties and transfer functions
+// special cases for certain transfer functions which do need global information at the moment
+// these are separated for performance.
 void RateUnit::SimulateUnitPropertiesV2(vector<UnitModifier*>* unitProperties, vector<float>* values, vector<float>* weights, vector<long>* hypercolumnIds)
 {
-	//this->Population()->TimingStart("SimulateUnitProperties");
 	bool bcpnnRun = false;
 
 	for (int j=0;j<unitProperties->size();j++)
 	{
 		if((*unitProperties)[j]->IsOn())
 		{
-			if((*unitProperties)[j]->GetId() == 2)//m_unitProperties[i]->GetId() == 2) // transfer bcpnn
+			if((*unitProperties)[j]->GetId() == 2) // special case for bcpnn
 			{
 				if(bcpnnRun == false)
 				{
-					((TransferBcpnnOnline*)(*unitProperties)[j])->SetValue(0.0);//((TransferBcpnnOnline*)m_unitProperties[i])->SetValue(0.0);
-					if(m_beta != 0.0) // fix ?
-						((TransferBcpnnOnline*)(*unitProperties)[j])->SetBeta(m_beta);//((TransferBcpnnOnline*)m_unitProperties[i])->SetBeta(m_beta);
+					((TransferBcpnnOnline*)(*unitProperties)[j])->SetValue(0.0);
+					if(m_beta != 0.0)
+						((TransferBcpnnOnline*)(*unitProperties)[j])->SetBeta(m_beta);
 					(*unitProperties)[j]->SimulateV2HypercolumnIds(*values,*weights,*hypercolumnIds,this);
-					//unitProperties[j]->Simulate(eus,weights, this);//m_unitProperties[i]->Simulate(eus,weights, this);
-					m_value += ((TransferBcpnnOnline*)(*unitProperties)[j])->GetValue();//m_value += ((TransferBcpnnOnline*)m_unitProperties[i])->GetValue();
+					m_value += ((TransferBcpnnOnline*)(*unitProperties)[j])->GetValue();
 					bcpnnRun = true;
 				}
 			}
-			else// if(m_unitProperties[i]->GetId() == 1) // transfer linear (+ nonlinearity) (CSL, foldiak, triesch)
+			else // e.g. linear transfer functions (+ nonlinearity) (CSL, foldiak, triesch)
 			{
-				(*unitProperties)[j]->SetValue(m_value);//m_unitProperties[i]->SetValue(m_value);
+				(*unitProperties)[j]->SetSubThresholdValue(m_subThreshValue);
+				(*unitProperties)[j]->SetValue(m_value);
 				(*unitProperties)[j]->SimulateV2(values,weights,this);
-				//unitProperties[j]->Simulate(eus,weights, this);//m_unitProperties[i]->Simulate(eus,weights, this);
-				m_value += (*unitProperties)[j]->GetValue();//m_value += m_unitProperties[i]->GetValue();//((TransferBcpnnOnline*)m_unitProperties[i])->GetValue();
-
-				// fix (!) - should unit properties instead be able to either add or set value (?)
-				//if(this->Population()->KeepValues() == true)
-				//	m_value = unitProperties[j]->GetValue();
+				m_value += (*unitProperties)[j]->GetValue();
+				m_subThreshValue = (*unitProperties)[j]->GetSubThresholdValue();
 			}
 
-			if(m_value != 1.0)
-				bool b = false;
 		}
 	}
-
-	//this->Population()->TimingStop("SimulateUnitProperties");
 }
 
-// used for some models
+// used for some plasticity models (bcpnn)
 void RateUnit::AddGains()
 {
 	m_value += m_inhibBeta;
@@ -670,11 +402,11 @@ void Hypercolumn::SimulateEventQueue()
 		}
 	}
 
-	// work on the modifying event queues for the connections
-	/*for(int i=0;i<m_preConnections.size();i++)
+	// work on the modifying event queues for the Projections
+	/*for(int i=0;i<m_preProjections.size();i++)
 	{
-		Connection* c = m_preConnections[i];
-		c->ModifyConnection();
+		Projection* c = m_preProjections[i];
+		c->ModifyProjection();
 	}*/
 }
 
@@ -701,15 +433,15 @@ float RateUnit::GetValueFromGroup(vector<int> nodeIndexes)
 	else
 	{
 		int unitIdLocalHypercolumn = 0;
-		int nodeId = this->GetNodeId();
+		int processId = this->GetNodeId();
 		float value;
-		int tagAct = nodeId*10 + 0;
+		int tagAct = processId*10 + 0;
 		MPI_Status status;
-		MPI_Recv(&unitIdLocalHypercolumn,1,MPI_INT,nodeId,tagAct,NETWORK_COMM_WORLD,&status);
+		MPI_Recv(&unitIdLocalHypercolumn,1,MPI_INT,processId,tagAct,NETWORK_COMM_WORLD,&status);
 
 		unitIdLocalHypercolumn=unitIdLocalHypercolumn-1;
-		tagAct = nodeId*10 + 1;
-		MPI_Recv(&value,1,MPI_FLOAT,nodeId,tagAct,NETWORK_COMM_WORLD,&status);
+		tagAct = processId*10 + 1;
+		MPI_Recv(&value,1,MPI_FLOAT,processId,tagAct,NETWORK_COMM_WORLD,&status);
 
 		m_value = value;
 		m_isLocal = true;
@@ -780,41 +512,24 @@ int poisson(double c) { // c is the intensity
 	}
 }
 
-// overridden to implement trace capability for minicolumns
+/// <summary>	Implements trace capability for RateUnits. </summary>
+
 void RateUnit::SimulateMisc()
 {
-	// update adaptation
-	// impl as an eventlayer atm
-/*	if(m_useAdaptation == true)
-	{
-		m_adaptationValue += (m_adaptationAmpl*m_value - m_adaptationValue) * m_adaptationTau;
-		m_value -= m_adaptationValue;
-	}
-	*/
-
 	// update trace
 	// (timestep is now 1/timestep)
 	if(m_useTrace == true)
 	{
 		m_value = m_value+m_traceValueLast*m_traceStrength;
-		/*for(map<int,float>::const_iterator it = m_trace.begin(); it != m_trace.end(); ++it)
-		{
-			m_trace[it->first] += (m_value - it->second) * 1.0/(float)it->first;
-			//trgtrc[j] += (trgact[j] - trgtrc[j]) * zjtaudt;
-			//trgctrc[j] += (trgcact[j] - trgctrc[j]) * zjtaudt;
-		}*/
 	}
 }
 
-/*if (m_noiseampl<=0)
-			m_dsup[j] += (gain*sup[j] - dsup[j])* taumdt;
-		else {
-			dsup[j] += (gain*(sup[j] +
-				m_noiseampl*(poisson(noiseintens) - noiseintens)) -
-				dsup[j])* taumdt;
-		}*/
+/// <summary>	Returns what by default should be recorded (if recording on) of a RateUnit. </summary>
+///
+/// <remarks>	Post Lazarus, 9/4/2012. </remarks>
+///
+/// <returns>	Activity value. </returns>
 
-// Recording return function
 vector<vector<float> > RateUnit::GetValuesToRecord()
 {
 	vector<vector<float> > f(1);
@@ -825,7 +540,10 @@ vector<vector<float> > RateUnit::GetValuesToRecord()
 	return f;
 }
 
-// Recording return function
+/// <summary>	Returns what by default should be recorded (if recording on) of a RateUnit. </summary>
+///
+/// <returns>	Values of all units in hypercolumn. </returns>
+
 vector<vector<float> > Hypercolumn::GetValuesToRecord()
 {
 	vector<vector<float> > f(1);
@@ -833,26 +551,18 @@ vector<vector<float> > Hypercolumn::GetValuesToRecord()
 	return f;
 }
 
-/*vector<vector<float> > UnitIF::GetValuesToRecord()
-{
-	vector<vector<float> > f2(2);
-	vector<float> f(4);
-	f[0] = S_.y0_;
-	f[1] = S_.y1_;
-	f[2] = S_.y2_;
-	f[3] = S_.y3_; // membrane potential RELATIVE TO RESTING POTENTIAL.
-
-	f2[0] = f;
-
-	return f2;
-}*/
+/// <summary>	Creates what should be distributed from Unit by global communication. </summary>
 
 void Unit::AddEventOutgoing()
 {
 	m_eventsOutgoing.push_back(this->CreateEvent(m_value));
 }
 
-// in changes
+/// <summary>	Adds incoming data at the correct delay.
+/// 			TODO: Create test to check if this is working as it should after optimizations. </summary>
+///
+/// <param name="eventIndex">	Zero-based index of the event. </param>
+
 void Unit::AddEventIncoming(long eventIndex)
 {
 	// eventIndex assumed to be preId here
@@ -868,7 +578,7 @@ void Unit::AddEventIncoming(long eventIndex)
 		delay = delay*(int)timeSteps; // [ms]
 	}
 
-/*	if(m_eventsIncoming.size()<delay+1) // will change in size during runtime
+	if(m_eventsIncoming.size()<delay+1) // will change in size during runtime
 		for(int i=m_eventsIncoming.size();i<delay+1;i++)
 		{
 			//vector<long> v(0);
@@ -881,27 +591,4 @@ void Unit::AddEventIncoming(long eventIndex)
 	// (this function currently called in communication loop)
 
 	m_eventsIncoming[delay].push_back(eventIndex);
-	*/
 }
-
-/*UnitModifier* Unit::GetUnitModifier(int id)
-{
-	for(int i=0;i<m_unitProperties.size();i++)
-	{
-		if(m_unitProperties[i]->GetId() == id)
-			return m_unitProperties[i];
-	}
-
-	return NULL;
-}
-
-UnitModifier* Unit::GetUnitModifier(string name)
-{
-	for(int i=0;i<m_unitProperties.size();i++)
-	{
-		if(m_unitProperties[i]->GetName().compare(name) == 0)
-			return m_unitProperties[i];
-	}
-
-	return NULL;
-}*/

@@ -18,19 +18,28 @@
 
 void NetworkMNIST2::NetworkSetupStructure()
 {
-	m_architecture = PC;
+	m_architecture = CRAY;
 
 	bool scalingRun = false;//true;
 	//int nrColors = 2;
 
 	// layer 1
-	// 768 pixels in each data item
-	m_nrInputHypercolumns = 200;//768;//720;//784;//784;//50;//784;
+	// 784 pixels in each data item
+	m_nrInputHypercolumns = 784;//784;//768;//720;//784;//784;//50;//784;
 	m_nrInputRateUnits = 1;//784;//nrColors;
 
 	// layer 2
-	m_nrHypercolumns2 = 6;//48;			// number clusters/patches
-	m_nrRateUnits2 = 10;//100;//200;	// number code vectors/units in each cluster
+	if(m_architecture == PC)
+	{
+		m_nrInputHypercolumns = 50;
+		m_nrHypercolumns2 = 5;//96;//48;			// number clusters/patches
+		m_nrRateUnits2 = 5;//100;//200;	// number code vectors/units in each cluster
+	}
+	else
+	{
+		m_nrHypercolumns2 = 8;//24;//96;
+		m_nrRateUnits2 = 50;//100;
+	}
 
 	if(scalingRun)
 	{
@@ -40,7 +49,7 @@ void NetworkMNIST2::NetworkSetupStructure()
 
 	// layer 3
 	m_nrHypercolumns3 = 48;//9;		// 2nd layer cluster
-	m_nrRateUnits3 = 100;//20;	// 2nd layer code vectors
+	m_nrRateUnits3 = 10;//20;	// 2nd layer code vectors
 
 	if(scalingRun)
 	{
@@ -97,6 +106,18 @@ void NetworkMNIST2::NetworkSetupMeters()
 	m_structureInput->SetupMeters(this->MPIGetNodeId(),this->MPIGetNrProcs());
 	m_structureLayer2->SetIndex(1);
 	m_structureLayer2->SetupMeters(this->MPIGetNodeId(),this->MPIGetNrProcs());
+
+	m_inputMeter = new Meter("inputLayer.csv", Storage::CSV);
+	m_inputMeter->AttachPopulation(m_layerInput);
+	AddMeter(m_inputMeter);
+
+	m_layer1Meter = new Meter("layer1.csv", Storage::CSV);
+	m_layer1Meter->AttachPopulation(m_layer2);
+	AddMeter(m_layer1Meter);
+	
+	m_layer2Meter = new Meter("layer2.csv", Storage::CSV);
+	m_layer2Meter->AttachPopulation(m_layer3);
+	AddMeter(m_layer2Meter);
 }
 
 void NetworkMNIST2::NetworkSetupParameters()
@@ -155,6 +176,7 @@ void NetworkMNIST2::TrainLayer(vector<vector<float> > trainingData, PopulationCo
 	// 1. Training phase
 	// 1A. Patches creation
 	structure->CSLLearn()->SetMaxPatterns(nrTrainImages);
+	structure->CSLLearn()->SetEta(0.001);
 	
 	// turn of response in 2nd layer during initial training phase for speed
 	structure->GetLayer(1)->SwitchOnOff(false);
@@ -170,7 +192,7 @@ void NetworkMNIST2::TrainLayer(vector<vector<float> > trainingData, PopulationCo
 		{
 			if(i == nrTrainImages/2)
 			{
-				if(j == (int)(iterationsPatches*0.8))
+				if(j == (int)(iterationsPatches*0.6))
 				{
 					if(structure->UsePearson() == false)
 					{
@@ -187,8 +209,7 @@ void NetworkMNIST2::TrainLayer(vector<vector<float> > trainingData, PopulationCo
 				}
 				//if(j ==(int)(iterationsPatches*0.7))
 					
-
-				if(j == (int)(iterationsPatches*0.9))
+				if(j == (int)(iterationsPatches*0.7))
 				{
 					structure->GetLayer(1)->SwitchOnOff(true);
 					//structureInput->MIHypercolumns()->SwitchOnOff(false);
@@ -252,24 +273,30 @@ void NetworkMNIST2::TrainLayer(vector<vector<float> > trainingData, PopulationCo
 
 	structure->VQ()->SwitchOnOff(false);
 //	structure->CompLearn()->SwitchOnOff(true);
-	structure->CSLLearn()->SwitchOnOff(true);
+	
 
 	structure->SetRecording(false);
 
 	float clC = m_nrRateUnits2*2;
-
+	int index=0;
 	for(int  j=0;j<iterationsFeatures;j++)
 	{
-		for(int i=0;i<nrTrainImages;i++)
-		{
+		//for(int i=0;i<nrTrainImages;i++)
+		//{
 			//binData = toBinary(trainingData[i],trainingData[i].size(), m_nrInputRateUnits);//vector<float> binData = toBinary(currentTrainingData[0],currentTrainingData[0].size(),nrInputRateUnits);//trainingData[i],trainingData[i].size(), nrInputRateUnits);
-			inputLayer->SetValuesAll(trainingData[i]);//binData);
+			inputLayer->SetValuesAll(trainingData[index]);//binData);
+			
+			index++;
+			if(index==nrTrainImages)
+				index = 0;
 
 			// next time step
 			this->Simulate();
 
 			cout.flush();
-		}
+
+			structure->CSLLearn()->SwitchOnOff(true); // turn on first time
+		//}
 
 		int modSize;
 		int plastStopIter = -1;
@@ -305,14 +332,16 @@ void NetworkMNIST2::TrainLayer(vector<vector<float> > trainingData, PopulationCo
 			//softmax->SetType(SoftMax::WTA);
 		}
 
-		if(this->MPIGetNodeId()== 0)
-			cout<<"\n";
+		//if(this->MPIGetNodeId()== 0)
+		//	cout<<"\n";
 		
-		this->RecordAll();
+		//this->RecordAll();
 
-		if(j==iterationsFeatures-2)
-			structure->SetRecording(true);
+		//if(j==iterationsFeatures-2)
+		//	structure->SetRecording(true);
 	}
+
+	this->Simulate(); // one extra time to get all training examples transmitted to feature layer
 
 //	structure->CompLearn()->SwitchOnOff(false);
 // switch off pop 1 plasticity
@@ -330,7 +359,7 @@ void NetworkMNIST2::NetworkRun()
 
 	int iterationsPatches = 10;//300;
 	
-	int iterationsFeatures = 1;
+	int iterationsFeatures = nrTrainImages + nrTrainImages;//+ 300;
 
 	if(m_architecture == PC)
 	{
@@ -374,8 +403,8 @@ void NetworkMNIST2::NetworkRun()
 
 	vector<vector<float> > trainingData = storage.LoadDataFloatCSV(filenameTrain,nrTrainImages,true);
 	vector<vector<float> > trainingLabels = storageLabels.LoadDataFloatCSV(filenameTrainLabels,nrTrainImages,true);
-	vector<vector<float> > testData = storage.LoadDataFloatCSV(filenameTest,nrTrainImages,true);
-	vector<vector<float> > testLabels = storageLabels.LoadDataFloatCSV(filenameTestLabels,nrTrainImages,true);
+	vector<vector<float> > testData = storage.LoadDataFloatCSV(filenameTest,nrTestImages,true);
+	vector<vector<float> > testLabels = storageLabels.LoadDataFloatCSV(filenameTestLabels,nrTestImages,true);
 
 	vector<int> partsOfDataToUseAsInput = m_layerInput->GetMPIDistributionHypercolumns(this->MPIGetNodeId());
 	vector<int> partsOfDataToUseAsOutput = vector<int>();//layer1->GetMPIDistributionHypercolumns(mpiRank);
@@ -383,18 +412,29 @@ void NetworkMNIST2::NetworkRun()
 	m_layerInput->SwitchOnOff(false);
 	m_structureInput->CSLLearn()->SetMaxPatterns(trainingData.size());
 	m_structureLayer2->CSLLearn()->SetMaxPatterns(trainingData.size());
+		
+	// Turn off recording during training
 	m_structureInput->SetRecording(false);
 	m_structureLayer2->SetRecording(false);
-
+	m_layerInput->SetRecording(false);
+	m_layer2->SetRecording(false);
+	m_layer3->SetRecording(false);
+	
 	// Train 1st layer
-	m_layer2->GetIncomingConnections()[1]->SwitchOnOff(false); // turn off the connections calculating correlations in layer 2 so (change to switch off in structure by default instead) (!)
-	m_layer2->GetIncomingConnections()[2]->SwitchOnOff(false);
+	m_layer2->GetIncomingProjections()[1]->SwitchOnOff(false); // turn off the Projections calculating correlations in layer 2 so (change to switch off in structure by default instead) (!)
+	m_layer2->GetIncomingProjections()[2]->SwitchOnOff(false);
 	m_layer3->SwitchOnOff(false);
 
 	TrainLayer(trainingData,m_layerInput,m_structureInput,iterationsPatches,iterationsFeatures);
 	
 	// Run through all training and test data
 	m_layer2->SwitchOnOff(true);
+
+	// turn on all recording
+	m_layerInput->SetRecording(true);
+	m_layer2->SetRecording(true);
+	m_layer3->SetRecording(true);
+
 	TimingStart("RunThrough");
 	for(int i=0;i<trainingData.size();i++)
 	{
@@ -407,6 +447,7 @@ void NetworkMNIST2::NetworkRun()
 		m_layerInput->SetValuesAll(testData[i]);
 		this->Simulate();
 	}
+
 	TimingStop("RunThrough");
 	// Train 2nd layer
 	m_layer3->SwitchOnOff(true);
@@ -424,7 +465,7 @@ void NetworkMNIST2::NetworkRun()
 	// clear activities
 
 	// run training and test sets
-	this->StoreAnalysis();
+
 }
 
 /*
@@ -563,12 +604,12 @@ void NetworkMNIST::NetworkMNISTRun1(int mpiRank, int mpiSize)
 		layerOutput->AddPre(structureInput->Layers()[1],full10); // Feedforward
 
 	SoftMax* softmaxOutput = new SoftMax(1.0, SoftMax::WTA);
-	ConnectionModifierBcpnnOnline* bClassification = new ConnectionModifierBcpnnOnline(0.05, 10e-3);
-	ConnectionModifierKussul* kClassification = new ConnectionModifierKussul();
+	ProjectionModifierBcpnnOnline* bClassification = new ProjectionModifierBcpnnOnline(0.05, 10e-3);
+	ProjectionModifierKussul* kClassification = new ProjectionModifierKussul();
 	
 	if(useClassification)
-		//full10->AddConnectionsEvent(bClassification);
-		full10->AddConnectionsEvent(kClassification);
+		//full10->AddProjectionsEvent(bClassification);
+		full10->AddProjectionsEvent(kClassification);
 	// Recordings
 
 	int iterationsPatches = 15;
@@ -1138,18 +1179,18 @@ void NetworkMNIST::NetworkMNISTRun2(int mpiRank, int mpiSize)
 	PopulationColumns* layer1 = new PopulationColumns(network,nrInputHypercolumns,nrInputRateUnits,PopulationColumns::Graded);
 	PopulationColumns* layer2 = new PopulationColumns(network,nrOutputHypercolumns,nrOutputRateUnits,PopulationColumns::Graded);
 
-	network->AddLayer(layer1);
-	network->AddLayer(layer2);
+	network->AddPopulation(layer1);
+	network->AddPopulation(layer2);
 
 	FullConnectivity* full = new FullConnectivity();
 	layer2->AddPre(layer1,full);
 
-	ConnectionModifierTriesch* eTriesch = new ConnectionModifierTriesch(0.05,0.2,0.005,1.0/(float)nrOutputRateUnits, false);//0.1);//(0.01,0.0,0.01,0.1);//1/500);//(float)nrOutputRateUnits);//0.01);
-	full->AddConnectionsEvent(eTriesch);
+	ProjectionModifierTriesch* eTriesch = new ProjectionModifierTriesch(0.05,0.2,0.005,1.0/(float)nrOutputRateUnits, false);//0.1);//(0.01,0.0,0.01,0.1);//1/500);//(float)nrOutputRateUnits);//0.01);
+	full->AddProjectionsEvent(eTriesch);
 
 	// implements N here
 	WTA* wta = new WTA();
-	layer2->AddLayerEvent(wta);
+	layer2->AddPopulationModifier(wta);
 
 	network->Initialize();
 
@@ -1157,16 +1198,16 @@ void NetworkMNIST::NetworkMNISTRun2(int mpiRank, int mpiSize)
 	// Meters
 	char* name1 = new char[50];
 	char* name2 = new char[50];
-	sprintf(name1,"Connection_triesch_n%d.csv",mpiRank);
+	sprintf(name1,"Projection_triesch_n%d.csv",mpiRank);
 
 	Meter* connMeter = new Meter(name1, Storage::CSV);
-	connMeter->AttachConnection(layer2->GetIncomingConnections()[0],0);
+	connMeter->AttachProjection(layer2->GetIncomingProjections()[0],0);
 	network->AddMeter(connMeter);
 
 	sprintf(name2,"Layer2Activity_triesch.csv");
 
 	Meter* layerMeter = new Meter(name2, Storage::CSV);
-	layerMeter->AttachLayer(layer2);
+	layerMeter->AttachPopulation(layer2);
 	network->AddMeter(layerMeter);
 	// end Meters
 	//////////////////////////////
@@ -1274,30 +1315,30 @@ void NetworkMNIST::NetworkMNISTRun3(int mpiRank, int mpiSize)
 	PopulationColumns* layer1 = new PopulationColumns(network,nrInputHypercolumns,nrInputRateUnits,PopulationColumns::Graded);
 	PopulationColumns* layer2 = new PopulationColumns(network,nrOutputHypercolumns,nrOutputRateUnits,PopulationColumns::Graded);
 
-	network->AddLayer(layer1);
-	network->AddLayer(layer2);
+	network->AddPopulation(layer1);
+	network->AddPopulation(layer2);
 
 	// feedforward feature extraction
 	FullConnectivity* full = new FullConnectivity();
 	layer2->AddPre(layer1,full);
 
-	ConnectionModifierTriesch* eTriesch = new ConnectionModifierTriesch(0.05,0.2,0.005,1.0/(float)nrOutputRateUnits, false);//0.1);//(0.01,0.0,0.01,0.1);//1/500);//(float)nrOutputRateUnits);//0.01);
-	full->AddConnectionsEvent(eTriesch);
+	ProjectionModifierTriesch* eTriesch = new ProjectionModifierTriesch(0.05,0.2,0.005,1.0/(float)nrOutputRateUnits, false);//0.1);//(0.01,0.0,0.01,0.1);//1/500);//(float)nrOutputRateUnits);//0.01);
+	full->AddProjectionsEvent(eTriesch);
 
-	// inhibitory connections
+	// inhibitory Projections
 	FullConnectivityNoLocalHypercolumns* full2 = new FullConnectivityNoLocalHypercolumns();
 	layer2->AddPre(layer2,full2);
 
 	float lambda0 = 0.0001;
 	float alpha = 0.01;
-	ConnectionModifierBcpnnOnline* bInhib = new ConnectionModifierBcpnnOnline(alpha,lambda0);
+	ProjectionModifierBcpnnOnline* bInhib = new ProjectionModifierBcpnnOnline(alpha,lambda0);
 	bInhib->SetImpactBeta(-1);
 	bInhib->SetImpactWeights(-1);
-	full2->AddConnectionsEvent(bInhib);
+	full2->AddProjectionsEvent(bInhib);
 
 	// implements N here
 	WTA* wta = new WTA();
-	layer2->AddLayerEvent(wta);
+	layer2->AddPopulationModifier(wta);
 
 	network->Initialize();
 
@@ -1306,20 +1347,20 @@ void NetworkMNIST::NetworkMNISTRun3(int mpiRank, int mpiSize)
 	char* name1 = new char[50];
 	char* name2 = new char[50];
 	char* name3 = new char[80];
-	sprintf(name1,"Connection_triesch_n%d.csv",mpiRank);
+	sprintf(name1,"Projection_triesch_n%d.csv",mpiRank);
 	Meter* connMeter = new Meter(name1, Storage::CSV);
-	connMeter->AttachConnection(layer2->GetIncomingConnections()[0],0);
+	connMeter->AttachProjection(layer2->GetIncomingProjections()[0],0);
 	network->AddMeter(connMeter);
 
 	sprintf(name2,"Layer2Activity_triesch.csv");
 
 	Meter* layerMeter = new Meter(name2, Storage::CSV);
-	layerMeter->AttachLayer(layer2);
+	layerMeter->AttachPopulation(layer2);
 	network->AddMeter(layerMeter);
 
-	sprintf(name3,"Connection_triesch_inhib_n%d.csv",mpiRank);
+	sprintf(name3,"Projection_triesch_inhib_n%d.csv",mpiRank);
 	Meter* connMeter2 = new Meter(name3, Storage::CSV);
-	connMeter2->AttachConnection(layer2->GetIncomingConnections()[1],0);
+	connMeter2->AttachProjection(layer2->GetIncomingProjections()[1],0);
 	network->AddMeter(connMeter2);
 	// end Meters
 	//////////////////////////////
@@ -1441,30 +1482,30 @@ void NetworkMNIST::NetworkMNISTRunLateralMaps(int mpiRank, int mpiSize)
 	PopulationColumns* layer1 = new PopulationColumns(network,nrInputHypercolumns,nrInputRateUnits,PopulationColumns::Graded);
 	PopulationColumns* layer2 = new PopulationColumns(network,nrOutputHypercolumns,nrOutputRateUnits,PopulationColumns::Graded);
 
-	network->AddLayer(layer1);
-	network->AddLayer(layer2);
+	network->AddPopulation(layer1);
+	network->AddPopulation(layer2);
 
 	// feedforward feature extraction
 	FullConnectivity* full = new FullConnectivity();
 	layer2->AddPre(layer1,full);
 
 	float eta = 0.8, decay = 0.1, tau = 100;
-	ConnectionModifierBCM* eBCM = new ConnectionModifierBCM(eta,decay,tau);
-	full->AddConnectionsEvent(eBCM);
+	ProjectionModifierBCM* eBCM = new ProjectionModifierBCM(eta,decay,tau);
+	full->AddProjectionsEvent(eBCM);
 
-	// inhibitory connections
+	// inhibitory Projections
 	FullConnectivityNoLocalHypercolumns* full2 = new FullConnectivityNoLocalHypercolumns();
 	layer2->AddPre(layer2,full2);
 
 	//float eta2 = 0.4, decay2 = 0.05, tau2 = 10;
-	//ConnectionModifierBCM* eBCM2 = new ConnectionModifierBCM();//(eta,decay,tau);
-	//full2->AddConnectionsEvent(eBCM2);
+	//ProjectionModifierBCM* eBCM2 = new ProjectionModifierBCM();//(eta,decay,tau);
+	//full2->AddProjectionsEvent(eBCM2);
 
 	// implements N here
 	WTA* wta = new WTA();
 	SoftMax* soft = new SoftMax(2.0,SoftMax::ProbWTA);
-	layer2->AddLayerEvent(soft);
-	//layer2->AddLayerEvent(wta);
+	layer2->AddPopulationModifier(soft);
+	//layer2->AddPopulationModifier(wta);
 
 	network->Initialize();
 
@@ -1473,20 +1514,20 @@ void NetworkMNIST::NetworkMNISTRunLateralMaps(int mpiRank, int mpiSize)
 	char* name1 = new char[50];
 	char* name2 = new char[50];
 	char* name3 = new char[80];
-	sprintf(name1,"Connection_bcm_n%d.csv",mpiRank);
+	sprintf(name1,"Projection_bcm_n%d.csv",mpiRank);
 	Meter* connMeter = new Meter(name1, Storage::CSV);
-	connMeter->AttachConnection(layer2->GetIncomingConnections()[0],0);
+	connMeter->AttachProjection(layer2->GetIncomingProjections()[0],0);
 	network->AddMeter(connMeter);
 
 	sprintf(name2,"Layer2Activity_bcm.csv");
 
 	Meter* layerMeter = new Meter(name2, Storage::CSV);
-	layerMeter->AttachLayer(layer2);
+	layerMeter->AttachPopulation(layer2);
 	network->AddMeter(layerMeter);
 
-	sprintf(name3,"Connection_bcm_inhib_n%d.csv",mpiRank);
+	sprintf(name3,"Projection_bcm_inhib_n%d.csv",mpiRank);
 	Meter* connMeter2 = new Meter(name3, Storage::CSV);
-	connMeter2->AttachConnection(layer2->GetIncomingConnections()[1],0);
+	connMeter2->AttachProjection(layer2->GetIncomingProjections()[1],0);
 	network->AddMeter(connMeter2);
 	// end Meters
 	//////////////////////////////
@@ -1583,8 +1624,8 @@ void NetworkMNIST::NetworkMNISTRunLateralMaps2(int mpiRank, int mpiSize)
 	PopulationColumns* layer1 = new PopulationColumns(network,nrInputHypercolumns,nrInputRateUnits,PopulationColumns::GradedThresholded);
 	PopulationColumns* layer2 = new PopulationColumns(network,nrOutputHypercolumns,nrOutputRateUnits,PopulationColumns::GradedThresholded);
 
-	network->AddLayer(layer1);
-	network->AddLayer(layer2);
+	network->AddPopulation(layer1);
+	network->AddPopulation(layer2);
 
 	FullConnectivity* full = new FullConnectivity();
 	FullConnectivity* full2;
@@ -1593,41 +1634,41 @@ void NetworkMNIST::NetworkMNISTRunLateralMaps2(int mpiRank, int mpiSize)
 	layer2->AddPre(layer1,full);
 
 	bool thresholded = true;
-	ConnectionModifierTriesch* eTriesch = new ConnectionModifierTriesch(0.0005,0.2,0.05,1.0/(float)nrOutputRateUnits, thresholded);//0.05,0.2,0.005,1.0/(float)nrOutputRateUnits, thresholded);
+	ProjectionModifierTriesch* eTriesch = new ProjectionModifierTriesch(0.0005,0.2,0.05,1.0/(float)nrOutputRateUnits, thresholded);//0.05,0.2,0.005,1.0/(float)nrOutputRateUnits, thresholded);
 
 	if(isTriesch)
-		full->AddConnectionsEvent(eTriesch);
+		full->AddProjectionsEvent(eTriesch);
 
 	//float eta1 = 3, eta2= 2.4, eta3 = 1.5, alpha = 0.005, beta = 200;
 	float eta1 = 0.5, eta2= 0.02, eta3 = 0.02, alpha = 0.0005, beta = 10;//alpha = 1.0/8.0, beta = 10;
 	bool lateral = false;
 
-	ConnectionModifierFoldiak* eFoldiak = new ConnectionModifierFoldiak(eta1, eta2, eta3, alpha, beta, lateral);
+	ProjectionModifierFoldiak* eFoldiak = new ProjectionModifierFoldiak(eta1, eta2, eta3, alpha, beta, lateral);
 	lateral = true;
 	alpha = 0;//0.1;//0.75;
-	ConnectionModifierFoldiak* eFoldiakLateral = new ConnectionModifierFoldiak(eta1, eta2, eta3, alpha, beta, lateral);
-	//ConnectionModifierBCM* eBCM = new ConnectionModifierBCM(0.1,0.05,20);
+	ProjectionModifierFoldiak* eFoldiakLateral = new ProjectionModifierFoldiak(eta1, eta2, eta3, alpha, beta, lateral);
+	//ProjectionModifierBCM* eBCM = new ProjectionModifierBCM(0.1,0.05,20);
 
 	if(!isTriesch)
 	{
 		full2 = new FullConnectivity();
 		layer2->AddPre(layer2,full2);
-		full->AddConnectionsEvent(eFoldiak);
-		full2->AddConnectionsEvent(eFoldiakLateral);
+		full->AddProjectionsEvent(eFoldiak);
+		full2->AddProjectionsEvent(eFoldiakLateral);
 	}
 	else
 	{
 		full3NoLocal = new FullConnectivityNoLocalHypercolumns();
-		//full3NoLocal->AddConnectionsEvent(eBCM);
-		full3NoLocal->AddConnectionsEvent(eFoldiakLateral);
+		//full3NoLocal->AddProjectionsEvent(eBCM);
+		full3NoLocal->AddProjectionsEvent(eFoldiakLateral);
 		//layer2->AddPre(layer2,full3NoLocal);
 	}
 
 	// implements N here
 	SoftMax* softmax = new SoftMax(SoftMax::WTAThresholded,0.5);//(10.0, SoftMax::ProbWTA);
 	WTA* wta = new WTA();
-	//layer2->AddLayerEvent(wta);
-	layer2->AddLayerEvent(softmax);
+	//layer2->AddPopulationModifier(wta);
+	layer2->AddPopulationModifier(softmax);
 
 	network->Initialize();
 
@@ -1635,15 +1676,15 @@ void NetworkMNIST::NetworkMNISTRunLateralMaps2(int mpiRank, int mpiSize)
 	// Meters
 	char* name1 = new char[50];
 	char* name2 = new char[50];
-	sprintf(name1,"Connection_triesch_n%d.csv",mpiRank);
+	sprintf(name1,"Projection_triesch_n%d.csv",mpiRank);
 	Meter* connMeter = new Meter(name1, Storage::CSV);
-	connMeter->AttachConnection(layer2->GetIncomingConnections()[0],0);
+	connMeter->AttachProjection(layer2->GetIncomingProjections()[0],0);
 	network->AddMeter(connMeter);
 
 	sprintf(name2,"Layer2Activity_triesch.csv");
 
 	Meter* layerMeter = new Meter(name2, Storage::CSV);
-	layerMeter->AttachLayer(layer2);
+	layerMeter->AttachPopulation(layer2);
 	network->AddMeter(layerMeter);
 	// end Meters
 	//////////////////////////////

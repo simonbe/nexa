@@ -2,13 +2,13 @@
 #include "NetworkPopulationModifier.h"
 #include "MPIDistribution.h"
 #include <algorithm>
-
+#include <functional>
 
 vector<double> SoftMax::ksoftwinners(vector<double> data,int k){	
 	vector<double> sorted(data); 
 	vector<double> output(data.size(),0); 
 	sort(sorted.begin(), sorted.end(),greater<double>()); // descending order	
-	//double sum = 0;	
+
 	int ks=0;
  	for(int i=data.size()-1;i>=0;i--){
 		if( (data[i]>=sorted[k-1]) ){	
@@ -16,8 +16,6 @@ vector<double> SoftMax::ksoftwinners(vector<double> data,int k){
 			if(output[i]!=output[i])
 				cerr<<"NAN("<<data[i]<<")";
 
-	//		if(output[i]>sum)
-	//			sum=output[i];
 			ks++;
 			if(ks>=k) 
 				break;
@@ -25,13 +23,9 @@ vector<double> SoftMax::ksoftwinners(vector<double> data,int k){
 		if(data[i]!=data[i])
 			cerr << "KSOFT::Nan encountered" << endl;
 	}
-	//if(sum>0)  // avoid nan
-	//	for(int i=0;i<output.size();i++){
-	//		output[i]=output[i]/sum; 
-	//	}	
+
 	return output;
 }
-
 
 vector<double> SoftMax::tempWTAFunction(vector<double> data)
 {
@@ -55,15 +49,11 @@ vector<double> SoftMax::tempWTAFunction(vector<double> data)
 	return output;
 }
 
+/// <summary>	Performs a soft winner-take-all operation </summary>
+
 void SoftMax::Simulate()
 {
 	PopulationColumns* layer = (PopulationColumns*)m_population;
-
-	/*if(layer->IsFirstRun() == true)
-	{
-		layer->MPI()->MPICreateCommsHypercolumns(); // could be initialized sooner
-		layer->SetFirstRun(false);
-	}*/
 
 	layer->MPI()->MPIMakeHypercolumnsValuesLocal(); // MPI distributor
 
@@ -76,15 +66,9 @@ void SoftMax::Simulate()
 	{
 		for(int i=0;i<localHypercolumns.size();i++)
 		{
-			//vector<int> mcsIndexes = layer->GetRateUnitsIndexes(localHypercolumns[i]);
-			//vector<double> data(mcsIndexes.size());
 			Hypercolumn* h = (Hypercolumn*)layer->GetHypercolumn(i);
 			vector<RateUnit*> mcs = h->GetRateUnits();
 
-			/*for(int j=mcsIndexes.size()-1;j>-1;j--)
-			{
-				data[j] = ((RateUnit*)units[mcsIndexes[j]])->GetValue();
-			}*/
 			vector<float> data = h->GetValues();
 
 			float maxValue = -1e10;
@@ -99,7 +83,7 @@ void SoftMax::Simulate()
 				}
 			}
 
-			if(maxValue == 1.0)//> m_threshold)
+			if(maxValue == 1.0)
 			{
 
 				for(int j=0;j<data.size();j++)
@@ -110,9 +94,7 @@ void SoftMax::Simulate()
 					}
 					else
 						data[j] = 0;
-
-					//					((RateUnit*)units[mcsIndexes[j]])->SetValue(data[j]);
-				} 
+				}
 			}
 
 			for(int j=0;j<mcs.size();j++)
@@ -126,23 +108,14 @@ void SoftMax::Simulate()
 			Hypercolumn* h = (Hypercolumn*)layer->GetHypercolumn(i);
 			vector<RateUnit*> mcs = h->GetRateUnits();
 			vector<double> data(mcs.size());
-			for(int j=mcs.size()-1;j>-1;j--){
+			for(int j=mcs.size()-1;j>-1;j--)
+			{
 				data[j] = mcs[j]->GetValue();
-
-				//vector<int> mcsIndexes = layer->GetRateUnitsIndexes(localHypercolumns[i]);
-				//vector<double> data(mcsIndexes.size());
-				//int Hsum=0;
-
-				//for(int j=mcsIndexes.size()-1;j>-1;j--){
-				//	data[j] = ((RateUnit*)units[mcsIndexes[j]])->GetValue();
-				//Hsum+=data[j];
 			}
-			//if(Hsum>0){
-			int k=int(floor(data.size()*0.5));//Hsum/data.size())); // regulate sparseness here				
+			
+			int k=int(floor(data.size()*0.5));//Hsum/data.size())); // regulate sparseness
 			data = ksoftwinners(data,k);  
-			//}
-			//for(int j=0;j<mcsIndexes.size();j++){
-			//	((RateUnit*)units[mcsIndexes[j]])->SetValue(data[j]);
+			
 			for(int j=0;j<mcs.size();j++){
 				mcs[j]->SetValue(data[j]);
 			}
@@ -154,25 +127,12 @@ void SoftMax::Simulate()
 		{
 			Hypercolumn* h = (Hypercolumn*)layer->GetHypercolumn(i);
 			vector<RateUnit*> mcs = h->GetRateUnits();
-			//vector<int> mcsIndexes = layer->GetRateUnitsIndexes(localHypercolumns[i]);
-			//vector<double> data(mcsIndexes.size());
 
-			/*for(int j=mcsIndexes.size()-1;j>-1;j--)
-			{
-				data[j] = ((RateUnit*)units[mcsIndexes[j]])->GetValue();
-			}*/
 			vector<float> dt = h->GetValues();
 			vector<double> data(dt.size());
 			for(int j=0;j<dt.size();j++) data[j] = dt[j];
 
 			data = Function(data,m_G);
-
-			/*for(int j=0;j<mcsIndexes.size();j++)
-			{
-				((RateUnit*)units[mcsIndexes[j]])->SetValue(data[j]);
-				//if(m_probabilisticWTA == true)
-				((RateUnit*)units[mcsIndexes[j]])->AddGains(); // only local units will !=0.0
-			}*/
 
 			for(int j=0;j<mcs.size();j++)
 			{
@@ -183,38 +143,6 @@ void SoftMax::Simulate()
 
 		// distribute all added gains
 		layer->MPI()->MPIMakeHypercolumnsValuesLocal(); // MPI distributor
-
-		// this work anymore?
-		if(m_type == WTA || m_type == ProbWTA)
-		{
-			for(int i=0;i<localHypercolumns.size();i++)
-			{
-				//vector<int> mcsIndexes = layer->GetRateUnitsIndexes(localHypercolumns[i]);
-				/*Hypercolumn* h = layer->GetHypercolumn(i);
-				vector<double> data(h->GetTotalNrRateUnits());//mcsIndexes.size());
-				vector<RateUnit*> mcs = h->GetRateUnits();
-
-				for(int j=0;j<//mcsIndexes.size()-1;j>-1;j--)
-				{
-					data[j] = ((RateUnit*)units[mcsIndexes[j]])->GetValue();
-				}
-
-				switch(m_type){
-				case ProbWTA: 
-					data = WTAProb(data);//tempWTAFunction(data);//WTAProb(data);//tempWTAFunction(data);//WTAProb(data);// rand run on all nodes - same seed
-					break;
-				case WTA:
-					data = tempWTAFunction(data);
-					break;
-				}	
-				//		data = tempWTAFunction(data);//Function(data,m_G);
-
-				for(int j=0;j<mcsIndexes.size();j++)
-				{
-					((RateUnit*)units[mcsIndexes[j]])->SetValue(data[j]);
-				}*/
-			}
-		}
 	}
 }
 
@@ -249,7 +177,12 @@ std::vector<double> SoftMax::WTAProb(std::vector<double> data)
 	return output;
 }
 
-// In hypercolumn setting: currently performed on all nodes involved in hypercolumn
+/// <summary>	Softmax function. </summary>
+///
+/// <param name="data">	Column activities. </param>
+/// <param name="G"> Sharpness of softmax.  </param>
+///
+/// <returns> Column activities. </returns>
 
 vector<double> SoftMax::Function(vector<double> data, float G)
 {
@@ -270,14 +203,6 @@ vector<double> SoftMax::Function(vector<double> data, float G)
 	{
 		if(m_population->network()->MPIGetNodeId() == 0)
 			cout<<"<";//cout<<"Warning: Large in softmax. Forcing lowering.";
-
-		/*for(int i=0;i<data.size();i++)
-		{
-			if(G>0)
-				data[i] = data[i]/(G*4);
-			else
-				data[i] = data[i]/(4);
-		}*/
 	}
 
 	for(int i=0;i<data.size();i++)
@@ -292,108 +217,97 @@ vector<double> SoftMax::Function(vector<double> data, float G)
 	return output;
 }
 
+/// <summary>	Winner-take-all operation. </summary>
 
 void WTA::Simulate()
 {
-	if(!IsOn()) return;
+	if(!IsOn()) return; // TODO: move outside
 
 	TimingStart(m_name);
 
-	PopulationColumns* layer = (PopulationColumns*)m_population;
-
-	/*if(layer->IsFirstRun() == true)
-	{
-		layer->MPI()->MPICreateCommsHypercolumns(); // could be initialized sooner
-		layer->SetFirstRun(false);
-	}*/
+	PopulationColumns* population = (PopulationColumns*)m_population;
 
 //	layer->MPI()->MPIMakeHypercolumnsValuesLocal(); // MPI distributor
 
-	vector<int> localHypercolumns = layer->GetLocalHypercolumnIndexes();
-	vector<Unit*> units = layer->GetUnits();
+	vector<int> localHypercolumns = population->GetLocalHypercolumnIndexes();
+	vector<Unit*> units = population->GetUnits();
 
 	// no need to let all nodes do this since values are distributed anyway now
 
 	vector<int> mcsIndexes;
 
 	////////////////////////////////////////////////////////////////
-	// OBS: replaced the added gain method by maps in transfer function
+	// Compared to earlier version: replaced the added gain method by maps in transfer function
 	////////////////////////////////////////
 
-
-/*	for(int i=0;i<localHypercolumns.size();i++)
-	{
-		mcsIndexes = layer->GetRateUnitsIndexes(localHypercolumns[i]);
-		vector<double> data(mcsIndexes.size());
-
-		for(int j=mcsIndexes.size()-1;j>-1;j--)
-		{
-			data[j] = ((RateUnit*)units[mcsIndexes[j]])->GetValue();
-		}
-
-		//data = Function(data);
-
-		for(int j=0;j<mcsIndexes.size();j++)
-		{
-			((RateUnit*)units[mcsIndexes[j]])->SetValue(data[j]);
-			((RateUnit*)units[mcsIndexes[j]])->AddGains(); // only local units will !=0.0
-		}
-	}
-*/
 	// distribute all added gains
-	// this will usually not do anything as all minicolumns are usually local (unless very many processes cmp to network size are used)
-	layer->MPI()->MPIMakeHypercolumnsValuesLocal(); // MPI distributor
+	// this will often not do anything as all minicolumns are local (unless many processes compared to network size are used)
+	population->MPI()->MakeActivityValuesLocal();//MPIMakeHypercolumnsValuesLocal(); // MPI distributor
 
 	// redo wta including added gains
 	for(int i=0;i<localHypercolumns.size();i++)
 	{
-		Hypercolumn* h = (Hypercolumn*)layer->GetHypercolumn(i);
+		Hypercolumn* h = (Hypercolumn*)population->GetHypercolumn(i);
 		
-		if(h->IsSilent() == false)
+		if(h->IsSilent() == false) // special case if true (not used in any standard model)
 		{
 			//Hypercolumn* h = (Hypercolumn*)m_network->GetUnitFromId(localHypercolumns[i]);
-			vector<RateUnit*> mcs = h->GetRateUnits();
+			//vector<RateUnit*> mcs = h->GetRateUnits();
 			//vector<int> mcsIndexes = layer->GetRateUnitsIndexes(localHypercolumns[i]);
 
 			vector<float> data = h->GetValues();
+			data = wta(data);
 
+			h->SetValues(data);
 
-			/*		vector<double> data(mcs.size());//(mcs.size());
-
-			for(int j=0;j<mcs.size();j++)
+			/*for(int j=0;j<mcs.size();j++)
 			{
-			data[j] = mcs[j]->GetValue();
-			}
-			*/
-			data = Function(data);
-
-			for(int j=0;j<mcs.size();j++)
-			{
-				//	cout<<mcs[j]->GetUnitIdLocalInHypercolumn()<<" ";cout.flush();
 				mcs[j]->SetValue(data[mcs[j]->GetUnitIdLocalInHypercolumn()]);//data[j]);
-			}
+			}*/
 		}
-
-		/*
-		vector<int> mcsIndexes = layer->GetRateUnitsIndexes(localHypercolumns[i]);
-		vector<double> data(mcsIndexes.size());
-
-		for(int j=mcsIndexes.size()-1;j>-1;j--)
-		{
-			data[j] = ((RateUnit*)m_network->GetUnitFromId(mcsIndexes[j]))->GetValue();//((RateUnit*)units[mcsIndexes[j]])->GetValue();
-		}
-
-		data = Function(data);
-
-		for(int j=0;j<mcsIndexes.size();j++)
-		{
-			((RateUnit*)m_network->GetUnitFromId(mcsIndexes[j]))->SetValue(data[j]);//((RateUnit*)units[mcsIndexes[j]])->SetValue(data[j]);
-		}
-		*/
 	}
 
 	TimingStop(m_name);
 }
+
+/// <summary>	Winner-take-all. </summary>
+///
+/// <param name="data">	Column/population activities. </param>
+///
+/// <returns>	Column/population activities. </returns>
+
+vector<float> WTA::wta(vector<float> data)
+{
+	vector<float> output(data.size());
+	double sum = 0;
+
+	double maxValue = -1e10;
+	int maxIndex = -1;
+	float r;
+
+	for(int i=0;i<data.size();i++)
+	{
+		if(data[i]>maxValue)
+		{
+			maxValue = data[i];
+			maxIndex = i;
+		}
+		else if(data[i]==maxValue) // randomly switch
+		{
+			r = (float)rand()/(float)RAND_MAX;
+			if(r>0.5)
+				maxIndex = i;
+		}
+	}
+
+	if(maxIndex!=-1)
+		output[maxIndex] = 1.0;
+
+	return output;
+}
+
+
+/// <summary>	Winner-take-all-operation with a threshold. </summary>
 
 void WTAThreshold::Simulate()
 {
@@ -427,7 +341,7 @@ void WTAThreshold::Simulate()
 
 		if(oneAbove == true)
 		{
-			data = m_wta.Function(data);
+			data = m_wta.wta(data);
 
 			for(int j=0;j<mcs.size();j++)
 			{
@@ -445,35 +359,8 @@ void WTAThreshold::Simulate()
 	TimingStop(m_name);
 }
 
-vector<float> WTA::Function(vector<float> data)
-{
-	vector<float> output(data.size());
-	double sum = 0;
 
-	double maxValue = -1e10;
-	int maxIndex = -1;
-	float r;
-
-	for(int i=0;i<data.size();i++)
-	{
-		if(data[i]>maxValue)
-		{
-			maxValue = data[i];
-			maxIndex = i;
-		}
-		else if(data[i]==maxValue) // randomly switch
-		{
-			r = (float)rand()/(float)RAND_MAX;
-			if(r>0.5)
-				maxIndex = i;
-		}
-	}
-
-	if(maxIndex!=-1)
-		output[maxIndex] = 1.0;
-
-	return output;
-}
+/// <summary>	Threshold-operation. </summary>
 
 void Threshold::Simulate()
 {
@@ -491,4 +378,52 @@ void Threshold::Simulate()
 	   } else
 		   minicolumns[i]->SetValue(0.0);
 	}
+}
+
+/// <summary>	Divise normalization-operation. </summary>
+
+void DivisiveNormalization::Simulate()
+{
+	if(!IsOn()) return;
+
+	TimingStart(m_name);
+
+	PopulationColumns* layer = (PopulationColumns*)m_population;
+
+	vector<int> localHypercolumns = layer->GetLocalHypercolumnIndexes();
+	vector<Unit*> units = layer->GetUnits();
+
+	vector<int> mcsIndexes;
+	layer->MPI()->MakeActivityValuesLocal(true);//MPIMakeHypercolumnsValuesLocal(); // MPI distributor, not needed anymore?
+
+	vector<float> valuesLocal = layer->GetValuesLocal();
+	vector<float> allValues = layer->GetValuesBuffer();
+	float totValues = 0;
+	for(int i=0;i<allValues.size();i++)
+		totValues += pow(allValues[i],2);
+
+	if(totValues>0)
+	{
+		vector<RateUnit*> mcs = layer->GetRateUnits();
+
+		float value, subThreshValue;
+		for(int j=0;j<mcs.size();j++)
+		{
+			value = mcs[j]->GetValue();
+			if(value >0)
+			{
+				value = sqrt(pow(value,2)/(1.0+totValues));
+				mcs[j]->SetValue(value);
+			}
+			else // subthreshold normalization
+			{
+				subThreshValue = mcs[j]->GetSubThresholdValue();
+				subThreshValue = sqrt(pow(subThreshValue,2)/(1.0+totValues));
+				mcs[j]->SetSubThresholdValue(subThreshValue);
+			}
+
+		}
+	}
+
+	TimingStop(m_name);
 }

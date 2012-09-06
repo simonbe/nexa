@@ -2,19 +2,19 @@
 #ifndef NETWORKSANGER_H
 #define NETWORKOJA_H
 
-#include "NetworkConnectionModifier.h"
+#include "NetworkProjectionModifier.h"
 
 // Sanger's rule / Generalized Hebbian Algorithm (GHA) / PCA rule
 
-class ConnectionModifierSanger : public ConnectionModifier
+class ProjectionModifierSanger : public ProjectionModifier
 {
 public:
 
-	ConnectionModifierSanger();
-	ConnectionModifierSanger(float etaHebb);
+	ProjectionModifierSanger();
+	ProjectionModifierSanger(float etaHebb);
 
-	void Initialize(Connection* connection);
-	void SetConnection(Connection* c);
+	void Initialize(Projection* Projection);
+	void SetProjection(Projection* c);
 	void Simulate(UnitModifier* e);
 	void Modify();
 	void Clear();
@@ -27,7 +27,7 @@ private:
 	vector<long> m_idsPost;
 	vector<vector<long> > m_idsPre;
 
-	Connection* m_connectionFixed;
+	Projection* m_projectionFixed;
 };
 
 #endif

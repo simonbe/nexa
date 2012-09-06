@@ -32,25 +32,25 @@ void StructureReTIDe::Initialize(Network* network, PopulationColumns* layerInput
 	m_layers.push_back(layerInput);
 }
 
-void StructureReTIDe::SetupStructure(Network* network, PopulationColumns* layerInput)
+void StructureReTIDe::SetupStructure(Network* network, PopulationColumns* layerInput, bool useDivNormalization)
 {
-	TransferReTIDe* transferReTIDe = new TransferReTIDe(layerInput,m_threshold,m_maxValue);//,m_maxValue);
+	TransferReTIDe* transferReTIDe = new TransferReTIDe(layerInput,m_threshold,useDivNormalization, m_maxValue);//,m_maxValue);
 	//TransferReTIDe* transferReTIDe2 = new TransferReTIDe(m_threshold2);
 	//TransferReTIDe* transferReTIDe3 = new TransferReTIDe(m_threshold3);
-	//layerInput->GetIncomingConnections()[0]->AddUnitsProperty(transferReTIDe);//layerInput->AddUnitsProperty(transferReTIDe);
-	//layerInput->GetIncomingConnections()[1]->AddUnitsProperty(transferReTIDe2);//
-	//layerInput->GetIncomingConnections()[2]->AddUnitsProperty(transferReTIDe3);//
+	//layerInput->GetIncomingProjections()[0]->AddUnitsProperty(transferReTIDe);//layerInput->AddUnitsProperty(transferReTIDe);
+	//layerInput->GetIncomingProjections()[1]->AddUnitsProperty(transferReTIDe2);//
+	//layerInput->GetIncomingProjections()[2]->AddUnitsProperty(transferReTIDe3);//
 	layerInput->AddUnitsProperty(transferReTIDe);
 }
 
 void StructureReTIDe::SetupMeters(int index, Storage::SaveDataState state)
 {
 //	char* name1 = new char[30];
-//	sprintf(name1,"Connection_%d_n%d.csv",m_index,mpiRank);
+//	sprintf(name1,"Projection_%d_n%d.csv",m_index,mpiRank);
 //	Meter* connMeter = new Meter(name1, Storage::CSV);
 
 	// if run on too many nodes compared to network size, could get error here
-	//connMeter->AttachConnection(m_layers[1]->GetIncomingConnections()[0]);//AttachUnit(layer1->GetRateUnits()[0]);
+	//connMeter->AttachProjection(m_layers[1]->GetIncomingProjections()[0]);//AttachUnit(layer1->GetRateUnits()[0]);
 	//m_network->AddMeter(connMeter);
 
 	//char* name2 = "Layer2Activity_2.csv";
@@ -68,7 +68,7 @@ void StructureReTIDe::SetupMeters(int index, Storage::SaveDataState state)
 	m_layerMeter = new Meter(name2, Storage::CSV, state);
 	//Meter layer3Meter(name3, Storage::CSV);
 
-	m_layerMeter->AttachLayer(m_layers[0]);
+	m_layerMeter->AttachPopulation(m_layers[0]);
 	m_network->AddMeter(m_layerMeter);
 }
 

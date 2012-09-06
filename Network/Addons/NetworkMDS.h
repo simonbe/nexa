@@ -2,9 +2,11 @@
 #ifndef NETWORKMDS_H
 #define NETWORKMDS_H
 
-#include "NetworkConnectionModifier.h"
+#include "NetworkProjectionModifier.h"
 
-class ConnectionModifier;
+class ProjectionModifier;
+
+/// <summary>	Multi-dimensional scaling. </summary>
 
 class LayerMDS : public PopulationModifier
 {
@@ -128,6 +130,8 @@ private:
 	vector<vector<float> > m_recordedValues;
 };
 
+/// <summary>	Analysis of a running Multi-dimensional scaling. Retrieves specific values from class for easy storage on disk. </summary>
+
 class AnalysisMDS : public AnalysisLayer
 {
 public:
@@ -158,41 +162,45 @@ private:
 	LayerMDS* m_layerMDS;
 };
 
-class ConnectionModifierMDS : public ConnectionModifier
+/// <summary>	Multi-dimensional scaling. Used in combination with LayerMDS. </summary>
+
+class ProjectionModifierMDS : public ProjectionModifier
 {
 public:
 
-	ConnectionModifierMDS()
+	ProjectionModifierMDS()
 	{
-		ConnectionModifierMDS(false);
-		m_name = "ConnectionModifierMDS";
+		ProjectionModifierMDS(false);
+		m_name = "ProjectionModifierMDS";
 	}
 
-	ConnectionModifierMDS(bool usePearson)
+	ProjectionModifierMDS(bool usePearson)
 	{
 		sprn = prn = 1;
-		m_MDSK = 2e-2;//2e-5;//2e-2;
+		m_MDSK = 2e-2;//2e-5;//2e-2; // Change in SetUpdateSize
 		m_eventId = 4;
 		m_firstRun = true;
 		m_usePearson = usePearson;
 		if(usePearson)
-			m_name = "ConnectionModifierMDS_Pearson";
+			m_name = "ProjectionModifierMDS_Pearson"; // Uses Pearson correlation as input
 		else
-			m_name = "ConnectionModifierMDS_MI";
+			m_name = "ProjectionModifierMDS_MI"; // Uses mutual information as input
 
 		m_useThreshold = false;
 		m_threshold = 0.9;
 	}
-
-	//void AddMI(ConnectionModifierMIHypercolumn* e) // corresponding to all outgoing connections from a minicolumn
-	//{
-	//	m_MI = e;
-	//}
-	
-	~ConnectionModifierMDS()
+		
+	~ProjectionModifierMDS()
 	{
  		//delete m_Xi;
 	}
+
+	/// <summary>	If threshold is used, points will only affect each other if they are within threshold distance. </summary>
+	///
+	/// <remarks>	Post Lazarus, 9/4/2012. </remarks>
+	///
+	/// <param name="useThreshold">	true to use threshold. </param>
+	/// <param name="threshold">   	Threshold value. </param>
 
 	void SetUseThreshold(bool useThreshold, float threshold)
 	{
@@ -201,7 +209,7 @@ public:
 	}
 
 	void AddParentPopulationModifier(PopulationModifier* e);
-	void SetConnection(Connection* c);
+	void SetProjection(Projection* c);
 	void Simulate(UnitModifier* e) {}
 	void Modify();
 
@@ -210,7 +218,11 @@ public:
 	float GetMeands() { return meands; }
 
 	void Dispose();
-	//~ConnectionModifierMDS();
+	//~ProjectionModifierMDS();
+
+	/// <summary>	Magnitude of update in one iteration of MDS. </summary>
+	///
+	/// <param name="mdsk">	Update value. </param>
 
 	void SetUpdateSize(float mdsk)
 	{
@@ -238,12 +250,7 @@ private:
 	vector<long> m_idsPost;
 	vector<vector<long> > m_idsPre;
 
-	//ConnectionModifierMIHypercolumn* m_MI;
-
-	//vector<vector<ConnectionModifierMIRateUnit*> > m_presMImc;
-	//vector<ConnectionModifierMIRateUnit*> m_postsMImc;
-
-	Connection* m_connectionFixed;
+	Projection* m_projectionFixed;
 };
 
 #endif

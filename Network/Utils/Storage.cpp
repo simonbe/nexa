@@ -5,6 +5,9 @@
 #include <vector>
 #include <sstream>
 #include <fstream>
+#include <iostream>
+#include <sstream>
+
 
 #include "Storage.h"
 
@@ -834,4 +837,152 @@ void Storage::SaveDataFloatCSV(char* filename, vector<vector<float> > data, Save
 		//}
 	}
 	else cout<<"Error saving file "<<filename;
+}
+
+vector<vector<vector<float> > > Storage::LoadDataFloatBinSparse(char* filename, int nrItems, bool keepOpen)
+{
+	// slow version
+	unsigned long long position = -1;
+	ifstream* in = new ifstream;
+
+	int extraPosition = 0;
+
+	in->open(filename,ifstream::binary);
+
+	if (!in)
+	{
+		cout<<"Error: Could not open data location file (LoadDataFloatBin): "<<filename<<".\n";
+		//Logger::print(ss.str().c_str());
+		cout.flush();
+		return vector<vector<vector<float> > >(0);// out;
+    }
+
+	/*int minRow = rowsToLoad[0];
+	int maxRow = rowsToLoad[0];
+
+	for(int i=0;i<rowsToLoad.size();i++)
+	{
+		if(rowsToLoad[i]<minRow)
+			minRow = rowsToLoad[i];
+		if(rowsToLoad[i]>maxRow)
+			maxRow = rowsToLoad[i];
+	}*/
+
+	// 1. first number specify nr of items/patterns in file
+	float nrPatterns;
+	//in->seekg( 4 );
+	in->read( (char *) &nrPatterns, sizeof( float) ); // ? needs to be flipped in case of different file system architecture ?
+
+	// 2. second number specify nr hypercolumns N
+	float nrHypercolumns;
+	in->read( (char *) &nrHypercolumns, sizeof( float ) ); // = 1 for semantic
+
+	vector<int> nrMinicolumns(nrHypercolumns);
+	// 3. N next numbers specify minicolumns in each hypercolumn
+
+	int totalMinicolumns = 0;
+	float nrMc = 1;
+	for(int i=0;i<nrHypercolumns;i++)
+	{
+		in->read( (char *) &nrMc, sizeof(float));
+		/*if(m_specialLimitNrValues>0)
+			nrMinicolumns[i] = (int)nrMc*m_specialLimitNrValues;
+		else*/
+		nrMinicolumns[i] = (int)nrMc;
+
+		totalMinicolumns += (int)nrMc;
+	}
+
+	if(nrItems>-1 && nrItems<=nrPatterns)
+		nrPatterns = nrItems;
+
+	vector<vector<vector<float> > >out(nrPatterns);//,vector<float>(0));
+
+	//out = ublas::compressed_matrix<float>(nrPatterns,totalMinicolumns);//totalMinicolumns,nrPatterns);//rowsToLoad.size(),nrHypercolumns);
+
+	bool finished = false;
+
+
+	int index = 0;
+	while(finished == false)
+	{
+		vector<float> vals(3000);
+
+		if(!in->read((char*) &vals[0], sizeof(float)*3000))
+		{
+			finished = true;
+		}
+		else
+		{
+			vector<float> val(3);
+			vector<float> dataTwo(2);
+
+			for(int i=0;i<vals.size();i+=3)
+			{
+				val[0] = vals[i]-1;
+				dataTwo[0] = vals[i+1]-1;
+				dataTwo[1] = vals[i+2];
+
+				if(val[0]+1>nrPatterns)
+				{
+					finished = true;
+					i = vals.size();
+				}
+				else
+				{
+					/*if(vals[1]>maxRow+1)  // assuming 1-based indexes, starting at (1,1), otherwise change = to minRow place for zero-based
+					{//	finished = true;
+					}
+					else
+					{
+					if(vals[1]>=minRow) // assuming linear (non-excluding) distribution of indexes
+					{
+					out.push_back(vals[0]-minRow-1,vals[1]-1,vals[2]);//out(vals[1]-1,vals[0]-minRow-1) = vals[2];
+					index++;
+
+					if(index%10000 == 0)
+					{
+					cout<<index<<" ";
+					}
+					}
+					}
+					*/
+
+					out[val[0]].push_back(dataTwo);//[vals[1]-1] = vals[2];
+				}
+			}
+		}
+	}
+
+//	ublas::compressed_matrix<float> a = ublas::compressed_matrix<float>(nrPatterns,totalMinicolumns);
+//	a = ublas::trans(out);
+	//out = ublas::trans(out);
+
+	return out;
+}
+
+
+vector<string> Storage::GetFileData(string filename)
+{
+	string line;
+	vector<string> allStrings;
+
+	ifstream myfile(filename);
+	if (myfile.is_open())
+	{
+		while ( myfile.good() )
+		{
+			getline (myfile,line);
+			if(line.length()>0)
+			{
+				if(line[0]!='#')
+				{
+					allStrings.push_back(line);
+				}
+			}
+		}
+		myfile.close();
+	}
+
+	return allStrings;
 }

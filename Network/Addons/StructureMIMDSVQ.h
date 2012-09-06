@@ -73,7 +73,6 @@ public:
 		m_mdsDimension = dimension;
 	}
 	
-
 	void SetupStructure(Network* network, PopulationColumns* layerInput, int nrMiddleHypercolumns, int nrMiddleRateUnits, bool addInputLayerToNetwork, bool useSilentHypercolumns = false, float silentHypercolumnsThreshold = 0.0);//, int nrOutputHypercolumns, int nrOutputRateUnits);
 	void SetupStructure(Network* network, int nrInputHypercolumns, int nrInputRateUnits, int nrMiddleHypercolumns, int nrMiddleRateUnits, bool addInputLayerToNetwork);//, int nrOutputHypercolumns, int nrOutputRateUnits);
 	void SetupMeters(int mpiRank, int mpiSize);//, Storage::FilePreference fileType);
@@ -93,23 +92,23 @@ public:
 		return m_VQ;
 	}
 
-	ConnectionModifierMDS* MDSHypercolumns()
+	ProjectionModifierMDS* MDSHypercolumns()
 	{
 		return m_mdsHypercolumns;
 	}
 
 	// this way of calling will be changed
-	ConnectionModifierCL* CompLearn()
+	ProjectionModifierCL* CompLearn()
 	{
 		return m_compLearn;
 	}
 
-	ConnectionModifierCSL* CSLLearn()
+	ProjectionModifierCSL* CSLLearn()
 	{
 		return m_cslLearn;
 	}
 
-	ConnectionModifierBCM* BCMLearn()
+	ProjectionModifierBCM* BCMLearn()
 	{
 		return m_bcmLearn;
 	}
@@ -119,7 +118,7 @@ public:
 		return m_adaptation;
 	}
 
-	ConnectionModifier* FeatureExtractor()
+	ProjectionModifier* FeatureExtractor()
 	{
 		if(m_featureExtraction == StructureMIMDSVQ::CL)
 			return m_compLearn;
@@ -133,17 +132,17 @@ public:
 			return m_cslLearn;
 	}
 
-	ConnectionModifierMIHypercolumn* MIHypercolumns()
+	ProjectionModifierMIHypercolumn* MIHypercolumns()
 	{
 		return m_miHypercolumns;
 	}
 
-	ConnectionModifierMIRateUnit* MIRateUnits()
+	ProjectionModifierMIRateUnit* MIRateUnits()
 	{
 		return m_miRateUnits;
 	}
 
-	ConnectionModifierPearson* Pearson()
+	ProjectionModifierPearson* Pearson()
 	{
 		return m_pearson;
 	}
@@ -168,14 +167,14 @@ protected:
 	vector<PopulationColumns*> m_layers;
 	LayerMDS* m_MDS;
 	LayerVQ* m_VQ;
-	ConnectionModifierMDS* m_mdsHypercolumns;
-	ConnectionModifierMIHypercolumn* m_miHypercolumns;
-	ConnectionModifierMIRateUnit* m_miRateUnits;
-	ConnectionModifierCL* m_compLearn;
-	ConnectionModifierCSL* m_cslLearn;
-	ConnectionModifierBCM* m_bcmLearn;
-	ConnectionModifierBcpnnOnline* m_bcpnn;
-	ConnectionModifierPearson* m_pearson; // between minicolumns
+	ProjectionModifierMDS* m_mdsHypercolumns;
+	ProjectionModifierMIHypercolumn* m_miHypercolumns;
+	ProjectionModifierMIRateUnit* m_miRateUnits;
+	ProjectionModifierCL* m_compLearn;
+	ProjectionModifierCSL* m_cslLearn;
+	ProjectionModifierBCM* m_bcmLearn;
+	ProjectionModifierBcpnnOnline* m_bcpnn;
+	ProjectionModifierPearson* m_pearson; // between minicolumns
 	PopulationModifierAdaptation* m_adaptation;
 
 	float m_featExtrRecurrProb;

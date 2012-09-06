@@ -2,24 +2,25 @@
 #ifndef NETWORKCORR_H
 #define NETWORKCORR_H
 
-#include "NetworkConnectionModifier.h"
+#include "NetworkProjectionModifier.h"
 
+/// <summary>	Incremental Pearson correlation. </summary>
 
-class ConnectionModifierPearson : public ConnectionModifier
+class ProjectionModifierPearson : public ProjectionModifier
 {
 public:
 
-	ConnectionModifierPearson()
+	ProjectionModifierPearson()
 	{
 		m_eventId = 11;
 	}
 
-	void SetConnection(Connection* c)
+	void SetProjection(Projection* c)
 	{
-		m_connection = c;
+		m_projection = c;
 	}
 
-	void Initialize(Connection* connection);
+	void Initialize(Projection* Projection);
 	void Simulate(UnitModifier* e){};
 	void Modify();
 

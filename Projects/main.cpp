@@ -10,13 +10,15 @@
 #include "Network.h"
 #include "NetworkTests.h"
 #include "NetworkMNIST.h"
-/*#include "NetworkOlfaction.h"
+#include "NetworkOlfaction.h"
 #include "NetworkSensorDrift.h"
 #include "NetworkIFTests.h"
 #include "NetworkSetupConns.h"
 #include "NetworkTopDownDecorr.h"
 #include "NetworkArithmetic.h"
-*/#include "Shapes.h"
+#include "Shapes.h"
+#include "NetworkFridaySemantics.h"
+#include "NetworkTemporal.h"
 
 #include "stubs.h"
 
@@ -45,6 +47,48 @@
 // tail -n 10 core.0 | addr2line -e project1
 
 using namespace std;
+
+//class NetworkDemoVis1;
+//class Network;
+
+/*void SimulationArguments(int argc, char **argv)
+{
+    int i;
+    for (i = 1; i < argc; ++i)
+    {
+        if (strcmp(argv[i], "-dir") == 0 &&
+                (i + 1) < argc)
+        {
+            VisItSetDirectory(argv[i + 1]);
+            ++i;
+        }
+        else if (strcmp(argv[i], "-options") == 0 &&
+                (i + 1) < argc)
+        {
+            VisItSetOptions(argv[i + 1]);
+            ++i;
+        }
+#ifdef VISIT_CONTROL_INTERFACE_V2_H
+        else if (strcmp(argv[i], "-trace") == 0 &&
+                (i + 1) < argc)
+        {
+#ifdef PARALLEL
+            int rank;
+            char *tmpfile = NULL;
+            tmpfile = (char*) malloc(strlen(argv[i + 1]) + 10);
+            MPI_Comm_rank(NETWORK_COMM_WORLD, &rank);
+            sprintf(tmpfile, "%s.%04d", argv[i + 1], rank);
+            VisItOpenTraceFile(tmpfile);
+            free(tmpfile);
+#else
+            VisItOpenTraceFile(argv[i + 1]);
+#endif
+            ++i;
+        }
+#endif
+    }
+}
+*/
 
 int main(int argc, char *argv[])
 {
@@ -86,8 +130,8 @@ int main(int argc, char *argv[])
 
 //NetworkScalingDemos scaling;
 //	scaling.RunAll();
-	NetworkScalingStrong scalingStrong;
-	scalingStrong.Run();
+//	NetworkScalingStrong scalingStrong;
+//	scalingStrong.Run();
 
 //	NetworkOlfactionScenariosClassification_PH olf;
 //	olf.Start();
@@ -109,7 +153,6 @@ int main(int argc, char *argv[])
 	//NetworkSetupConns setupConns;
 	//setupConns.Example1();
 
-
 //	NetworkTopDownDecorr decorr;
 //	decorr.RunRule1();//RunHistoryDependencePlot();
 
@@ -124,9 +167,14 @@ int main(int argc, char *argv[])
 //	NetworkTopDownDecorr_Invariance decorrInv;
 //	decorrInv.Run();
 
+//	NetworkTopDownDecorr_SequencePrediction seq;
+//	seq.Run();
+//	NetworkFridaySemantics semantics;
+//	semantics.Run();
+
 //	ShapesNetwork shapes;
 //	shapes.Run();
-//	NetworkConnectionTests testsConns;
+//	NetworkProjectionTests testsConns;
 //	testsConns.Run();
 
 //	NetworkSynapsesTests tests;
@@ -137,8 +185,12 @@ int main(int argc, char *argv[])
 //	decorr.RunTestHSInhib();
 //	NetworkArithmetic arithmetic;
 //	arithmetic.Run();
+	NetworkTES tes;
+	tes.Run();
 
-	
+//	NetworkTemporal temporal;
+//	temporal.Run();
+
 //	VisItSetupEnvironment();
 //	NetworkDemoVis1 vis1;
 //	vis1.Run();
