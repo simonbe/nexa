@@ -7,9 +7,6 @@
  
 void MPIDistribution::MPICreateCommLayer()
 {
-	// Create MPI handle for entire network layer (used to gather data from all units in the layer)
-	//MPI_Barrier(NETWORK_COMM_WORLD); //debug
-
 	if(m_population->network()->MPIGetNodeId() == 0 && DEBUG_LEVEL > 2)
 	{
 		cout<<"Creating MPI Communicator for layer...";cout.flush();
@@ -267,17 +264,14 @@ void MPIDistribution::MPICreateCommsHypercolumns()
 
 	vector<vector<int> > nodeHcIndexes = ((PopulationColumns*)m_population)->GetAllNodeIndexes();
 
-	//for(int i=0;i<m_mpiCommHCs.size();i++)
-//		delete m_mpiCommHCs[i];
-
-	// watch memory leak (!)
+	// TODO: check we do not have a memory leak for multiple runs and ok to do like this
 	for(int i=0;i<m_mpiCommHCs.size();i++)
 		delete m_mpiCommHCs[i];
 
 	m_mpiCommHCs.clear();
 
 	// this will currently create the extra communicators needed for shared hypercolumns on all processes
-	// - change so that they will only be created on the processes that will use them (!)
+	// - only if more than one process uses them it will be created
 
 	for(int i=0;i<nodeHcIndexes.size();i++)
 	{
@@ -300,6 +294,16 @@ void MPIDistribution::MPICreateCommsHypercolumns()
 
 	m_commsHCsCreated = true;
 }
+
+/// <summary>	Generates a division of a columnar populatin based on which parallelization scheme has been selected.
+/// 			TODO: Simplify the way to extend to new parallelization schemes. </summary>
+///
+/// <param name="nrRateUnits">				Nr of rate units in each column. </param>
+/// <param name="parallelizationScheme">	The parallelization scheme. </param>
+/// <param name="mpiRank">					This mpi process. </param>
+/// <param name="mpiSize">					Nr total processes. </param>
+///
+/// <returns>	Distribution. </returns>
 
 vector<vector<vector<long> > > MPIDistribution::DivideEqualByHypercolumn(vector<int> nrRateUnits, ParallelizationSchemeLayer parallelizationScheme, int mpiRank,int mpiSize)
 {
