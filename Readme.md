@@ -18,7 +18,7 @@ For easy access on Windows, [GitHub for Windows](http://windows.github.com/) can
 
 **Project files and Makefiles**
 
-Repo includes a Visual Studio 2012 project file. To get MPI libraries and parallel debugging, [Microsoft Compute Cluster Pack SDK](http://www.microsoft.com/en-us/download/details.aspx?id=239) or [Microsoft HPC Pack](http://www.microsoft.com/en-us/download/details.aspx?id=8433) are recomended.
+Repo includes a Visual Studio 2010/2012 project file. To get MPI libraries and parallel debugging, [Microsoft Compute Cluster Pack SDK](http://www.microsoft.com/en-us/download/details.aspx?id=239) or [Microsoft HPC Pack](http://www.microsoft.com/en-us/download/details.aspx?id=8433) are recomended.
 For other platforms (currently CRAY XE6 using the GNU compiler and BG/L and BG/P using the IBM compiler), Makefiles exist in the [Resources/Makefiles](https://github.com/simonbe/nexa/tree/master/Resources/Makefiles) directory.
 
 ### Setting up a network ###
