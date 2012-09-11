@@ -6,6 +6,9 @@ class Population;
 
 using namespace std;
 
+/// <summary>	Contains functions for handling the distribution of units according
+/// 			to a parallelization scheme across a machine. </summary>
+
 class MPIDistribution
 {
 
@@ -25,6 +28,14 @@ public:
 		m_commsHCsCreated = false;
 		m_commsLayersCreated = false;
 	}
+
+	/// <summary>	Divide a fixed number of units equally. </summary>
+	///
+	/// <param name="nrUnits">	The nr units. </param>
+	/// <param name="mpiRank">	This mpi process. </param>
+	/// <param name="mpiSize">	Nr total processes. </param>
+	///
+	/// <returns>	Distribution. </returns>
 
 	vector<vector<long> > DivideEqualByUnits(unsigned long nrUnits,int mpiRank,int mpiSize)
 	{
@@ -53,7 +64,16 @@ public:
 		return indexesInterval;
 	}
 
-	// Used in DivideEquaByHypercolumn (not private)
+	/// <summary>	Divides a single hypercolumn across processes.
+	/// 			Used in DivideEquaByHypercolumn
+	///				(TODO: check dependencies, make private) </summary>
+	///
+	/// <param name="nrRateUnits">	Nr of rate units in each column. </param>
+	/// <param name="mpiRank">	  	This mpi process. </param>
+	/// <param name="mpiSize">	  	Nr total processes. </param>
+	///
+	/// <returns>	Distribution. </returns>
+
 	vector<vector<long> > DivideEqualByUnitsSingleHC(vector<int> nrRateUnits,int mpiRank,int mpiSize)
 	{
 		float part = (float)nrRateUnits.size()/(float)mpiSize;
