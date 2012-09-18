@@ -140,8 +140,6 @@ public:
 
 	virtual UnitModifier* CreateEvent(float value) = 0;
 
-	bool AlreadySentEventToNode(int processId);
-
 	void SetPopulation(Population* net)
 	{
 		m_population = net;
@@ -194,7 +192,7 @@ protected:
 	vector<UnitModifier*> m_eventsOutgoing;
 
 	float m_value;
-	float m_subThreshValue; // TODO: used for gradedThresholded unit - move it
+	float m_subThreshValue, m_subThreshDrive; // TODO: used for gradedThresholded unit - move it
 
 	bool m_isNewEvent;
 	vector<vector<float> > m_recordedValues; // TODO: may get moved to network object class
@@ -273,6 +271,11 @@ public:
 		m_value = value;
 	}
 
+	void SetSubThresholdDrive(float value)
+	{
+		m_subThreshDrive = value;
+	}
+
 	void SetSubThresholdValue(float value) // valid if unit GradedThresholded is used
 	{
 		m_subThreshValue = value;
@@ -281,6 +284,11 @@ public:
 	float GetSubThresholdValue() // valid if unit GradedThresholded is used
 	{
 		return m_subThreshValue;
+	}
+	
+	float GetSubThresholdDrive() // valid if unit GradedThresholded is used
+	{
+		return m_subThreshDrive;
 	}
 
 	UnitModifier* CreateEvent(float value);

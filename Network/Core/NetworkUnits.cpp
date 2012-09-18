@@ -2,80 +2,37 @@
 #include "NetworkUnits.h"
 #include <deque>
 
-// will be used across all incoming Projections - put in a specific Projection instead to make it specific
+/// <summary>	Adds a unit modifier (e.g. transfer function) on a unit
+/// 			This will be used across all incoming projections - can put on a specific projection instead to make it specific </summary>
+///
+/// <param name="p">	[in,out] If non-null, the UnitModifier* to process. </param>
+
 void Unit::AddUnitModifier(UnitModifier* p)
 {
 	m_unitProperties.insert(m_unitProperties.begin(),p);
-	//m_unitProperties.push_back(p);
 	p->SetUnit(this);
 }
 
-// Loop around all units in population ends up here, overridable
+/// <summary>	Loop around all units in population gets here. </summary>
+
 void Unit::Simulate()
 {
-	// work on the event queues for unit and Projections
+	// work on the event queues for added properties on units and projections (e.g. transfer functions etc)
 	SimulateEventQueue();
 
-	/*int nr = m_eventsIncoming.size();
-	for(int i=0;i<nr;i++)
-	{
-		if(m_eventsIncoming[i]!=NULL)
-		{
-			delete m_eventsIncoming[i];
-			m_eventsIncoming[i] = NULL;
-		}
-	}
-
-	m_eventsIncoming.clear();*/
-
+	// Simulate any additional tasks for unit (typically not used but can be overridden)
 	SimulateMisc();
 
 	this->ClearEventsIncoming();
-
-	//m_eventsIncoming.clear();
 }
 
-/*void RateUnit::AddEvent(UnitModifier* e)
-{
-	// do nothing
-}*/
 
-// not used atm.
-bool Unit::AlreadySentEventToNode(int processId)
-{
-	bool alreadySent = false;
+/// <summary>	Simulates and handles all incoming data (from other units most of the time) to unit
+/// currently:
+///  - have some separate cases for certain transfer functions (such as bcpnn which has log around hypercolumns), this may be moved
+///  - not data-driven as loops would need to change their order in that case (could get better performance if changed)
+///  - has been optimized, hence the reserves and all different cases </summary>
 
-	if(processId == m_maxNode)
-	{
-		alreadySent = true;
-	}
-	else if(processId < m_maxNode)
-	{
-		for(int i=0;i<m_sentToNode.size();i++)
-			if(processId == m_sentToNode[i])
-			{
-				alreadySent = true;
-				break;
-			}
-	}
-	else
-	{
-		m_maxNode = processId;
-	}
-
-	if(alreadySent == false)
-	{
-		m_sentToNode.push_back(processId);
-	}
-
-	return alreadySent;
-}
-
-// Simulates and handles all incoming data (from other units most of the time) to unit
-// currently:
-// - have some separate cases for certain transfer functions (such as bcpnn which has log around hypercolumns)
-// - not data-driven as loops would need to change their order in that case
-// - has been optimized, hence the reserves and all different cases
 void RateUnit::SimulateEventQueue()
 {
 	int index=0;
@@ -255,17 +212,20 @@ void RateUnit::SimulateEventQueue()
 						}
 					}
 
+					// calls e.g. transfer functions
 					SimulateUnitPropertiesV2(unitProperties,&values,&weights,&hypercolumnIds);
 				}
 			}
 		}
 
+		// if properties have been added to populations and not units
 		if(layerUnitProperties->size()>0)
 		{
 			SimulateUnitPropertiesV2(layerUnitProperties,&allValues,&allWeights,&allHypercolumnIds);
 		}
 
-		if(m_unitProperties.size()>0) // if no global unit properties exist / deleted afterwards otherwise	
+		// if no global unit properties exist / deleted afterwards otherwise	
+		if(m_unitProperties.size()>0)
 		{	
 			SimulateUnitPropertiesV2(layerUnitProperties,&allValues,&allWeights,&allHypercolumnIds);
 		}
@@ -275,26 +235,6 @@ void RateUnit::SimulateEventQueue()
 		else
 			m_isNewEvent = false;
 	}
-
-/*	if(m_useThreshold == true)
-	{
-		float tau = 40;
-		m_subThreshValue = m_subThreshValue + (-m_subThreshValue + m_value)/tau;//m_tau; 
-
-		float threshold = 1;
-		if(m_subThreshValue > threshold)
-		{
-			m_value = m_subThreshValue-threshold;
-			m_isNewEvent = true;
-		}
-		else
-		{
-			m_value = 0;
-			m_isNewEvent = false;
-		}
-	}
-*/
-
 }
 
 // unit properties and transfer functions
@@ -339,6 +279,7 @@ void RateUnit::SimulateUnitProperties(vector<UnitModifier*> unitProperties, vect
 void RateUnit::SimulateUnitPropertiesV2(vector<UnitModifier*>* unitProperties, vector<float>* values, vector<float>* weights, vector<long>* hypercolumnIds)
 {
 	bool bcpnnRun = false;
+	m_subThreshDrive = 0;
 
 	for (int j=0;j<unitProperties->size();j++)
 	{
@@ -362,6 +303,11 @@ void RateUnit::SimulateUnitPropertiesV2(vector<UnitModifier*>* unitProperties, v
 				(*unitProperties)[j]->SetValue(m_value);
 				(*unitProperties)[j]->SimulateV2(values,weights,this);
 				m_value += (*unitProperties)[j]->GetValue();
+				
+				for(int i=0;i<values->size();i++)
+					if(weights->at(i)>0)
+						m_subThreshDrive += values->at(i)*weights->at(i);
+
 				m_subThreshValue = (*unitProperties)[j]->GetSubThresholdValue();
 			}
 
@@ -401,16 +347,9 @@ void Hypercolumn::SimulateEventQueue()
 			}
 		}
 	}
-
-	// work on the modifying event queues for the Projections
-	/*for(int i=0;i<m_preProjections.size();i++)
-	{
-		Projection* c = m_preProjections[i];
-		c->ModifyProjection();
-	}*/
 }
 
-// 
+// TODO: Check if used any longer
 float RateUnit::GetValueFromGroup(vector<int> nodeIndexes)
 {
 	int thisNodeId = this->GetPopulation()->network()->MPIGetNodeId();
@@ -450,17 +389,12 @@ float RateUnit::GetValueFromGroup(vector<int> nodeIndexes)
 	return m_value;
 }
 
-// not used atm?
+// TODO: since createEvents not used any longer, check dependencies and remove
 UnitModifier* RateUnit::CreateEvent(float value)
 {
 	m_value = value;
 
 	UnitModifierGraded* e = new UnitModifierGraded(m_unitId,m_hypercolumnId,m_value);
-	//m_isNewEvent = true;
-	//e->SetValue(m_value);
-	//e->SetFromUnitId(m_unitId);
-	//e->SetFromHypercolumnId(m_hypercolumnId);
-
 	return e;
 }
 
@@ -468,10 +402,6 @@ UnitModifier* RateUnit::CreateEvent(float value)
 UnitModifier* RateUnit::CreateEvent()
 {
 	UnitModifierGraded* e = new UnitModifierGraded(m_unitId,m_hypercolumnId,m_value);
-	/*e->SetValue(m_value);
-	e->SetFromUnitId(m_unitId);
-	e->SetFromHypercolumnId(m_hypercolumnId);*/
-
 	return e;
 }
 
@@ -489,16 +419,8 @@ UnitModifier* Hypercolumn::CreateEvent()
 	return e;
 }
 
-/*void RateUnit::SetTraceTimeSteps(int traceTimeSteps)
-{
-	m_traceTimeSteps = traceTimeSteps;
-	if(m_traceTimeSteps>0)
-		m_useTrace = true;
-	else
-		m_useTrace = false;
-}*/
 
-// move
+// TODO: move
 int poisson(double c) { // c is the intensity
 	int x = 0;
 	double t = 0.0;
@@ -525,8 +447,6 @@ void RateUnit::SimulateMisc()
 }
 
 /// <summary>	Returns what by default should be recorded (if recording on) of a RateUnit. </summary>
-///
-/// <remarks>	Post Lazarus, 9/4/2012. </remarks>
 ///
 /// <returns>	Activity value. </returns>
 
