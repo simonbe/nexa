@@ -6,6 +6,12 @@ It includes among other things:
 - Capabilities to build networks using machine learning inspired methods for e.g.  self-organization of network architecture and for structural plasticity.
 - Analysis running in parallel beside the simulation.
 
+
+Also see
+
+Benjaminsson, S. and Lansner, A. (2012). [Nexa: A scalable neural simulator with integrated analysis] (http://informahealthcare.com/doi/abs/10.3109/0954898X.2012.737087). Network: Computation in Neural Systems, 23(4): 254-271.
+
+
 ### Installation ###
 
 [Download the latest version as a zip file](https://github.com/simonbe/nexa/zipball/master) or clone the repo:
