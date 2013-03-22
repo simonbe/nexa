@@ -8,12 +8,6 @@
     <Filter Include="Source Files\core">
       <UniqueIdentifier>{a4fe4cba-5f04-472e-87d5-fb0cbcc313d7}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\add-ons">
-      <UniqueIdentifier>{f567b94d-bfb9-419b-a86f-71d30d31ca80}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\add-ons\structures">
-      <UniqueIdentifier>{b817278c-ec1b-4a83-b3c8-0cab11207006}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Extern">
       <UniqueIdentifier>{94660955-f073-450c-87f5-6174b5aac02e}</UniqueIdentifier>
     </Filter>
@@ -26,12 +20,6 @@
     </Filter>
     <Filter Include="Header Files\core">
       <UniqueIdentifier>{b7c22ae7-73ce-4072-af9f-607021db7af5}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\add-ons">
-      <UniqueIdentifier>{f272a274-77b0-47ff-a36f-5059eea0bc62}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\add-ons\structures">
-      <UniqueIdentifier>{269bc2ca-57e3-47e0-a0d2-bc93f2ca062f}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files\Extern">
       <UniqueIdentifier>{9fed9165-19fd-4ee8-8946-77cf85b9c108}</UniqueIdentifier>
@@ -48,6 +36,18 @@
     </Filter>
     <Filter Include="Source Files\Visualization">
       <UniqueIdentifier>{7780f969-6c56-4ad7-bc5f-563f9d44a9b4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Addons">
+      <UniqueIdentifier>{f567b94d-bfb9-419b-a86f-71d30d31ca80}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Addons\structures">
+      <UniqueIdentifier>{b817278c-ec1b-4a83-b3c8-0cab11207006}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Addons">
+      <UniqueIdentifier>{f272a274-77b0-47ff-a36f-5059eea0bc62}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Addons\structures">
+      <UniqueIdentifier>{269bc2ca-57e3-47e0-a0d2-bc93f2ca062f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -72,83 +72,65 @@
     <ClCompile Include="Core\NetworkUnitsIF.cpp">
       <Filter>Source Files\core</Filter>
     </ClCompile>
-    <ClCompile Include="Addons\KernelConnectivity.cpp">
-      <Filter>Source Files\add-ons</Filter>
-    </ClCompile>
     <ClCompile Include="Addons\NetworkAdaptation.cpp">
-      <Filter>Source Files\add-ons</Filter>
+      <Filter>Source Files\Addons</Filter>
     </ClCompile>
     <ClCompile Include="Addons\NetworkAdaptation2.cpp">
-      <Filter>Source Files\add-ons</Filter>
+      <Filter>Source Files\Addons</Filter>
     </ClCompile>
     <ClCompile Include="Addons\NetworkBCM.cpp">
-      <Filter>Source Files\add-ons</Filter>
+      <Filter>Source Files\Addons</Filter>
     </ClCompile>
     <ClCompile Include="Addons\NetworkBCPNN.cpp">
-      <Filter>Source Files\add-ons</Filter>
+      <Filter>Source Files\Addons</Filter>
     </ClCompile>
     <ClCompile Include="Addons\NetworkCL.cpp">
-      <Filter>Source Files\add-ons</Filter>
+      <Filter>Source Files\Addons</Filter>
     </ClCompile>
     <ClCompile Include="Addons\NetworkCorr.cpp">
-      <Filter>Source Files\add-ons</Filter>
+      <Filter>Source Files\Addons</Filter>
     </ClCompile>
     <ClCompile Include="Addons\NetworkFoldiak.cpp">
-      <Filter>Source Files\add-ons</Filter>
+      <Filter>Source Files\Addons</Filter>
     </ClCompile>
     <ClCompile Include="Addons\NetworkHebbSimple.cpp">
-      <Filter>Source Files\add-ons</Filter>
+      <Filter>Source Files\Addons</Filter>
     </ClCompile>
     <ClCompile Include="Addons\NetworkKussul.cpp">
-      <Filter>Source Files\add-ons</Filter>
+      <Filter>Source Files\Addons</Filter>
     </ClCompile>
     <ClCompile Include="Addons\NetworkMDS.cpp">
-      <Filter>Source Files\add-ons</Filter>
+      <Filter>Source Files\Addons</Filter>
     </ClCompile>
     <ClCompile Include="Addons\NetworkMI.cpp">
-      <Filter>Source Files\add-ons</Filter>
+      <Filter>Source Files\Addons</Filter>
     </ClCompile>
     <ClCompile Include="Addons\NetworkSanger.cpp">
-      <Filter>Source Files\add-ons</Filter>
+      <Filter>Source Files\Addons</Filter>
     </ClCompile>
     <ClCompile Include="Addons\NetworkSTDP.cpp">
-      <Filter>Source Files\add-ons</Filter>
+      <Filter>Source Files\Addons</Filter>
     </ClCompile>
     <ClCompile Include="Addons\NetworkTriesch.cpp">
-      <Filter>Source Files\add-ons</Filter>
+      <Filter>Source Files\Addons</Filter>
     </ClCompile>
     <ClCompile Include="Addons\NetworkVQ.cpp">
-      <Filter>Source Files\add-ons</Filter>
-    </ClCompile>
-    <ClCompile Include="Addons\StimulusPatterns.cpp">
-      <Filter>Source Files\add-ons</Filter>
+      <Filter>Source Files\Addons</Filter>
     </ClCompile>
     <ClCompile Include="Addons\StructureReTIDe.cpp">
-      <Filter>Source Files\add-ons\structures</Filter>
+      <Filter>Source Files\Addons\structures</Filter>
     </ClCompile>
     <ClCompile Include="Addons\StructureMIMDSVQ.cpp">
-      <Filter>Source Files\add-ons\structures</Filter>
-    </ClCompile>
-    <ClCompile Include="Utils\ParamReader.cpp">
-      <Filter>Source Files\Utils</Filter>
+      <Filter>Source Files\Addons\structures</Filter>
     </ClCompile>
     <ClCompile Include="Utils\Storage.cpp">
       <Filter>Source Files\Utils</Filter>
     </ClCompile>
-    <ClCompile Include="Addons\EarlyOlfSys.cpp">
-      <Filter>Source Files\add-ons\structures</Filter>
-    </ClCompile>
     <ClCompile Include="Core\Analysis.cpp">
       <Filter>Source Files\core</Filter>
     </ClCompile>
-    <ClCompile Include="..\NetworkTests\ParameterSet.cpp">
-      <Filter>Source Files\Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="..\NetworkTests\ParameterSet_OlfactionPH.cpp">
-      <Filter>Source Files\Utils</Filter>
-    </ClCompile>
     <ClCompile Include="Addons\NetworkAdThreshold.cpp">
-      <Filter>Source Files\add-ons</Filter>
+      <Filter>Source Files\Addons</Filter>
     </ClCompile>
     <ClCompile Include="Visualization\stubs.cpp">
       <Filter>Source Files\Visualization</Filter>
@@ -160,7 +142,7 @@
       <Filter>Source Files\core</Filter>
     </ClCompile>
     <ClCompile Include="Addons\NetworkDepression.cpp">
-      <Filter>Source Files\add-ons</Filter>
+      <Filter>Source Files\Addons</Filter>
     </ClCompile>
     <ClCompile Include="Core\NetworkPopulation.cpp">
       <Filter>Source Files\core</Filter>
@@ -218,83 +200,62 @@
     <ClInclude Include="Core\States.h">
       <Filter>Header Files\core</Filter>
     </ClInclude>
-    <ClInclude Include="Addons\KernelConnectivity.h">
-      <Filter>Header Files\add-ons</Filter>
-    </ClInclude>
     <ClInclude Include="Addons\NetworkAdaptation.h">
-      <Filter>Header Files\add-ons</Filter>
+      <Filter>Header Files\Addons</Filter>
     </ClInclude>
     <ClInclude Include="Addons\NetworkAdaptation2.h">
-      <Filter>Header Files\add-ons</Filter>
+      <Filter>Header Files\Addons</Filter>
     </ClInclude>
     <ClInclude Include="Addons\NetworkBCM.h">
-      <Filter>Header Files\add-ons</Filter>
+      <Filter>Header Files\Addons</Filter>
     </ClInclude>
     <ClInclude Include="Addons\NetworkBCPNN.h">
-      <Filter>Header Files\add-ons</Filter>
+      <Filter>Header Files\Addons</Filter>
     </ClInclude>
     <ClInclude Include="Addons\NetworkCL.h">
-      <Filter>Header Files\add-ons</Filter>
+      <Filter>Header Files\Addons</Filter>
     </ClInclude>
     <ClInclude Include="Addons\NetworkCorr.h">
-      <Filter>Header Files\add-ons</Filter>
+      <Filter>Header Files\Addons</Filter>
     </ClInclude>
     <ClInclude Include="Addons\NetworkFoldiak.h">
-      <Filter>Header Files\add-ons</Filter>
+      <Filter>Header Files\Addons</Filter>
     </ClInclude>
     <ClInclude Include="Addons\NetworkHebbSimple.h">
-      <Filter>Header Files\add-ons</Filter>
+      <Filter>Header Files\Addons</Filter>
     </ClInclude>
     <ClInclude Include="Addons\NetworkKussul.h">
-      <Filter>Header Files\add-ons</Filter>
+      <Filter>Header Files\Addons</Filter>
     </ClInclude>
     <ClInclude Include="Addons\NetworkMDS.h">
-      <Filter>Header Files\add-ons</Filter>
+      <Filter>Header Files\Addons</Filter>
     </ClInclude>
     <ClInclude Include="Addons\NetworkMI.h">
-      <Filter>Header Files\add-ons</Filter>
+      <Filter>Header Files\Addons</Filter>
     </ClInclude>
     <ClInclude Include="Addons\NetworkSanger.h">
-      <Filter>Header Files\add-ons</Filter>
+      <Filter>Header Files\Addons</Filter>
     </ClInclude>
     <ClInclude Include="Addons\NetworkSTDP.h">
-      <Filter>Header Files\add-ons</Filter>
+      <Filter>Header Files\Addons</Filter>
     </ClInclude>
     <ClInclude Include="Addons\NetworkTriesch.h">
-      <Filter>Header Files\add-ons</Filter>
+      <Filter>Header Files\Addons</Filter>
     </ClInclude>
     <ClInclude Include="Addons\NetworkVQ.h">
-      <Filter>Header Files\add-ons</Filter>
-    </ClInclude>
-    <ClInclude Include="Addons\StimulusPatterns.h">
-      <Filter>Header Files\add-ons</Filter>
+      <Filter>Header Files\Addons</Filter>
     </ClInclude>
     <ClInclude Include="Addons\StructureReTIDe.h">
-      <Filter>Header Files\add-ons\structures</Filter>
+      <Filter>Header Files\Addons\structures</Filter>
     </ClInclude>
     <ClInclude Include="Addons\StructureMIMDSVQ.h">
-      <Filter>Header Files\add-ons\structures</Filter>
-    </ClInclude>
-    <ClInclude Include="Utils\ParamReader.h">
-      <Filter>Header Files\Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="Addons\EarlyOlfSys.h">
-      <Filter>Header Files\add-ons\structures</Filter>
-    </ClInclude>
-    <ClInclude Include="Addons\MinCut.h">
-      <Filter>Header Files\Utils</Filter>
+      <Filter>Header Files\Addons\structures</Filter>
     </ClInclude>
     <ClInclude Include="Core\Analysis.h">
       <Filter>Header Files\core</Filter>
     </ClInclude>
-    <ClInclude Include="..\NetworkTests\ParameterSet.h">
-      <Filter>Header Files\Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="..\NetworkTests\ParameterSet_OlfactionPH.h">
-      <Filter>Header Files\Utils</Filter>
-    </ClInclude>
     <ClInclude Include="Addons\NetworkAdThreshold.h">
-      <Filter>Header Files\add-ons</Filter>
+      <Filter>Header Files\Addons</Filter>
     </ClInclude>
     <ClInclude Include="Visualization\stubs.h">
       <Filter>Header Files\Visualization</Filter>
@@ -306,7 +267,7 @@
       <Filter>Header Files\core</Filter>
     </ClInclude>
     <ClInclude Include="Addons\NetworkDepression.h">
-      <Filter>Header Files\add-ons</Filter>
+      <Filter>Header Files\Addons</Filter>
     </ClInclude>
     <ClInclude Include="Core\NetworkPopulation.h">
       <Filter>Header Files\core</Filter>

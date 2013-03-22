@@ -4,21 +4,11 @@
 
 //#define WIN32
 
-#include "NetworkUnitTests.h"
-#include "NetworkDemoVis1.h"
-#include "NetworkDemoVis0.h"
+//#include "NetworkUnitTests.h"
+//#include "NetworkDemoVis1.h"
 #include "Network.h"
-#include "NetworkTests.h"
+//#include "NetworkTests.h"
 #include "NetworkMNIST.h"
-#include "NetworkOlfaction.h"
-#include "NetworkSensorDrift.h"
-#include "NetworkIFTests.h"
-#include "NetworkSetupConns.h"
-#include "NetworkTopDownDecorr.h"
-#include "NetworkArithmetic.h"
-#include "Shapes.h"
-#include "NetworkFridaySemantics.h"
-#include "NetworkTemporal.h"
 
 #include "stubs.h"
 
@@ -26,9 +16,7 @@
 //#include "OB_OCTX_Connectivity/NetworkOlfaction_BK.h"
 //#include "OlfactionSystem.h"
 
-#include "NetworkOlfactionScenariosClassification.h"
-#include "NetworkOlfactionScenariosClassification_PH.h"
-#include "NetworkScalingDemos.h"
+//#include "NetworkScalingDemos.h"
 #include <mpi.h>
 //#include <VisItControlInterface_V2.h>
 //#include <VisItDataInterface_V2.h>
@@ -185,8 +173,8 @@ int main(int argc, char *argv[])
 //	decorr.RunTestHSInhib();
 //	NetworkArithmetic arithmetic;
 //	arithmetic.Run();
-	NetworkTES tes;
-	tes.Run();
+//	NetworkTES tes;
+//	tes.Run();
 
 //	NetworkTemporal temporal;
 //	temporal.Run();

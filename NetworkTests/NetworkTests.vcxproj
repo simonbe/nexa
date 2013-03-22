@@ -29,7 +29,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v100</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">
     <PlatformToolset>v110</PlatformToolset>
@@ -127,53 +127,19 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Projects\AssignmentStrategy.h" />
-    <ClInclude Include="..\Projects\NetworkArithmetic.h" />
-    <ClInclude Include="..\Projects\NetworkBiorep.h" />
-    <ClInclude Include="..\Projects\NetworkDemoVis0.h" />
     <ClInclude Include="..\Projects\NetworkDemoVis1.h" />
-    <ClInclude Include="..\Projects\NetworkFridaySemantics.h" />
-    <ClInclude Include="..\Projects\NetworkOlfactionScenariosClassification.h" />
-    <ClInclude Include="..\Projects\NetworkOlfactionScenariosTemplate.h" />
     <ClInclude Include="..\Projects\NetworkScalingDemos.h" />
-    <ClInclude Include="..\Projects\NetworkSensorDrift.h" />
-    <ClInclude Include="..\Projects\NetworkTemporal.h" />
-    <ClInclude Include="..\Projects\OlfactionSystem.h" />
     <ClInclude Include="..\Projects\Shapes.h" />
-    <ClInclude Include="D:\Databases\Olfaction\Bernhard\ob_output\ob_output\NetworkOlfaction_BK.h" />
-    <ClInclude Include="NetworkIFTests.h" />
     <ClInclude Include="..\Projects\NetworkMNIST.h" />
-    <ClInclude Include="..\Projects\NetworkOlfaction.h" />
-    <ClInclude Include="..\Projects\NetworkSetupConns.h" />
-    <ClInclude Include="NetworkOlfactionScenariosClassification_PH.h" />
     <ClInclude Include="NetworkTests.h" />
-    <ClInclude Include="..\Projects\NetworkTopDownDecorr.h" />
     <ClInclude Include="NetworkUnitTests.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\Projects\AssignmentStrategy.cpp" />
     <ClCompile Include="..\Projects\main.cpp" />
-    <ClCompile Include="..\Projects\NetworkArithmetic.cpp" />
-    <ClCompile Include="..\Projects\NetworkBiorep.cpp" />
-    <ClCompile Include="..\Projects\NetworkDemoVis0.cpp" />
     <ClCompile Include="..\Projects\NetworkDemoVis1.cpp" />
-    <ClCompile Include="..\Projects\NetworkFridaySemantics.cpp" />
     <ClCompile Include="..\Projects\NetworkMNIST.cpp" />
-    <ClCompile Include="..\Projects\NetworkOlfaction.cpp" />
-    <ClCompile Include="..\Projects\NetworkOlfactionConcInv.cpp" />
-    <ClCompile Include="..\Projects\NetworkOlfactionMixtures.cpp" />
-    <ClCompile Include="..\Projects\NetworkOlfactionScenariosClassification.cpp" />
-    <ClCompile Include="..\Projects\NetworkOlfactionScenariosTemplate.cpp" />
     <ClCompile Include="..\Projects\NetworkScalingDemos.cpp" />
-    <ClCompile Include="..\Projects\NetworkSensorDrift.cpp" />
-    <ClCompile Include="..\Projects\NetworkTemporal.cpp" />
-    <ClCompile Include="..\Projects\OlfactionSystem.cpp" />
     <ClCompile Include="..\Projects\Shapes.cpp" />
-    <ClCompile Include="D:\Databases\Olfaction\Bernhard\ob_output\ob_output\NetworkOlfaction_BK.cpp" />
-    <ClCompile Include="NetworkIFTests.cpp" />
-    <ClCompile Include="..\Projects\NetworkSetupConns.cpp" />
-    <ClCompile Include="..\Projects\NetworkTopDownDecorr.cpp" />
-    <ClCompile Include="NetworkOlfactionScenariosClassification_PH.cpp" />
     <ClCompile Include="NetworkTests.cpp" />
     <ClCompile Include="NetworkUnitTests.cpp" />
   </ItemGroup>

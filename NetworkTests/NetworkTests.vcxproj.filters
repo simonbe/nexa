@@ -11,52 +11,13 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Projects\NetworkBiorep.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="NetworkIFTests.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\Projects\NetworkMNIST.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Projects\NetworkOlfaction.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Projects\NetworkSetupConns.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="NetworkTests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\Projects\NetworkTopDownDecorr.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Projects\NetworkSensorDrift.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Projects\OlfactionSystem.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Projects\NetworkOlfactionScenariosClassification.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Projects\NetworkOlfactionScenariosTemplate.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="NetworkOlfactionScenariosClassification_PH.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\Projects\NetworkScalingDemos.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="D:\Databases\Olfaction\Bernhard\ob_output\ob_output\NetworkOlfaction_BK.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Projects\NetworkArithmetic.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Projects\NetworkDemoVis0.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\Projects\NetworkDemoVis1.h">
@@ -68,72 +29,18 @@
     <ClInclude Include="..\Projects\Shapes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\Projects\NetworkFridaySemantics.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Projects\AssignmentStrategy.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Projects\NetworkTemporal.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\Projects\NetworkBiorep.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\Projects\NetworkMNIST.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Projects\NetworkOlfaction.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Projects\NetworkOlfactionConcInv.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Projects\NetworkOlfactionMixtures.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Projects\NetworkSetupConns.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Projects\NetworkTopDownDecorr.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="NetworkIFTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="NetworkTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Projects\NetworkSensorDrift.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\Projects\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Projects\OlfactionSystem.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Projects\NetworkOlfactionScenariosClassification.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Projects\NetworkOlfactionScenariosTemplate.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="NetworkOlfactionScenariosClassification_PH.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\Projects\NetworkScalingDemos.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="D:\Databases\Olfaction\Bernhard\ob_output\ob_output\NetworkOlfaction_BK.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Projects\NetworkArithmetic.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Projects\NetworkDemoVis0.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Projects\NetworkDemoVis1.cpp">
@@ -143,15 +50,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Projects\Shapes.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Projects\NetworkFridaySemantics.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Projects\AssignmentStrategy.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Projects\NetworkTemporal.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

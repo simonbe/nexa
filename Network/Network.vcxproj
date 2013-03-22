@@ -28,7 +28,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v100</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">
     <PlatformToolset>v110</PlatformToolset>
@@ -107,11 +107,7 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\NetworkTests\ParameterSet.cpp" />
-    <ClCompile Include="..\NetworkTests\ParameterSet_OlfactionPH.cpp" />
     <ClCompile Include="..\Resources\libcsv-3.0.0\libcsv.c" />
-    <ClCompile Include="Addons\EarlyOlfSys.cpp" />
-    <ClCompile Include="Addons\KernelConnectivity.cpp" />
     <ClCompile Include="Addons\NetworkAdaptation.cpp" />
     <ClCompile Include="Addons\NetworkAdaptation2.cpp" />
     <ClCompile Include="Addons\NetworkAdThreshold.cpp" />
@@ -129,7 +125,6 @@
     <ClCompile Include="Addons\NetworkSTDP.cpp" />
     <ClCompile Include="Addons\NetworkTriesch.cpp" />
     <ClCompile Include="Addons\NetworkVQ.cpp" />
-    <ClCompile Include="Addons\StimulusPatterns.cpp" />
     <ClCompile Include="Addons\StructureMIMDSVQ.cpp" />
     <ClCompile Include="Addons\StructureReTIDe.cpp" />
     <ClCompile Include="Core\Analysis.cpp" />
@@ -148,17 +143,11 @@
     <ClCompile Include="Core\NetworkTransferFunctions.cpp" />
     <ClCompile Include="Core\Visualization.cpp" />
     <ClCompile Include="Utils\DataSources.cpp" />
-    <ClCompile Include="Utils\ParamReader.cpp" />
     <ClCompile Include="Utils\Storage.cpp" />
     <ClCompile Include="Visualization\stubs.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\NetworkTests\ParameterSet.h" />
-    <ClInclude Include="..\NetworkTests\ParameterSet_OlfactionPH.h" />
     <ClInclude Include="..\Resources\libcsv-3.0.0\csv.h" />
-    <ClInclude Include="Addons\EarlyOlfSys.h" />
-    <ClInclude Include="Addons\KernelConnectivity.h" />
-    <ClInclude Include="Addons\MinCut.h" />
     <ClInclude Include="Addons\NetworkAdaptation.h" />
     <ClInclude Include="Addons\NetworkAdaptation2.h" />
     <ClInclude Include="Addons\NetworkAdThreshold.h" />
@@ -176,7 +165,6 @@
     <ClInclude Include="Addons\NetworkSTDP.h" />
     <ClInclude Include="Addons\NetworkTriesch.h" />
     <ClInclude Include="Addons\NetworkVQ.h" />
-    <ClInclude Include="Addons\StimulusPatterns.h" />
     <ClInclude Include="Addons\StructureMIMDSVQ.h" />
     <ClInclude Include="Addons\StructureReTIDe.h" />
     <ClInclude Include="Core\Analysis.h" />
@@ -198,7 +186,6 @@
     <ClInclude Include="Core\NetworkTransferFunctions.h" />
     <ClInclude Include="Core\Visualization.h" />
     <ClInclude Include="Utils\DataSources.h" />
-    <ClInclude Include="Utils\ParamReader.h" />
     <ClInclude Include="Utils\Storage.h" />
     <ClInclude Include="Visualization\stubs.h" />
   </ItemGroup>

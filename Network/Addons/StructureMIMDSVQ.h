@@ -15,7 +15,7 @@
 #include "NetworkAdaptation.h"
 #include "Network.h"
 #include "Meter.h"
-#include "KernelConnectivity.h"
+//#include "KernelConnectivity.h"
 
 class PopulationModifierAdaptation;
 

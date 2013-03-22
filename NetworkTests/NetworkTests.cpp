@@ -10,7 +10,7 @@
 #include "NetworkCorr.h"
 #include "NetworkTriesch.h"
 #include "NetworkFoldiak.h"
-#include "EarlyOlfSys.h"
+//#include "EarlyOlfSys.h"
 #include "NetworkAdaptation2.h"
 #include "NetworkHebbSimple.h"
 #include "NetworkBCM.h"
@@ -21,9 +21,9 @@
 #include "DataSources.h"
 #include "NetworkTests.h"
 #include <math.h>
-#include "StimulusPatterns.h"
-#include "KernelConnectivity.h"
-#include "ParamReader.h"
+//#include "StimulusPatterns.h"
+//#include "KernelConnectivity.h"
+//#include "ParamReader.h"
 #include "StructureMIMDSVQ.h"
 
 using namespace std;
@@ -1275,7 +1275,7 @@ std::string IntToStr( int n )
 
 void NetworkTests::NetworkTestOR2ORN2MT(int mpiRank, int mpiSize)
 {
-	ParamReader* params = new ParamReader("orn_network.cfg");
+	/*ParamReader* params = new ParamReader("orn_network.cfg");
 	// network construction
 		
 	Network* network = new Network();
