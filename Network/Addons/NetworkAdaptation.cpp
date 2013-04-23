@@ -5,7 +5,7 @@ void PopulationModifierAdaptation::Simulate()
 	if(!IsOn())
 		return;
 
-	if(m_adampl == 0 || m_adtaudt == 0)
+	if(fabs(m_adampl) < EPS || fabs(m_adtaudt) < EPS)
 		return;
 
 	PopulationColumns* layer = (PopulationColumns*)m_population;

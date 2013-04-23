@@ -208,7 +208,7 @@ vector<double> SoftMax::Function(vector<double> data, float G)
 	for(int i=0;i<data.size();i++)
 		sum += exp(G*data[i]);
 
-	if(sum==0.0)
+	if(fabs(sum)<EPS)
 		cout<<"Error: Sum==0 in softmax.";
 
 	for(int i=0;i<data.size();i++)

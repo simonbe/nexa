@@ -59,7 +59,7 @@ void ProjectionModifierMDS::Modify()
 
 			// euclidean distance
 			for(int d=0;d<m_mdsDim; d++)
-				dij+=pow((*m_Xi)[j][d] - (*m_Xi)[iIndex][d],2);//dij += pow(Xi_j[d] - Xi_i[d],2);
+				dij+=((*m_Xi)[j][d] - (*m_Xi)[iIndex][d])*((*m_Xi)[j][d] - (*m_Xi)[iIndex][d]);//dij+=pow((*m_Xi)[j][d] - (*m_Xi)[iIndex][d],2);//dij += pow(Xi_j[d] - Xi_i[d],2);
 
 			dij = sqrt(dij);
 			totLocalStress+=dij;
