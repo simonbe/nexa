@@ -8,14 +8,14 @@
 //#include "NetworkDemoVis1.h"
 #include "Network.h"
 //#include "NetworkTests.h"
-#include "NetworkMNIST.h"
+//#include "NetworkMNIST.h"
 
 #include "stubs.h"
 
 //#include "D:/Databases/Olfaction/Bernhard/ob_output/ob_output/NetworkOlfaction_BK.h"
 //#include "OB_OCTX_Connectivity/NetworkOlfaction_BK.h"
 //#include "OlfactionSystem.h"
-
+#include "NetworkTemporal3.h"
 //#include "NetworkScalingDemos.h"
 #include <mpi.h>
 //#include <VisItControlInterface_V2.h>
@@ -90,6 +90,8 @@ int main(int argc, char *argv[])
 	//Network::MPIComm = setup->communicator();
 #endif
 
+	NetworkTemporal3 net;
+	net.Run();
 //	NetworkIFTests ifTests;
 //	ifTests.NetworkTestSTDP();
 

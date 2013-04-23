@@ -169,7 +169,7 @@ float r01() {
 
 void LayerVQ::updvq() {
 
-	if (prn==0 || sprn==0) return;
+	if (fabs(prn)<EPS || fabs(sprn)<EPS) return;
 	float dmin,dmax,di;
 	int vmin,vmax;
 	for (int v=0; v<trgnhyp; v++) { vqd[v] = 0; vqn[v] = 0; }

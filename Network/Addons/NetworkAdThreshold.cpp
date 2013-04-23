@@ -44,9 +44,9 @@ void AdaptiveThreshold::Simulate()
 			float y = 1.0/(1.0+exp(-a[unit->GetUnitId()]*h-b[unit->GetUnitId()]));
 			float y2 = pow(y,2.0f);
 
-			if(a[unit->GetUnitId()] == 0)
+			if(fabs(a[unit->GetUnitId()]) < EPS)
 				a[unit->GetUnitId()] = 0.01;
-			if(b[unit->GetUnitId()] == 0)
+			if(fabs(b[unit->GetUnitId()]) < EPS)
 				b[unit->GetUnitId()] = 0.01;
 
 			if(m_isThresholded == true)
