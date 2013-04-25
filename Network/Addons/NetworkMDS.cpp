@@ -85,7 +85,7 @@ void ProjectionModifierMDS::Modify()
 				//ddij = (dij-miDij[j][i]);
 				ddij = (dij-miDij[j][i]);///(miDij[j][i]+0.1); // avoid division by zero
 				//ddij = fabs((dij-miDij[j][i])/(miDij[j][i]+1));
-				meanddij += pow(ddij,2);
+				meanddij += ddij*ddij;//pow(ddij,2);
 				ddij *= m_MDSK/10;
 				//ddij /= 2/(m_MDSK/10);
 				//ddij = 0.001;
@@ -94,9 +94,9 @@ void ProjectionModifierMDS::Modify()
 				{
 					//diffXi[iIndex][d] += ddij*((*m_Xi)[j][d]-(*m_Xi)[iIndex][d]);	//Xi_i[d] += ddij*(Xi_j[d]-Xi_i[d]);
 					//diffXi[j][d] -= ddij*((*m_Xi)[j][d]-(*m_Xi)[iIndex][d]);
-
-					diffXi[iIndex][d] += ddij*((*m_Xi)[j][d]-(*m_Xi)[iIndex][d]);	//Xi_i[d] += ddij*(Xi_j[d]-Xi_i[d]);
-					diffXi[j][d] -= ddij*((*m_Xi)[j][d]-(*m_Xi)[iIndex][d]);
+					float v=ddij*((*m_Xi)[j][d]-(*m_Xi)[iIndex][d]);
+					diffXi[iIndex][d] += v;	//Xi_i[d] += ddij*(Xi_j[d]-Xi_i[d]);
+					diffXi[j][d] -= v;
 
 					// if...
 					//	Xm[d]+= Xi_i[d]; // only be done on one Projection from hc
@@ -118,7 +118,7 @@ void ProjectionModifierMDS::TranslateToOrigin(vector<float> XmTot)
 		Xi_i[d] -= XmTot[d];
 		Xi_j[d] -= XmTot[d];
 
-		meands += pow(Xi_i[d]-oldXi_i[d],2);
+		meands += (Xi_i[d]-oldXi_i[d])*(Xi_i[d]-oldXi_i[d]);//pow(Xi_i[d]-oldXi_i[d],2);
 	}
 
 	meands = 0;

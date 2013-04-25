@@ -51,7 +51,7 @@ void PopulationModifierAdaptation::Modify()
 			m_adaptValues[i] += (m_adampl*data[i]) - (1-data[i])*m_adampl*m_adtaudt;//m_adaptValues[i] = (1-m_adtaudt)*m_adaptValues[i];
 		else
 		{
-			if(data[i]!=0.0)
+			if(!(fabs(data[i])<EPS))
 				m_adaptValues[i] += ((m_adampl*1) - m_adaptValues[i]) * m_adtaudt;//(m_adampl*data[i]*fabs((((RateUnit*)minicolumns[i])->GetSubThresholdValue())) - m_adaptValues[i]) * m_adtaudt;
 			else
 				m_adaptValues[i] += ( -m_adaptValues[i]) * m_adtaudt*5;

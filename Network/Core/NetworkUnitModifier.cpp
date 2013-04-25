@@ -545,7 +545,7 @@ float TransferCSL::RRValue(vector<float> x1, vector<float> x2)
   float val = 0;
   
   for(int i=0;i<x1.size();i++) {
-    val+=pow(x1[i]-x2[i],2);
+    val+=(x1[i]-x2[i])*(x1[i]-x2[i]);//pow(x1[i]-x2[i],2);
   }
 
   return sqrt(val);
@@ -583,7 +583,7 @@ void TransferTriesch::Simulate(vector<UnitModifier*> events, vector<float> weigh
 	}
 
 	float y = 1.0/(1.0+exp(-a[unit->GetUnitId()]*h-b[unit->GetUnitId()]));
-	float y2 = pow(y,2.0f);
+	float y2 = y*y;//pow(y,2.0f);
 
 	if(a[unit->GetUnitId()] == 0)
 		a[unit->GetUnitId()] = 0.01;
@@ -601,13 +601,13 @@ void TransferTriesch::Simulate(vector<UnitModifier*> events, vector<float> weigh
 				m_thresholdLastSpike = false;
 				y=1;//m_thresholdLastY;//1;
 				h = m_thresholdLastH;
-				y2 = pow(y,2.0f);
+				y2 = y*y;//pow(y,2.0f);
 			}
 			else
 			{
 				y = 0.0;//m_thresholdLastY;//0.5;
 				h = m_thresholdLastH;
-				y2 = pow(y,2.0f);
+				y2 = y*y;//pow(y,2.0f);
 			}
 
 			a[unit->GetUnitId()] = a[unit->GetUnitId()] + eta_ip*(1.0/a[unit->GetUnitId()] + h - (2.0+1.0/mu)*h*y + 1.0/mu * h * y2);
@@ -655,7 +655,7 @@ void TransferTriesch::SimulateV2(vector<float>* values, vector<float>* weights, 
 	}
 
 	float y = 1.0/(1.0+exp(-a[unit->GetUnitId()]*h-b[unit->GetUnitId()]));
-	float y2 = pow(y,2.0f);
+	float y2 = y*y;//pow(y,2.0f);
 
 	if(a[unit->GetUnitId()] == 0)
 		a[unit->GetUnitId()] = 0.01;
@@ -673,13 +673,13 @@ void TransferTriesch::SimulateV2(vector<float>* values, vector<float>* weights, 
 				m_thresholdLastSpike = false;
 				y=1;//m_thresholdLastY;//1;
 				h = m_thresholdLastH;
-				y2 = pow(y,2.0f);
+				y2 = y*y;//pow(y,2.0f);
 			}
 			else
 			{
 				y = 0.0;//m_thresholdLastY;//0.5;
 				h = m_thresholdLastH;
-				y2 = pow(y,2.0f);
+				y2 = y*y;//pow(y,2.0f);
 			}
 
 			a[unit->GetUnitId()] = a[unit->GetUnitId()] + eta_ip*(1.0/a[unit->GetUnitId()] + h - (2.0+1.0/mu)*h*y + 1.0/mu * h * y2);

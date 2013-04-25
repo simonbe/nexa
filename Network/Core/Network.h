@@ -32,7 +32,7 @@
 #define BGL 1
 #define PC 0
 
-#define EPS 1e-12
+#define EPS 1e-9
 #include <map>
 #include <mpi.h>
 #include <algorithm>

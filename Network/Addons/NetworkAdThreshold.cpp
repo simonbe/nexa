@@ -42,7 +42,7 @@ void AdaptiveThreshold::Simulate()
 			h = unit->GetValue();
 
 			float y = 1.0/(1.0+exp(-a[unit->GetUnitId()]*h-b[unit->GetUnitId()]));
-			float y2 = pow(y,2.0f);
+			float y2 = y*y;//pow(y,2.0f);
 
 			if(fabs(a[unit->GetUnitId()]) < EPS)
 				a[unit->GetUnitId()] = 0.01;

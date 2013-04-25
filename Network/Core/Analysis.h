@@ -146,7 +146,7 @@ public:
 			if(time>m_timingMax[name])
 				m_timingMax[name] = time;
 			
-			if(m_timingMin[name] == 0.0)
+			if(fabs(m_timingMin[name])<EPS)
 				m_timingMin[name] = 1e8;
 			if(time<m_timingMin[name])
 				m_timingMin[name] = time;

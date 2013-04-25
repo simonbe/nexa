@@ -101,7 +101,7 @@ void ProjectionModifierTriesch::Modify()
 				preId = (*preIds)[j][i];
 
 				weight = network()->GetWeight(preId,postId);
-				totWeights += pow((double)weight,2.0); // fabs(weight); // += weight;
+				totWeights += weight*weight;//pow((double)weight,2.0); // fabs(weight); // += weight;
 			}
 
 			totWeights = sqrt(totWeights);

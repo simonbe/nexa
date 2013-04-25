@@ -551,7 +551,7 @@ void PopulationColumns::Simulate()
 
 	for(int j=0;j<m_minicolumns.size();j++)
 	{
-		if(m_minicolumns[j]->GetValue() != 0.0)
+		if(!(fabs(m_minicolumns[j]->GetValue()) < EPS))
 		{
 			m_minicolumns[j]->IsNewEvent(true); // currently removes prev existing events (TODO: check if always ok.)
 			m_minicolumns[j]->AddEventOutgoing();

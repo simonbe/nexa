@@ -253,7 +253,7 @@ void LayerVQ::updvq() {
 	{
 		/* Move unit with lowest distorsion to duplicate unit with highest resolution */
 
-		if(dmin!=0 && m_distFracChanged == false)
+		if(!(fabs(dmin)<EPS) && m_distFracChanged == false)
 			m_distFracChanged = true;
 
 		if((m_distFrac - dmin/dmax)/m_distFrac > 1e-8 || m_distFracChanged == false) // unless no more change
@@ -555,7 +555,7 @@ void LayerVQ::CSL_Step()
 	CSL_ParallelDistortionCalculation( &m_distortion, &D );
 
 	//3. Selection
-	if(m_distortion == 0.0) // usually never happens
+	if(fabs(m_distortion) < EPS) // usually never happens
 	{
 		if(this->m_population->network()->MPIGetNodeId() == 0)
 		{
@@ -607,7 +607,7 @@ float LayerVQ::CSL_RRValue(vector<float> x1, vector<float> x2)
   float val = 0;
   
   for(int i=0;i<x1.size();i++) {
-    val+=pow(x1[i]-x2[i],2);
+    val+=(x1[i]-x2[i])*(x1[i]-x2[i]);//pow(x1[i]-x2[i],2);
   }
 
   return sqrt(val);
@@ -1451,7 +1451,7 @@ void CSL::Step(vector<vector<float> >* x)
 	m_currentDistortion = distortion;
 
 	//3. Selection
-	if(distortion == 0.0) // usually never happens unless m_x.size() == m_c.size()
+	if(fabs(distortion) < EPS) // usually never happens unless m_x.size() == m_c.size()
 	{
 		if(m_mpiRank == 0 && m_printOutResult)
 		{
@@ -1503,7 +1503,7 @@ float CSL::RRValue(vector<float> x1, vector<float> x2)
 
 	for(int i=0;i<x1.size();i++) 
 	{
-		val+=pow(x1[i]-x2[i],2);
+		val+=(x1[i]-x2[i])*(x1[i]-x2[i]);//pow(x1[i]-x2[i],2);
 	}
 
 	return val;//sqrt(val);
