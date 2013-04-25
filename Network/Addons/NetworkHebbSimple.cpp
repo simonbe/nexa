@@ -74,7 +74,7 @@ void ProjectionModifierHebbSimple::Normalize(bool allWeights)
 					preId = preIds[i];//(*preIds)[j][i];
 
 					weight = network()->GetWeight(preId,postId);
-					totWeights += pow((double)weight,2.0); // weight*preValues[i];//pow((double)weight,2.0); // fabs(weight); // += weight;
+					totWeights += weight*weight;//pow((double)weight,2.0); // weight*preValues[i];//pow((double)weight,2.0); // fabs(weight); // += weight;
 				}
 			}
 
@@ -91,7 +91,7 @@ void ProjectionModifierHebbSimple::Normalize(bool allWeights)
 						//if(preValues[i] >0.0)
 						//	weight = y/preValues[i] * weight/totWeights;
 						//else
-						weight = m_normalizationFactor*sqrt(pow(weight,2)/totWeights);//weight*1.0/totWeights;//2*y*weight/totWeights;//weight*1.0/totWeights;//totWeightsOld/totWeights;
+						weight = m_normalizationFactor*sqrt(weight*weight/totWeights);//weight*1.0/totWeights;//2*y*weight/totWeights;//weight*1.0/totWeights;//totWeightsOld/totWeights;
 
 						network()->SetWeight(weight,preId,postId);
 					}
@@ -152,13 +152,13 @@ void ProjectionModifierHebbSimple::Modify()
 						bool b = false;
 
 					weight = network()->GetWeight(preId,postId);
-					totWeightsOld += pow((double)weight,2.0);
+					totWeightsOld += weight*weight;//pow((double)weight,2.0);
 
 					dw = x*y; // (alt: N implemented as an outside WTA)
 					//dw = y*(x - weight);
 
 					//if(weight<1)
-					if(dw!=0.0)
+					if(!(fabs(dw)<EPS))
 					{
 						weight = weight + m_etaHebb*dw - fabs(weight)*0.1; // (add: (optional) weight decay)
 
@@ -182,7 +182,7 @@ void ProjectionModifierHebbSimple::Modify()
 						preId = preIds[i];//(*preIds)[j][i];
 
 						weight = network()->GetWeight(preId,postId);
-						totWeights += pow((double)weight,2.0); // weight*preValues[i];//pow((double)weight,2.0); // fabs(weight); // += weight;
+						totWeights += weight*weight;//pow((double)weight,2.0); // weight*preValues[i];//pow((double)weight,2.0); // fabs(weight); // += weight;
 					}
 				}
 
@@ -202,7 +202,7 @@ void ProjectionModifierHebbSimple::Modify()
 							/*if(y<10)
 								weight = weight*y/totWeights;//weight*1.0/totWeights;//weight*1.0/totWeights;//2*y*weight/totWeights;//weight*1.0/totWeights;//totWeightsOld/totWeights;
 							else*/
-								weight = m_normalizationFactor*sqrt(pow(weight,2)/totWeights);//m_normalizationFactor*weight/totWeights;
+								weight = m_normalizationFactor*sqrt(weight*weight/totWeights);//m_normalizationFactor*weight/totWeights;
 
 							network()->SetWeight(weight,preId,postId);
 						}

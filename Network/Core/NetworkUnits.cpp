@@ -41,7 +41,7 @@ void RateUnit::SimulateEventQueue()
 
 	if(m_noUpdatingCurrentTimeStep == true)
 	{
-		if(m_value!=0.0)
+		if(!(fabs(m_value)<EPS))
 			m_isNewEvent = true;
 		else
 			m_isNewEvent = false;
@@ -188,7 +188,7 @@ void RateUnit::SimulateEventQueue()
 						preIdIter = preIds[j];
 						incomingBufferData = m_network->GetPreValue(preIdIter);//GetIncomingBufferData(preIds[j]);//it->first);
 #endif
-						if(incomingBufferData!=0 || isTransferCSL)
+						if(!(fabs(incomingBufferData)<EPS) || isTransferCSL)
 						{
 							if(this->network()->IsTrackingHypercolumnIds())
 							{
@@ -230,7 +230,7 @@ void RateUnit::SimulateEventQueue()
 			SimulateUnitPropertiesV2(layerUnitProperties,&allValues,&allWeights,&allHypercolumnIds);
 		}
 
-		if(m_value!=0.0)
+		if(!(fabs(m_value)<EPS))
 			m_isNewEvent = true;
 		else
 			m_isNewEvent = false;
@@ -253,7 +253,7 @@ void RateUnit::SimulateUnitProperties(vector<UnitModifier*> unitProperties, vect
 				if(bcpnnRun == false)
 				{
 					((TransferBcpnnOnline*)unitProperties[j])->SetValue(0.0);
-					if(m_beta != 0.0) // unnecessary (?)
+					if(!(fabs(m_beta)<EPS)) // unnecessary (?)
 						((TransferBcpnnOnline*)unitProperties[j])->SetBeta(m_beta);
 					unitProperties[j]->Simulate(eus,weights, this);
 					m_value += ((TransferBcpnnOnline*)unitProperties[j])->GetValue();
@@ -290,7 +290,7 @@ void RateUnit::SimulateUnitPropertiesV2(vector<UnitModifier*>* unitProperties, v
 				if(bcpnnRun == false)
 				{
 					((TransferBcpnnOnline*)(*unitProperties)[j])->SetValue(0.0);
-					if(m_beta != 0.0)
+					if(!(fabs(m_beta)<EPS))
 						((TransferBcpnnOnline*)(*unitProperties)[j])->SetBeta(m_beta);
 					(*unitProperties)[j]->SimulateV2HypercolumnIds(*values,*weights,*hypercolumnIds,this);
 					m_value += ((TransferBcpnnOnline*)(*unitProperties)[j])->GetValue();

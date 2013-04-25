@@ -36,7 +36,6 @@ void ProjectionModifierPearson::Modify()
 	m_n++;
 
 	float delta,deltaX, x,y, corr;
-
 	for(int i=0;i<preValues.size();i++)
 	{
 		//meanI[i] += (preValues[i] - meanI[i])*prntaupdt;
@@ -68,7 +67,7 @@ void ProjectionModifierPearson::Modify()
 			deltaX = x - meanIJ[i][j];
 			meanIJ[i][j] = meanIJ[i][j] + deltaX/(float)m_n;
 
-			if(variance_nI[i] == 0  || variance_nJ[j] == 0)
+			if(fabs(variance_nI[i]) < EPS || fabs(variance_nJ[j]) < EPS)
 				corr = 0;
 			else
 				corr = meanIJ[i][j]/(sqrt(variance_nI[i])*sqrt(variance_nJ[j]));
@@ -80,9 +79,9 @@ void ProjectionModifierPearson::Modify()
 
 			// own definition of corr or zero vectors (group them), and do not group zero with something
 			// 1.0 - absolute(pearson corr)
-			if(meanJ[j] == 0 && meanI[i] == 0)
+			if(fabs(meanJ[j]) < EPS && fabs(meanI[i]) < EPS)
 				rIJ[i][j] = 0.0;
-			else if(meanJ[j] == 0 || meanI[i] == 0)
+			else if(fabs(meanJ[j]) < EPS || fabs(meanI[i]) < EPS)
 				rIJ[i][j] = 1.0;
 			else
 				rIJ[i][j] = 1.0 - fabs(corr);

@@ -76,7 +76,7 @@ void ProjectionModifierMIRateUnit::Modify()
 	// MPILocal...
 	if(IsOn() == false) return;
 
-	if(prn==0 || sprn==0) return;
+	if(fabs(prn)<EPS || fabs(sprn)<EPS) return;
 
 	float prntaupdt = 0.00625/2;//taupdt*fabs(sprn);
 	//prntaupdt2 = taupdt2*fabs(sprn);

@@ -243,7 +243,7 @@ void StructureMIMDSVQ::SetupMeters(int mpiRank, int mpiSize)//, Storage::FilePre
 void StructureMIMDSVQ::SetRecording(bool on)
 {
 	m_layers[1]->SetRecording(on);
-	m_VQ->SetRecording(on);
+	//m_VQ->SetRecording(on);
 	if(m_mdsUsePearson == false)
 		m_miHypercolumns->SetRecording(on);
 	m_layers[1]->GetIncomingProjections()[0]->SetRecording(on,0);

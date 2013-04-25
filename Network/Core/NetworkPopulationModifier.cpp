@@ -208,7 +208,7 @@ vector<double> SoftMax::Function(vector<double> data, float G)
 	for(int i=0;i<data.size();i++)
 		sum += exp(G*data[i]);
 
-	if(sum==0.0)
+	if(fabs(sum)<EPS)
 		cout<<"Error: Sum==0 in softmax.";
 
 	for(int i=0;i<data.size();i++)
@@ -400,7 +400,7 @@ void DivisiveNormalization::Simulate()
 	vector<float> allValues = layer->GetValuesBuffer();
 	float totValues = 0;
 	for(int i=0;i<allValues.size();i++)
-		totValues += pow(allValues[i],2);
+		totValues += allValues[i]*allValues[i];//pow(allValues[i],2);
 
 	if(totValues>0)
 	{
@@ -412,13 +412,13 @@ void DivisiveNormalization::Simulate()
 			value = mcs[j]->GetValue();
 			if(value >0)
 			{
-				value = sqrt(pow(value,2)/(1.0+totValues));
+				value = sqrt(value*value/(1.0+totValues));
 				mcs[j]->SetValue(value);
 			}
 			else // subthreshold normalization
 			{
 				subThreshValue = mcs[j]->GetSubThresholdValue();
-				subThreshValue = sqrt(pow(subThreshValue,2)/(1.0+totValues));
+				subThreshValue = sqrt(subThreshValue*subThreshValue/(1.0+totValues));
 				mcs[j]->SetSubThresholdValue(subThreshValue);
 			}
 

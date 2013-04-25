@@ -142,7 +142,7 @@ void AnalysisTiming::Finalize()
 
 		for(int i=0;i<m_meanValues.size();i++)
 		{
-			sqrmValues[i] = pow((totValues[i]-m_meanValues[i]),2);
+			sqrmValues[i] = (totValues[i]-m_meanValues[i])*(totValues[i]-m_meanValues[i]);//pow((totValues[i]-m_meanValues[i]),2);
 		}
 
 		// could do only reduce
@@ -169,8 +169,8 @@ void AnalysisTiming::Finalize()
 
 		for(int i=0;i<m_meanMaxValues.size();i++)
 		{
-			maxSqrmValues[i] = pow((maxValues[i]-m_meanMaxValues[i]),2);
-			minSqrmValues[i] = pow((minValues[i]-m_meanMinValues[i]),2);
+			maxSqrmValues[i] = (maxValues[i]-m_meanMaxValues[i])*(maxValues[i]-m_meanMaxValues[i]);//pow((maxValues[i]-m_meanMaxValues[i]),2);
+			minSqrmValues[i] = (minValues[i]-m_meanMinValues[i])*(minValues[i]-m_meanMinValues[i]);//pow((minValues[i]-m_meanMinValues[i]),2);
 		}
 
 		// could do only reduce
@@ -292,7 +292,7 @@ void FisherRatio::CalcFisherRatio()
 				for(int j=0;j<m_data[i].size();j++)
 				{
 					for(int k=0;k<m_data[i][j].size();k++)
-						localDist[i][j] += pow(m_data[i][j][k]-means[i][j],2);
+						localDist[i][j] += (m_data[i][j][k]-means[i][j])*(m_data[i][j][k]-means[i][j]);//pow(m_data[i][j][k]-means[i][j],2);
 				}
 			}
 		}
@@ -336,7 +336,7 @@ void FisherRatio::CalcFisherRatio()
 				int minSize = min(means[i].size(),means[j].size()); // in case one is of zero size
 				for(int m=0;m<minSize;m++)
 				{
-					meanDist+=pow(means[i][m]-means[j][m],2);
+					meanDist+=(means[i][m]-means[j][m])*(means[i][m]-means[j][m]);//pow(means[i][m]-means[j][m],2);
 				}
 
 				meanDist = sqrt(meanDist);
@@ -448,7 +448,7 @@ void AnalysisDistance::Simulate()
 				{
 					for(int i=0;i<m_buffer.size();i++)
 						for(int j=0;j<m_buffer[i].size();j++)
-							distances[i]+=pow(m_buffer[i][j]-values[j],2);
+							distances[i]+=(m_buffer[i][j]-values[j])*(m_buffer[i][j]-values[j]);//pow(m_buffer[i][j]-values[j],2);
 
 				}
 				else if(m_measure == AnalysisDistance::Hamming)

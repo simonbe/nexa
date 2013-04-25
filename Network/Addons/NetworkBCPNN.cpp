@@ -61,7 +61,7 @@ void ProjectionModifierBcpnnOnline::Modify()
 		else*/
 			m_Aj[j] = m_Aj[j] + m_alpha*(( (1-m_lambda0)*postValues[j] + m_lambda0)-m_Aj[j]);
 
-		if(m_impactBeta < 0.0 && m_impactWeights == 0.0) // special case, putting inhib thresh outside normalization
+		if(m_impactBeta < 0.0 && fabs(m_impactWeights) < EPS) // special case, putting inhib thresh outside normalization
 		{
 			/*if(postValues[j]==1.0)
 			{
@@ -92,7 +92,7 @@ void ProjectionModifierBcpnnOnline::Modify()
 
 		preValues = m_projectionFixed->GetPreValues(m_postIds[j]);
 
-		if(m_impactWeights != 0.0)
+		if(!(fabs(m_impactWeights) < EPS))
 		{
 			vector<long> preIds = m_projectionFixed->GetPreIds(m_postIds[j]);
 			//map<long, Network::SynapseStandard>* preSynapses = m_network->GetPreSynapses(m_postIds[j]); // will get all synapses originating from all different populations (!)
@@ -193,7 +193,7 @@ void ProjectionModifierBcpnnOnline::Initialize(Projection* Projection)
 	}
 
 	m_beta = vector<float>(postValues.size(),0);//0;
-	if(m_impactBeta < 0.0 && m_impactWeights == 0.0)
+	if(m_impactBeta < 0.0 && fabs(m_impactWeights) < EPS)
 		m_inhibBeta = vector<float>(postValues.size(),0.0);
 
 	m_firstRun = true;

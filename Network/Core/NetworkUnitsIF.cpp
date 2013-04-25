@@ -41,7 +41,7 @@ void UnitIF::SimulateEventQueue()
 
 							float incomingBufferData = m_network->GetPreValue(preIds[j]);
 
-							if(incomingBufferData!=0)
+							if(!(fabs(incomingBufferData)<EPS))
 							{
 								bool exists = true;
 
