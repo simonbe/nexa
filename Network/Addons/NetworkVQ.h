@@ -35,14 +35,14 @@ public:
 	void Selection(vector<int> indexes, vector<float> D);
 	vector<int> GetHighestIndexes(bool highestAndLowest, int nrValues, vector<float> data);
 	unsigned int GetSeed();
-	void ParallelDistortionCalculation(float *distortion, std::vector<float> *D);
+	void ParallelDistortionCalculation(float *distortion, vector<float> *D);
 	void ParallelCompetitiveLearning();
 	void Step(vector<vector<float> >* x);
-	float RRValue(vector<float> x1, vector<float> x2);
-	int GetClosestCodeVectorIndex(std::vector<float> data, std::vector<std::vector<float> > codeVectors);
-	std::vector<std::vector<float> > GetClosestCodeVectorMultipleIndexesAndValues(vector<float> data, vector<vector<float> > codeVectors, int maxSize);
-	vector<int> GetClosestCodeVectorIndexes(std::vector<std::vector<float> > data);
-	vector<float> GetClosestCodeVectorIndexAndValue(vector<float> data, vector<vector<float> > codeVectors);
+	float RRValue(const vector<float>& x1, const vector<float>& x2);
+	int GetClosestCodeVectorIndex(const vector<float>& data, const vector<vector<float> >& codeVectors);
+	vector<vector<float> > GetClosestCodeVectorMultipleIndexesAndValues(const vector<float>& data, const vector<vector<float> >& codeVectors, int maxSize);
+	vector<int> GetClosestCodeVectorIndexes(const vector<vector<float> >& data);
+	vector<float> GetClosestCodeVectorIndexAndValue(const vector<float>& data, const vector<vector<float> >& codeVectors);
 
 	void SaveState();
 	void LoadState();
@@ -129,9 +129,9 @@ private:
 	float m_currentDistortion;
 	int m_mpiSize,m_mpiRank;
 
-	std::vector<std::vector<float> >* m_x; // input data
-	std::vector<std::vector<float> > m_c; // codebook
-	std::vector<std::vector<float> > m_cSaved; // saved state codebook
+	vector<vector<float> >* m_x; // input data
+	vector<vector<float> > m_c; // codebook
+	vector<vector<float> > m_cSaved; // saved state codebook
 
 	vector<int> m_S; // Selection size per time step (declining)
 
@@ -426,8 +426,8 @@ private:
 
 	float m_distortion;
 
-	std::vector<std::vector<float> > m_x; // input data
-	std::vector<std::vector<float> > m_c; // codebook
+	vector<vector<float> > m_x; // input data
+	vector<vector<float> > m_c; // codebook
 	vector<int> m_S; // Selection size per time step (declining)
 
 	vector<int> m_winners;
@@ -438,12 +438,12 @@ private:
 	void CSL_Selection(vector<int> indexes, vector<float> D);
 	vector<int> CSL_GetHighestIndexes(bool highestAndLowest, int nrValues, vector<float> data);
 	unsigned int GetSeed();
-	void CSL_ParallelDistortionCalculation(float *distortion, std::vector<float> *D);
+	void CSL_ParallelDistortionCalculation(float *distortion, vector<float> *D);
 	void CSL_ParallelCompetitiveLearning();
 	void CSL_Step();
-	float CSL_RRValue(vector<float> x1, vector<float> x2);
-	int CSL_GetClosestCodeVectorIndex(std::vector<float> data, std::vector<std::vector<float> > codeVectors);
-	vector<float> CSL_GetClosestCodeVectorIndexAndValue(vector<float> data, vector<vector<float> > codeVectors);
+	float CSL_RRValue(const vector<float>& x1, const vector<float>& x2);
+	int CSL_GetClosestCodeVectorIndex(const vector<float>& data, const vector<vector<float> >& codeVectors);
+	vector<float> CSL_GetClosestCodeVectorIndexAndValue(const vector<float>& data, const vector<vector<float> >& codeVectors);
 
 	// overlapping winners
 	int m_nrOverlaps;

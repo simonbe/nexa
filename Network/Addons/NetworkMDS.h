@@ -65,7 +65,7 @@ public:
 		return &m_Xi;
 	}
 
-	std::vector<std::vector<float> > GetValuesToRecord() 
+	vector<vector<float> > GetValuesToRecord() 
 	{
 		//vector<float> time(1);
 		//time[0] = this->network()->GetCurrentTimeStep();

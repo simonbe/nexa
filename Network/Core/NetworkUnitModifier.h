@@ -48,7 +48,7 @@ public:
 		return m_eventTypeId;
 	}
 
-	std::vector<float> GetEventData()
+	vector<float> GetEventData()
 	{
 		return m_eventData;
 	}
@@ -120,7 +120,7 @@ protected:
 	short m_eventTypeId;
 	long m_fromUnitId;
 	long m_fromHypercolumnId;
-	std::vector<float> m_eventData;
+	vector<float> m_eventData;
 		
 	float m_value, m_subThresholdValue;
 	int m_id;
@@ -350,7 +350,7 @@ public:
 	void Simulate(vector<UnitModifier*> events, vector<float> weights, Unit* unit);
 	void SimulateV2(vector<float>* values, vector<float>* weights, Unit* unit);
 
-	float RRValue(vector<float> x1, vector<float> x2);
+	float RRValue(const vector<float>& x1, const vector<float>& x2);
 
 private:
 

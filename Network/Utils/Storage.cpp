@@ -330,7 +330,7 @@ void UPCdata::readHDFfile(char* filename, int count){ // count: 11040 for segmen
 	hsize_t size = H5Dget_storage_size(dataset_id);
 	
 	//vector<Sample> buf(NRECORDS+1);
-	//std::vector<Sample> buf(static_cast<int>(size+1), 0x00);
+	//vector<Sample> buf(static_cast<int>(size+1), 0x00);
 
 	status=H5TBread_table(file_id, "Dataset", dst_size, dst_offset, dst_sizes, sampledata);
 

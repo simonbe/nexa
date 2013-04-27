@@ -78,7 +78,7 @@ public:
 
 private:
 
-	std::vector<float> toBinary(int nr, int total);
+	vector<float> toBinary(int nr, int total);
 	vector<float> toBinary(vector<float> data, int nrHc, int nrMc);
 
 	vector<PopulationColumns*> AttachPopulations(Network* network, PopulationColumns* layerInput, int nrMiddleHypercolumns, int nrMiddleRateUnits, int nrOutputHypercolumns, int nrOutputRateUnits);

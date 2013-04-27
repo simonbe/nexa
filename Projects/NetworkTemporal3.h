@@ -34,16 +34,16 @@ private:
 	void NetworkRun();
 
 	// training process functions
-	void ComputeCorrelation(vector<vector<float> > trainingData,  PopulationColumns* inputLayer, StructureMIMDSVQ* structure, int iter);
-	void ComputeMDS(vector<vector<float> > trainingData,  PopulationColumns* inputLayer, StructureMIMDSVQ* structure, int iter);
-	void ComputeVQ(vector<vector<float> > trainingData,  PopulationColumns* inputLayer, StructureMIMDSVQ* structure, int iter);
-	void ExtractFeatures(vector<vector<float> > trainingData,  PopulationColumns* inputLayer, StructureMIMDSVQ* structure);
+	void ComputeCorrelation(const vector<vector<float> >& trainingData,  PopulationColumns* inputLayer, StructureMIMDSVQ* structure, int iter);
+	void ComputeMDS(const vector<vector<float> >& trainingData,  PopulationColumns* inputLayer, StructureMIMDSVQ* structure, int iter);
+	void ComputeVQ(const vector<vector<float> >& trainingData,  PopulationColumns* inputLayer, StructureMIMDSVQ* structure, int iter);
+	void ExtractFeatures(const vector<vector<float> >& trainingData,  PopulationColumns* inputLayer, StructureMIMDSVQ* structure);
 	
 	// Train
-	void TrainLayer(vector<vector<float> > trainingData, PopulationColumns* inputLayer, StructureMIMDSVQ* structure, int iterationsCorrs, int iterationsMDS, int iterationsVQ, int iterationsFeatures);
+	void TrainLayer(const vector<vector<float> >& trainingData, PopulationColumns* inputLayer, StructureMIMDSVQ* structure, int iterationsCorrs, int iterationsMDS, int iterationsVQ, int iterationsFeatures);
 
 	// other
-	vector<float> toBinary(vector<float> data, int nrHc, int nrMc);
+	vector<float> toBinary(const vector<float>& data, int nrHc, int nrMc);
 	//void ClearActivities();
 
 	

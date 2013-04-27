@@ -3,6 +3,7 @@
 #define NETWORKCONNS_H
 
 #include <string>
+#include <set>
 #include "Network.h"
 #include "NetworkPopulation.h"
 #include "NetworkProjectionModifier.h"
@@ -422,7 +423,7 @@ public:
 	void Clear();
 	void Clear(long postId);
 
-	std::vector<std::vector<float> > GetValuesToRecord();
+	vector<vector<float> > GetValuesToRecord();
 
 	// Copy all weight values to another connectivity
 	void CopyProjectionsOtherPost(Population* newPost);
@@ -459,8 +460,8 @@ public:
 
 	void AddActiveEvent(long preId, float value); // used in hashed active communication mode
 	void AddActiveEvents(vector<long> preIds, vector<float> values);
-	vector<long> GetPostIds(long preId);
-	vector<long> GetLocalPostIds(long preId);
+	set<long> GetPostIds(long preId);
+	set<long> GetLocalPostIds(long preId);
 
 	void ClearActiveBuffer();
 
@@ -503,15 +504,15 @@ protected:
 #if USE_UNORDERED_MAP == 1
 	unordered_map<long, vector<long> > m_preIds;
 #if USE_HASHED_ACTIVE_COMMUNICATION == 1
-	unordered_map<long, vector<long> > m_postIdsPre;
-	unordered_map<long, vector<long> > m_localPostIdsPre;
+	unordered_map<long, set<long> > m_postIdsPre;
+	unordered_map<long, set<long> > m_localPostIdsPre;
 #endif
 
 #else
 	map<long, vector<long> > m_preIds; // id-based (wrt position in m_postIds) - used anymore?
 #if USE_HASHED_ACTIVE_COMMUNICATION == 1
-	map<long, vector<long> > m_postIdsPre;
-	map<long, vector<long> > m_localPostIdsPre;
+	map<long, set<long> > m_postIdsPre;
+	map<long, set<long> > m_localPostIdsPre;
 #endif
 
 #endif

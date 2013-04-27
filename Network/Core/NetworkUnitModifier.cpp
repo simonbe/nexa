@@ -3,7 +3,6 @@
 
 
 
-
 void GeometryUnit::SetPosition(float x, float y, float z)
 {
 	this->x = x;
@@ -540,7 +539,7 @@ void TransferFoldiak::SimulateV2(vector<float>* values, vector<float>* weights, 
 	s[unit->GetUnitId()] += m_eta3*(m_alpha-m_value); // f: -gamma (+s instead of -f)
 }
 
-float TransferCSL::RRValue(vector<float> x1, vector<float> x2)
+float TransferCSL::RRValue(const vector<float>& x1, const vector<float>& x2)
 {
   float val = 0;
   
