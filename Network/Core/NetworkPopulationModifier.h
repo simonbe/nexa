@@ -126,10 +126,10 @@ public:
 
 
 	void Simulate();
-	std::vector<double> Function(std::vector<double> data, float G);
-	std::vector<double> WTAProb(std::vector<double> data);
-	std::vector<double> tempWTAFunction(std::vector<double> data);
-	std::vector<double> ksoftwinners(std::vector<double> data,int k=10);
+	vector<double> Function(vector<double> data, float G);
+	vector<double> WTAProb(vector<double> data);
+	vector<double> tempWTAFunction(vector<double> data);
+	vector<double> ksoftwinners(vector<double> data,int k=10);
 
 private:
 
@@ -152,7 +152,7 @@ public:
 	}
 
 	void Simulate();
-	std::vector<float> wta(std::vector<float> data);
+	vector<float> wta(vector<float> data);
 
 private:
 
@@ -170,7 +170,7 @@ public:
 	}
 
 	void Simulate();
-	std::vector<float> Function(std::vector<float> data);
+	vector<float> Function(vector<float> data);
 
 private:
 
@@ -189,7 +189,7 @@ public:
 	}
 
 	void Simulate();
-	//std::vector<float> Function(std::vector<float> data);
+	//vector<float> Function(vector<float> data);
 
 private:
 

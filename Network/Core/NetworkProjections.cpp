@@ -1,5 +1,5 @@
 #include <iostream>
-
+#include <set>
 #include "NetworkProjections.h"
 #include "NetworkUnits.h"
 #include "NetworkProjectionModifier.h"
@@ -59,11 +59,10 @@ void Projection::AddProjection(long preId, long postId, long postLocalId, bool f
 	}
 
 #if USE_HASHED_ACTIVE_COMMUNICATION == 1
-		m_postIdsPre[preId].push_back(postId);
+		m_postIdsPre[preId].insert(postId);
 		if(postLocalId<0)
 			postLocalId = this->PostLayer()->GetLocalIdUnitId(postId);
-
-		m_localPostIdsPre[preId].push_back(postLocalId);
+		m_localPostIdsPre[preId].insert(postLocalId);
 #endif
 
 	m_preIds[postIndex].push_back(preId);
@@ -99,11 +98,10 @@ void Projection::AddProjections(vector<long> preIds, long postId, long postLocal
 	{
 		// always guarantee no duplicates?
 		// cannot be necessary to handle both
-		m_postIdsPre[preIds[i]].push_back(postId);
+		m_postIdsPre[preIds[i]].insert(postId);
 		if(postLocalId<0)
 			postLocalId = this->PostLayer()->GetLocalIdUnitId(postId);
-
-		m_localPostIdsPre[preIds[i]].push_back(postLocalId);
+		m_localPostIdsPre[preIds[i]].insert(postLocalId);
 	}
 #endif
 
@@ -176,7 +174,7 @@ void Projection::ClearActiveBuffer()
 {
 #if USE_HASHED_ACTIVE_COMMUNICATION == 1
 	m_preIdsActive.clear();
-	m_preIdsActive = vector<vector<pair<long, float> > >(this->PostLayer()->GetNrUnitsTotal());//this->PostLayer()->GetUnits().size());
+	//m_preIdsActive = vector<vector<pair<long, float> > >(this->PostLayer()->GetNrUnitsTotal());//this->PostLayer()->GetUnits().size());
 #endif
 }
 
@@ -337,34 +335,37 @@ vector<long> Projection::GetPreIds(long unitId)
 
 void Projection::AddActiveEvent(long preId, float value)
 {
-	vector<long> postIds;
+	set<long> postIds;
 
 	// get all the units this unit is connected to on this Projection
 	postIds = GetPostIds(preId);
 	
 	// put in their active queues/buffers
-	for(int i=0;i<postIds.size();i++)
+	for(set<long>::iterator it = postIds.begin(); it!=postIds.end();++it)
 	{
 		pair<long, float> p;
 		p.first = preId;
 		p.second = value;
 		// put in vector with position determined by hash (this is set up once)
-		m_preIdsActive[postIds[i]].push_back(p);
+		m_preIdsActive[*it].push_back(p);
 	}
 }
 
 void Projection::AddActiveEvents(vector<long> preIds, vector<float> values)
 {
-	vector<vector<long> > localPostIds(preIds.size());
-	m_preIdsActive = vector<vector<pair<long,float> > >(this->PostLayer()->GetNrUnitsTotal());//this->PostLayer()->GetUnits().size());
+	vector<set<long> > localPostIds(preIds.size()); 
+	if(m_preIdsActive.size()>0)
+		m_preIdsActive.clear();
+	else
+		m_preIdsActive = vector<vector<pair<long,float> > >(this->PostLayer()->GetNrUnitsTotal());//this->PostLayer()->GetUnits().size());
 
 	for(int i=0;i<preIds.size();i++)
 	{
 		// get all the units this unit is connected to on this Projection
 		localPostIds[i] = GetLocalPostIds(preIds[i]);//GetPostIds(preIds[i]);
-		for(int j=0;j<localPostIds[i].size();j++)
+		for(set<long>::iterator it=localPostIds[i].begin();it!=localPostIds[i].end();++it)
 		{
-			m_preIdsActive[localPostIds[i][j]].reserve(preIds.size()); // optimization
+			m_preIdsActive[*it].reserve(preIds.size()); // optimization
 		}
 	}
 
@@ -378,9 +379,9 @@ void Projection::AddActiveEvents(vector<long> preIds, vector<float> values)
 		p.second = values[i];
 		long localId;
 
-		for(int j=0;j<localPostIds[i].size();j++)//postIds.size();j++)
+		for(set<long>::iterator it=localPostIds[i].begin();it!=localPostIds[i].end();++it)//postIds.size();j++)
 		{
-			m_preIdsActive[localPostIds[i][j]].push_back(p);
+			m_preIdsActive[*it].emplace_back(p);
 		}
 	}
 }
@@ -399,7 +400,7 @@ vector<pair<long,float> >* Projection::GetPreIdsActiveLocal(long localUnitId)
 }
 
 // Necessary to set USE_HASHED_ACTIVE_COMMUNICATION to 1 to be able to use this (consumes unnecessary memory otherwise (scales with nr synapses))
-vector<long> Projection::GetPostIds(long preId)
+set<long> Projection::GetPostIds(long preId)
 {
 #if	USE_HASHED_ACTIVE_COMMUNICATION == 1
 	return m_postIdsPre[preId];
@@ -408,7 +409,7 @@ vector<long> Projection::GetPostIds(long preId)
 #endif
 }
 
-vector<long> Projection::GetLocalPostIds(long preId)
+set<long> Projection::GetLocalPostIds(long preId)
 {
 #if	USE_HASHED_ACTIVE_COMMUNICATION == 1
 	return m_localPostIdsPre[preId];
@@ -448,21 +449,13 @@ void Projection::EraseSynapse(long postId, long preId)
 #if USE_HASHED_ACTIVE_COMMUNICATION
 
 	int index2 = -1;
-	vector<long> postIds = m_postIdsPre[postId];
-
-	for(int i=0;i<postIds.size();i++)
-	{
-		if(postIds[i] == postId)
-		{
-			index2 = i;
-			break;
-		}
-	}
-	if(index2 !=-1)
-	{
-		postIds.erase(postIds.begin()+index2);
+	set<long> postIds = m_postIdsPre[postId];
+	set<long>::iterator it = postIds.find(postId);
+	if(it!=postIds.end()) {
+		postIds.erase(it);
 		m_postIdsPre[preId] = postIds;
 	}
+		
 
 #endif
 
@@ -635,7 +628,7 @@ void Projection::SetWeight(float weight, long preId, long postId)
 	(*network()->HashWeights())[postId][preId] = weight;
 }*/
 
-std::vector<std::vector<float> > Projection::GetValuesToRecord()
+vector<vector<float> > Projection::GetValuesToRecord()
 {
 	vector<vector<float> > outData;
 

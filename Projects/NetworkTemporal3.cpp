@@ -76,7 +76,7 @@ void NetworkTemporal3::NetworkSetupParameters()
 }
 
 
-vector<float> NetworkTemporal3::toBinary(vector<float> data, int nrHc, int nrMc)
+vector<float> NetworkTemporal3::toBinary(const vector<float>& data, int nrHc, int nrMc)
 {
 	vector<float> out(nrHc*nrMc);
 
@@ -90,7 +90,7 @@ vector<float> NetworkTemporal3::toBinary(vector<float> data, int nrHc, int nrMc)
 	return out;
 }
 
-void NetworkTemporal3::ComputeCorrelation(vector<vector<float> > trainingData,  PopulationColumns* inputLayer, StructureMIMDSVQ* structure, int iter) {
+void NetworkTemporal3::ComputeCorrelation(const vector<vector<float> >& trainingData,  PopulationColumns* inputLayer, StructureMIMDSVQ* structure, int iter) {
 	structure->Pearson()->SwitchOnOff(true);
 	for(int i=0;i<trainingData.size();i++) {
 		if(m_verbose && this->MPIGetNodeId() == 0) {
@@ -106,7 +106,7 @@ void NetworkTemporal3::ComputeCorrelation(vector<vector<float> > trainingData,  
 	structure->Pearson()->SwitchOnOff(false);
 }
 
-void NetworkTemporal3::ComputeMDS(vector<vector<float> > trainingData,  PopulationColumns* inputLayer, StructureMIMDSVQ* structure, int iter) {
+void NetworkTemporal3::ComputeMDS(const vector<vector<float> >& trainingData,  PopulationColumns* inputLayer, StructureMIMDSVQ* structure, int iter) {
 	structure->MDSHypercolumns()->SwitchOnOff(true);
 	structure->MDS()->SwitchOnOff(true);
 	for(int i=0;i<trainingData.size();i++) {
@@ -124,7 +124,7 @@ void NetworkTemporal3::ComputeMDS(vector<vector<float> > trainingData,  Populati
 	structure->MDS()->SwitchOnOff(false);
 }
 
-void NetworkTemporal3::ComputeVQ(vector<vector<float> > trainingData,  PopulationColumns* inputLayer, StructureMIMDSVQ* structure, int iter) {
+void NetworkTemporal3::ComputeVQ(const vector<vector<float> >& trainingData,  PopulationColumns* inputLayer, StructureMIMDSVQ* structure, int iter) {
 	structure->GetLayer(1)->SwitchOnOff(true);
 	structure->VQ()->SwitchOnOff(true);
 	for(int i=0;i<trainingData.size();i++) {
@@ -132,7 +132,7 @@ void NetworkTemporal3::ComputeVQ(vector<vector<float> > trainingData,  Populatio
 			cout<<i<<"("<<iter<<") ";
 			cout.flush();
 		}
-		inputLayer->SetValuesAll(m_dataAssigner->prepareValues(i,trainingData));
+//		inputLayer->SetValuesAll(m_dataAssigner->prepareValues(i,trainingData));
 		this->Simulate();
 		cout.flush();
 	}
@@ -141,7 +141,7 @@ void NetworkTemporal3::ComputeVQ(vector<vector<float> > trainingData,  Populatio
 	structure->VQ()->SwitchOnOff(false);
 }
 
-void NetworkTemporal3::ExtractFeatures(vector<vector<float> > trainingData,  PopulationColumns* inputLayer, StructureMIMDSVQ* structure) {
+void NetworkTemporal3::ExtractFeatures(const vector<vector<float> >& trainingData,  PopulationColumns* inputLayer, StructureMIMDSVQ* structure) {
 	structure->CSLLearn()->SwitchOnOff(true);
 	structure->SetRecording(false);
 	float clC = m_nrRateUnits2*2;
@@ -159,7 +159,7 @@ void NetworkTemporal3::ExtractFeatures(vector<vector<float> > trainingData,  Pop
 	structure->CSLLearn()->SwitchOnOff(false);
 }
 
-void NetworkTemporal3::TrainLayer(vector<vector<float> > trainingData, PopulationColumns* inputLayer, StructureMIMDSVQ* structure, int iterationsCorrs, int iterationsMDS, int iterationsVQ, int iterationsFeatures)
+void NetworkTemporal3::TrainLayer(const vector<vector<float> >& trainingData, PopulationColumns* inputLayer, StructureMIMDSVQ* structure, int iterationsCorrs, int iterationsMDS, int iterationsVQ, int iterationsFeatures)
 {
 	// Training phase
 
@@ -235,8 +235,8 @@ void NetworkTemporal3::NetworkRun()
 
 	if(m_architecture == PC)
 	{
-		nrTrainImages = 35;
-		nrTestImages = 20;
+		nrTrainImages = 3000;
+		nrTestImages = 3000;
 		//iterationsPatches = 10;
 		filenameTrain="D:\\Databases\\tidigits\\trainData.csv";
 		filenameTrainLabels="D:\\Databases\\tidigits\\trainDataLabels.csv";
@@ -274,9 +274,9 @@ void NetworkTemporal3::NetworkRun()
 	//m_layer2->GetIncomingProjections()[2]->SwitchOnOff(false);
 
 	int iterationsCorrs = 2; // run through x times, 5
-	int iterationsMDS = 1;//200
-	int iterationsVQ = 1;//200
-	iterationsFeatures = 1; //+nrtraindata the timesteps to run CSL (first totalNrTrainingData steps are to collect the data to run on)
+	int iterationsMDS = 2;//200
+	int iterationsVQ = 5;//200
+	iterationsFeatures = 2; //+nrtraindata the timesteps to run CSL (first totalNrTrainingData steps are to collect the data to run on)
 	TrainLayer(trainingData,m_layerInput,m_structureInput,iterationsCorrs,iterationsMDS,iterationsVQ,iterationsFeatures);
 	
 	// Run through all training and test data

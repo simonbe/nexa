@@ -131,7 +131,7 @@ vector<vector<int> > MPIDistribution::MPILayerGatherVariables(vector<vector<int>
 }
 
 void Simulate(); // overridden from PopulationModifier and called every simulation time step
-	vector<float> wta(std::vector<float> data); // the actual winner-take-all function,
+	vector<float> wta(vector<float> data); // the actual winner-take-all function,
 												// which takes the input vector data and
 												//  returns a vector with a 1 on the position 
 												//  of the highest value in data and 0 on 

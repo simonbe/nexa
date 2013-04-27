@@ -146,7 +146,7 @@ void SoftMax::Simulate()
 	}
 }
 
-std::vector<double> SoftMax::WTAProb(std::vector<double> data)
+vector<double> SoftMax::WTAProb(vector<double> data)
 {
 	double sum = 0;
 	for(int i=0;i<data.size();i++)

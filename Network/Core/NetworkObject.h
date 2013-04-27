@@ -64,9 +64,9 @@ public:
 		m_network = net;
 	}
 
-	virtual std::vector<std::vector<float> > GetValuesToRecord() 
+	virtual vector<vector<float> > GetValuesToRecord() 
 	{ 
-		return std::vector<std::vector<float> >(0); 
+		return vector<vector<float> >(0); 
 	}
 
 	void SetRecording(bool on)

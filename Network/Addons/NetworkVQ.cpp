@@ -602,7 +602,7 @@ void LayerVQ::CSL_Step()
 	}
 }
 
-float LayerVQ::CSL_RRValue(vector<float> x1, vector<float> x2)
+float LayerVQ::CSL_RRValue(const vector<float>& x1, const vector<float>& x2)
 {
   float val = 0;
   
@@ -614,7 +614,7 @@ float LayerVQ::CSL_RRValue(vector<float> x1, vector<float> x2)
 }
 
 
-vector<float> LayerVQ::CSL_GetClosestCodeVectorIndexAndValue(vector<float> data, vector<vector<float> > codeVectors)
+vector<float> LayerVQ::CSL_GetClosestCodeVectorIndexAndValue(const vector<float>& data, const vector<vector<float> >& codeVectors)
 {
   vector<float> out;
   
@@ -636,12 +636,12 @@ vector<float> LayerVQ::CSL_GetClosestCodeVectorIndexAndValue(vector<float> data,
 }
 
 
-void LayerVQ::CSL_ParallelDistortionCalculation(float *distortion, std::vector<float> *D)
+void LayerVQ::CSL_ParallelDistortionCalculation(float *distortion, vector<float> *D)
 {
 	int n_s = m_x.size()/m_mpiSize;
 
-	std::vector<float> totD(m_c.size());
-	std::vector<float> subD(m_c.size());
+	vector<float> totD(m_c.size());
+	vector<float> subD(m_c.size());
 
 	float newDistortion = 0;
 	
@@ -764,7 +764,7 @@ void LayerVQ::CSL_ParallelCompetitiveLearning()
 	}      	
 }
 
-int LayerVQ::CSL_GetClosestCodeVectorIndex(vector<float> data, vector<vector<float> > codeVectors)
+int LayerVQ::CSL_GetClosestCodeVectorIndex(const vector<float>& data, const vector<vector<float> >& codeVectors)
 {
   float minValue = 1e10;
   int minIndex = -1;
@@ -1180,7 +1180,7 @@ void CSL::Selection(vector<int> indexes, vector<float> D)
 	}
 }
 
-std::vector<std::vector<float> > CSL::GetClosestCodeVectorMultipleIndexesAndValues(vector<float> data, vector<vector<float> > codeVectors, int maxSize)
+vector<vector<float> > CSL::GetClosestCodeVectorMultipleIndexesAndValues(const vector<float>& data, const vector<vector<float> >& codeVectors, int maxSize)
 {
   float minValue = 1e10;
   int minIndex = -1;
@@ -1497,7 +1497,7 @@ void CSL::Step(vector<vector<float> >* x)
 
 }
 
-float CSL::RRValue(vector<float> x1, vector<float> x2)
+float CSL::RRValue(const vector<float>& x1, const vector<float>& x2)
 {
 	float val = 0;
 
@@ -1536,7 +1536,7 @@ void CSL::LoadState()
 	}
 }
 
-vector<float> CSL::GetClosestCodeVectorIndexAndValue(vector<float> data, vector<vector<float> > codeVectors)
+vector<float> CSL::GetClosestCodeVectorIndexAndValue(const vector<float>& data, const vector<vector<float> >& codeVectors)
 {
 	vector<float> out;
 
@@ -1560,7 +1560,7 @@ vector<float> CSL::GetClosestCodeVectorIndexAndValue(vector<float> data, vector<
 	return out;
 }
 
-vector<int> CSL::GetClosestCodeVectorIndexes(std::vector<std::vector<float> > data)
+vector<int> CSL::GetClosestCodeVectorIndexes(const vector<vector<float> >& data)
 {
 	vector<int> out(data.size());
 
@@ -1573,12 +1573,12 @@ vector<int> CSL::GetClosestCodeVectorIndexes(std::vector<std::vector<float> > da
 }
 
 
-void CSL::ParallelDistortionCalculation(float *distortion, std::vector<float> *D)
+void CSL::ParallelDistortionCalculation(float *distortion, vector<float> *D)
 {
 	int n_s = m_x->size()/m_mpiSize;
 
-	std::vector<float> totD(m_c.size());
-	std::vector<float> subD(m_c.size());
+	vector<float> totD(m_c.size());
+	vector<float> subD(m_c.size());
 
 	float newDistortion = 0;
 
@@ -1734,7 +1734,7 @@ void CSL::ParallelCompetitiveLearning()
 	}      	
 }
 
-int CSL::GetClosestCodeVectorIndex(vector<float> data, vector<vector<float> > codeVectors)
+int CSL::GetClosestCodeVectorIndex(const vector<float>& data, const vector<vector<float> >& codeVectors)
 {
 	float minValue = 1e10;
 	int minIndex = -1;

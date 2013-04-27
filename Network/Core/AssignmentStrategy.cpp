@@ -1,9 +1,9 @@
 #include "AssignmentStrategy.h";
-vector<float> SequentialAssignmentStrategy::prepareValues(int idx, vector<vector<float> > values) {
+vector<float> SequentialAssignmentStrategy::prepareValues(int idx, const vector<vector<float> >& values) {
 	return values[idx];
 }
 
-vector<float> ConstLagAssignmentStrategy::prepareValues(int idx, vector<vector<float> > values) {
+vector<float> ConstLagAssignmentStrategy::prepareValues(int idx, const vector<vector<float> >& values) {
 	int interval=values.size()/(_lag+1)-1;
 	vector<float> out;
 	for(int i=0;i<values[idx].size();i++) {
@@ -17,7 +17,7 @@ vector<float> ConstLagAssignmentStrategy::prepareValues(int idx, vector<vector<f
 	return out;
 }
 
-vector<float> ConstLagAssignmentStrategy2::prepareValues(int idx, vector<vector<float> > values) {
+vector<float> ConstLagAssignmentStrategy2::prepareValues(int idx, const vector<vector<float> >& values) {
 	int interval=_len/(_lag+1);
 	vector<float> out;
 	for(int i=0;i<values[idx].size();i++) {
@@ -31,7 +31,7 @@ vector<float> ConstLagAssignmentStrategy2::prepareValues(int idx, vector<vector<
 	return out;
 }
 
-vector<float> ExpansionAssignmentStrategy::prepareValues(int idx, vector<vector<float> > values) {
+vector<float> ExpansionAssignmentStrategy::prepareValues(int idx, const vector<vector<float> >& values) {
 	vector<float> out(_n,0.0f);
 	for(int i=0;i<values[idx].size();++i)
 		out[i]=values[idx][i];
