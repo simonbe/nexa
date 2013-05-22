@@ -95,8 +95,7 @@ void LayerVQ::Simulate()
 			m_csl->Initialize(m_data,m_nrCodeVectors, this->network()->MPIGetNodeId(),this->network()->MPIGetNrProcs(), true, this, NETWORK_COMM_WORLD); // all nodes involved
 			//CSL_Initiate();
 		}
-
-		m_csl->Step(m_data);
+		SwitchOnOff(m_csl->Step(m_data));
 		if(this->m_nrOverlaps > 1)
 			m_totalWinnersUnits = m_csl->GetTotalWinnersUnits(m_nrOverlaps);
 		else
@@ -982,7 +981,8 @@ void CSL::Initialize(vector<vector<float> >* x, int nrCodeVectors, int mpiRank, 
 	m_mpiRank = mpiRank;
 	m_mpiSize = mpiSize;
 	m_comm = comm;
-
+	m_prevDistortion=0;
+	m_distUnchanged=0;
 	//m_epsilon = 0.01;//0.001;
 	//m_eta = 0.01;//0.0001;//0.5;//0.001;
 	
@@ -1436,7 +1436,7 @@ vector<vector<int> > CSL::GetTotalWinnersUnits(int nrOverlaps)
 	return m_totalWinnersUnits;
 }
 
-void CSL::Step(vector<vector<float> >* x)
+bool CSL::Step(vector<vector<float> >* x)
 {
 	m_x = x;
 	//m_x = *m_childPopulationModifier[0]->GetOutput(); // latest copy of (mds) data
@@ -1449,7 +1449,15 @@ void CSL::Step(vector<vector<float> >* x)
 	ParallelCompetitiveLearning();
 	ParallelDistortionCalculation( &distortion, &D );
 	m_currentDistortion = distortion;
-
+	if(fabs(m_prevDistortion-m_currentDistortion)<VQ_EPS) {
+		m_distUnchanged++;
+	}
+	else {
+		m_prevDistortion=m_currentDistortion;
+		m_distUnchanged=0;
+	}
+	if(m_distUnchanged>=VQ_NUM)
+		return false;
 	//3. Selection
 	if(fabs(distortion) < EPS) // usually never happens unless m_x.size() == m_c.size()
 	{
@@ -1494,19 +1502,17 @@ void CSL::Step(vector<vector<float> >* x)
 	{
 		m_totalWinnersUnits[m_total_winners[i]].push_back(i);
 	}
-
+	return true;
 }
 
 float CSL::RRValue(const vector<float>& x1, const vector<float>& x2)
 {
 	float val = 0;
-
 	for(int i=0;i<x1.size();i++) 
 	{
 		val+=(x1[i]-x2[i])*(x1[i]-x2[i]);//pow(x1[i]-x2[i],2);
 	}
-
-	return val;//sqrt(val);
+	return sqrt(val);//val;
 }
 
 // Currently only saves/loads the values of the code vectors
@@ -2011,7 +2017,7 @@ void ProjectionModifierCSL::Modify()
 				else
 				{
 					if(m_x[i].size()!=m_csl[i]->GetCodeVectors()->size()) // could put check inside csl
-						m_csl[i]->Step(&(m_x[i]));
+						SwitchOnOff(m_csl[i]->Step(&(m_x[i])));
 					
 					hasRun = true;
 				}

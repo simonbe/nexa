@@ -460,8 +460,8 @@ public:
 
 	void AddActiveEvent(long preId, float value); // used in hashed active communication mode
 	void AddActiveEvents(vector<long> preIds, vector<float> values);
-	set<long> GetPostIds(long preId);
-	set<long> GetLocalPostIds(long preId);
+	set<long>& GetPostIds(long preId);
+	set<long>& GetLocalPostIds(long preId);
 
 	void ClearActiveBuffer();
 

@@ -1,7 +1,8 @@
 #pragma once
 #ifndef NETWORKMDS_H
 #define NETWORKMDS_H
-
+#define MDS_EPS 1e-3
+#define MDS_NUM 10
 #include "NetworkProjectionModifier.h"
 
 class ProjectionModifier;
@@ -17,6 +18,8 @@ public:
 		this->network(net);
 		m_mdsDimension = MDSDimension;
 		m_miDimension = MIDimension;
+		m_prevDist=0;
+		m_distUnchanged=0;
 		m_Xi = vector<vector<float> >(MIDimension,vector<float>(MDSDimension));
 		m_diffXi = vector<vector<float> >(MIDimension,vector<float>(MDSDimension));
 		srand(0); // make sure all get same start matrix
@@ -125,7 +128,8 @@ private:
 	float m_totChange;
 	float m_totStress;
 	float m_localStress;
-
+	float m_prevDist;
+	int m_distUnchanged;
 	int m_mdsDimension, m_miDimension;
 	vector<vector<float> > m_recordedValues;
 };

@@ -8,7 +8,7 @@
 Population::Population() 
 {
 	m_mpiDistribution = new MPIDistribution(this);
-	m_keepValues = false;
+	m_keepValues = false;//false;
 	m_parallelizationScheme = MPIDistribution::ParallelizationDefault;
 }
 
@@ -124,7 +124,7 @@ void Population::AddUnitsModifierToInitialize(UnitModifier* p)
 PopulationColumns::PopulationColumns(Network* net, unsigned long nrHypercolumns, unsigned long nrRateUnits, UnitType unitType, MPIDistribution::ParallelizationSchemeLayer parallelizationScheme, bool useSilentHypercolumns, float silentHypercolumnsThreshold)
 {
 	m_network = net;
-	m_keepValues = false;
+	m_keepValues = false;//false;
 
 	m_unitType = unitType;
 	m_parallelizationScheme = parallelizationScheme;

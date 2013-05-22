@@ -353,7 +353,7 @@ void Projection::AddActiveEvent(long preId, float value)
 
 void Projection::AddActiveEvents(vector<long> preIds, vector<float> values)
 {
-	vector<set<long> > localPostIds(preIds.size()); 
+	//vector<set<long> > localPostIds(preIds.size()); 
 	if(m_preIdsActive.size()>0)
 		m_preIdsActive.clear();
 	else
@@ -362,8 +362,8 @@ void Projection::AddActiveEvents(vector<long> preIds, vector<float> values)
 	for(int i=0;i<preIds.size();i++)
 	{
 		// get all the units this unit is connected to on this Projection
-		localPostIds[i] = GetLocalPostIds(preIds[i]);//GetPostIds(preIds[i]);
-		for(set<long>::iterator it=localPostIds[i].begin();it!=localPostIds[i].end();++it)
+		//localPostIds[i] = m_localPostIdsPre[preIds[i]];//GetLocalPostIds(preIds[i]);//GetPostIds(preIds[i]);
+		for(set<long>::iterator it=m_localPostIdsPre[preIds[i]].begin();it!=m_localPostIdsPre[preIds[i]].end();++it)
 		{
 			m_preIdsActive[*it].reserve(preIds.size()); // optimization
 		}
@@ -379,7 +379,7 @@ void Projection::AddActiveEvents(vector<long> preIds, vector<float> values)
 		p.second = values[i];
 		long localId;
 
-		for(set<long>::iterator it=localPostIds[i].begin();it!=localPostIds[i].end();++it)//postIds.size();j++)
+		for(set<long>::iterator it=m_localPostIdsPre[preIds[i]].begin();it!=m_localPostIdsPre[preIds[i]].end();++it)//postIds.size();j++)
 		{
 			m_preIdsActive[*it].emplace_back(p);
 		}
@@ -400,7 +400,7 @@ vector<pair<long,float> >* Projection::GetPreIdsActiveLocal(long localUnitId)
 }
 
 // Necessary to set USE_HASHED_ACTIVE_COMMUNICATION to 1 to be able to use this (consumes unnecessary memory otherwise (scales with nr synapses))
-set<long> Projection::GetPostIds(long preId)
+set<long>& Projection::GetPostIds(long preId)
 {
 #if	USE_HASHED_ACTIVE_COMMUNICATION == 1
 	return m_postIdsPre[preId];
@@ -409,7 +409,7 @@ set<long> Projection::GetPostIds(long preId)
 #endif
 }
 
-set<long> Projection::GetLocalPostIds(long preId)
+set<long>& Projection::GetLocalPostIds(long preId)
 {
 #if	USE_HASHED_ACTIVE_COMMUNICATION == 1
 	return m_localPostIdsPre[preId];
