@@ -1,7 +1,8 @@
 #pragma once
 #ifndef NETWORKVQ_H
 #define NETWORKVQ_H
-
+#define VQ_EPS 1e-3
+#define VQ_NUM 10
 #include "NetworkPopulationModifier.h"
 //#include "Parameter.h"
 
@@ -37,7 +38,7 @@ public:
 	unsigned int GetSeed();
 	void ParallelDistortionCalculation(float *distortion, vector<float> *D);
 	void ParallelCompetitiveLearning();
-	void Step(vector<vector<float> >* x);
+	bool Step(vector<vector<float> >* x);
 	float RRValue(const vector<float>& x1, const vector<float>& x2);
 	int GetClosestCodeVectorIndex(const vector<float>& data, const vector<vector<float> >& codeVectors);
 	vector<vector<float> > GetClosestCodeVectorMultipleIndexesAndValues(const vector<float>& data, const vector<vector<float> >& codeVectors, int maxSize);
@@ -127,6 +128,8 @@ private:
 	int m_N; // current nr of codewords
 	int m_k; // dimension of input and codevectors
 	float m_currentDistortion;
+	float m_prevDistortion;
+	int m_distUnchanged;
 	int m_mpiSize,m_mpiRank;
 
 	vector<vector<float> >* m_x; // input data

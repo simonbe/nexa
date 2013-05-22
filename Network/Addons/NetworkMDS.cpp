@@ -160,20 +160,27 @@ void LayerMDS::Simulate()
 		}
 	}
 
-
+	
+	m_totChange = 0;
+	for(int i=0;i<m_Xi.size();i++)
+	{
+		for(int j=0;j<m_Xi[0].size();j++)
+		{
+			m_totChange+=fabs(m_diffXi[i][j]);
+		}
+	}
 	if(m_population->network()->MPIGetNodeId() == 0 && DEBUG_LEVEL > 2)
 	{
-		m_totChange = 0;
-		for(int i=0;i<m_Xi.size();i++)
-		{
-			for(int j=0;j<m_Xi[0].size();j++)
-			{
-				m_totChange+=fabs(m_diffXi[i][j]);
-			}
-		}
-
 		cout<<"MDS-totDiff="<<m_totChange<<" ";
 	}
+	if(fabs(m_totChange-m_prevDist)<MDS_EPS) {
+		m_distUnchanged++;
+	}
+	else {
+		m_distUnchanged=0;
+		m_prevDist=m_totChange;
+	}
+	SwitchOnOff(m_distUnchanged<MDS_NUM);
 
 	// reset
 	m_diffXi = vector<vector<float> >(m_diffXi.size(),vector<float>(m_diffXi[0].size()));

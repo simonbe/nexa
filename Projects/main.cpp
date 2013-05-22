@@ -16,6 +16,7 @@
 //#include "OB_OCTX_Connectivity/NetworkOlfaction_BK.h"
 //#include "OlfactionSystem.h"
 #include "NetworkTemporal3.h"
+#include "NetworkTemporal3BCPNN.h"
 //#include "NetworkScalingDemos.h"
 #include <mpi.h>
 //#include <VisItControlInterface_V2.h>
